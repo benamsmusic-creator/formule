@@ -195,8 +195,19 @@ function DashboardContent() {
   const router = useRouter();
 
   useEffect(() => {
-    setForms(getForms());
-    setLoaded(true);
+    // Try server first (cross-device), fallback to localStorage
+    fetch('/api/forms')
+      .then((r) => r.json())
+      .then((serverForms) => {
+        if (Array.isArray(serverForms) && serverForms.length > 0) {
+          setForms(serverForms);
+        } else {
+          setForms(getForms());
+        }
+      })
+      .catch(() => setForms(getForms()))
+      .finally(() => setLoaded(true));
+
     if (searchParams.get('created') === '1') {
       setShowToast(true);
       setTimeout(() => setShowToast(false), 4000);

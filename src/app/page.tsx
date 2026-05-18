@@ -114,23 +114,23 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         >
-          {/* Badge */}
-          <motion.div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-gold-600 text-sm font-medium mb-8"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            ✦ Réservations & événements
-          </motion.div>
-
           <h1
-            className="text-[clamp(3rem,8vw,6rem)] font-light text-brown-900 leading-tight mb-6"
+            className="text-[clamp(3rem,8vw,6rem)] font-light text-brown-900 leading-tight mb-4"
             style={{ fontFamily: 'var(--font-cormorant)' }}
           >
             Bienvenue chez{' '}
             <em className="gradient-text not-italic">HabadLyon</em>
           </h1>
+
+          {/* Badge */}
+          <motion.div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-gold-600 text-xs font-medium mb-8"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            ✦ Événements HabadLyon
+          </motion.div>
 
           <p className="text-brown-500 text-lg sm:text-xl leading-relaxed mb-12 max-w-lg mx-auto">
             Inscrivez-vous à nos événements, consultez vos réservations et gérez votre participation en toute simplicité.

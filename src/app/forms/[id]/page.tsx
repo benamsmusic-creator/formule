@@ -562,8 +562,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | undefined>(undefined);
 
   useEffect(() => {
-    const f = getForm(id);
-    if (f) {
+    const initForm = (f: Form) => {
       setForm(f);
       const init: Record<string, string | boolean> = {};
       f.fields.forEach((field) => {
@@ -573,9 +572,25 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
         else init[field.id] = '';
       });
       setFormData(init);
-    } else {
-      setNotFound(true);
-    }
+    };
+
+    // Try server first (works on any device), fallback to localStorage
+    fetch(`/api/forms/${id}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((f) => {
+        if (f && f.id) {
+          initForm(f);
+        } else {
+          const local = getForm(id);
+          if (local) initForm(local);
+          else setNotFound(true);
+        }
+      })
+      .catch(() => {
+        const local = getForm(id);
+        if (local) initForm(local);
+        else setNotFound(true);
+      });
   }, [id]);
 
   useEffect(() => {
@@ -738,23 +753,26 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
         )}
 
         {screen === 'payment' && paymentField && (
-          <motion.div key="payment" className="absolute inset-0 flex items-center justify-center px-6"
+          <motion.div key="payment" className="absolute inset-0 overflow-y-auto"
             initial={{ y: '100%' }} animate={{ y: '0%', transition: SPRING }}
             exit={{ y: '-100%', transition: { ...SPRING, stiffness: 340 } }}>
-            <div className="w-full max-w-md">
-              <button onClick={() => { setDirection(-1); setScreen('payment_choice'); }}
-                className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">← Retour</button>
-              <h2 className="text-4xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>Paiement sécurisé</h2>
-              <p className="text-brown-400 text-sm mb-8">{paymentField.label} · {paymentField.amount?.toFixed(2)} €</p>
-              <StripePayment
-                amount={paymentField.amount ?? 50}
-                description={form.title}
-                onSuccess={() => {
-                  const currentUser = getCurrentUser();
-                  addResponse(id, { ...buildFinalData(identityData!), payment_status: 'paid' }, currentUser?.id, 'card');
-                  setScreen('success');
-                }}
-              />
+            <div className="min-h-full flex items-start justify-center px-6 py-16">
+              <div className="w-full max-w-md">
+                <button onClick={() => { setDirection(-1); setScreen('payment_choice'); }}
+                  className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">← Retour</button>
+                <h2 className="text-4xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>Paiement sécurisé</h2>
+                <p className="text-brown-400 text-sm mb-8">{paymentField.label} · {paymentField.amount?.toFixed(2)} €</p>
+                <StripePayment
+                  amount={paymentField.amount ?? 50}
+                  description={form.title}
+                  onSuccess={() => {
+                    const currentUser = getCurrentUser();
+                    addResponse(id, { ...buildFinalData(identityData!), payment_status: 'paid' }, currentUser?.id, 'card');
+                    setScreen('success');
+                  }}
+                />
+                <div className="h-10" />
+              </div>
             </div>
           </motion.div>
         )}

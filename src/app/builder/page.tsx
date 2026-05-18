@@ -36,15 +36,6 @@ function MiniCalendar({ value, onChange }: { value?: string; onChange: (text: st
   const [open, setOpen] = useState(false);
   const [viewDate, setViewDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, []);
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -61,94 +52,95 @@ function MiniCalendar({ value, onChange }: { value?: string; onChange: (text: st
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div>
       <button
         type="button"
         onClick={() => setOpen(!open)}
         className="w-full text-left px-3 py-2.5 rounded-xl bg-gold-400/10 border border-gold-400/30 text-brown-900 text-sm flex items-center justify-between gap-2 hover:border-gold-500/50 transition-colors"
       >
         <span className={value ? 'text-brown-900 font-medium' : 'text-brown-400'}>{value || 'Choisir une date…'}</span>
-        <span className="text-gold-500 text-base">📅</span>
+        <span className="text-gold-500 text-base">{open ? '▲' : '📅'}</span>
       </button>
 
       <AnimatePresence>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -6, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.97 }}
-            transition={{ duration: 0.18 }}
-            className="absolute top-full left-0 right-0 mt-2 z-50 bg-beige-50 border border-gold-400/30 rounded-2xl shadow-2xl overflow-hidden p-4"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden"
           >
-            {/* Month nav */}
-            <div className="flex items-center justify-between mb-3">
-              <button
-                type="button"
-                onClick={() => setViewDate(new Date(year, month - 1, 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-beige-200 text-brown-600 transition-colors font-bold"
-              >
-                ‹
-              </button>
-              <span className="text-sm font-semibold text-brown-900" style={{ fontFamily: 'var(--font-cormorant)', fontSize: '1rem' }}>
-                {MONTHS_FR[month]} {year}
-              </span>
-              <button
-                type="button"
-                onClick={() => setViewDate(new Date(year, month + 1, 1))}
-                className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-beige-200 text-brown-600 transition-colors font-bold"
-              >
-                ›
-              </button>
-            </div>
+            <div className="mt-2 bg-beige-50 border border-gold-400/30 rounded-2xl p-4">
+              {/* Month nav */}
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  type="button"
+                  onClick={() => setViewDate(new Date(year, month - 1, 1))}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-beige-200 text-brown-600 transition-colors font-bold"
+                >
+                  ‹
+                </button>
+                <span className="text-sm font-semibold text-brown-900" style={{ fontFamily: 'var(--font-cormorant)', fontSize: '1rem' }}>
+                  {MONTHS_FR[month]} {year}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setViewDate(new Date(year, month + 1, 1))}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-beige-200 text-brown-600 transition-colors font-bold"
+                >
+                  ›
+                </button>
+              </div>
 
-            {/* Day names */}
-            <div className="grid grid-cols-7 mb-1">
-              {DAYS_FR.map((d, i) => (
-                <div key={i} className="text-center text-[10px] text-brown-400 font-semibold py-1 uppercase tracking-wide">
-                  {d}
-                </div>
-              ))}
-            </div>
+              {/* Day names */}
+              <div className="grid grid-cols-7 mb-1">
+                {DAYS_FR.map((d, i) => (
+                  <div key={i} className="text-center text-[10px] text-brown-400 font-semibold py-1 uppercase tracking-wide">
+                    {d}
+                  </div>
+                ))}
+              </div>
 
-            {/* Days grid */}
-            <div className="grid grid-cols-7 gap-0.5">
-              {Array(adjustedFirstDay).fill(null).map((_, i) => <div key={`e-${i}`} />)}
-              {Array(daysInMonth).fill(null).map((_, i) => {
-                const day = i + 1;
-                const isToday = year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
-                const isSelected = selectedDate &&
-                  year === selectedDate.getFullYear() &&
-                  month === selectedDate.getMonth() &&
-                  day === selectedDate.getDate();
-                return (
-                  <button
-                    key={day}
-                    type="button"
-                    onClick={() => selectDate(day)}
-                    className={`h-8 w-full rounded-lg text-xs font-medium transition-all hover:scale-105 ${
-                      isSelected
-                        ? 'bg-gold-500 text-white shadow-sm shadow-gold-500/30'
-                        : isToday
-                        ? 'bg-gold-400/20 text-gold-700 font-bold ring-1 ring-gold-400/40'
-                        : 'text-brown-700 hover:bg-beige-200'
-                    }`}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
+              {/* Days grid */}
+              <div className="grid grid-cols-7 gap-0.5">
+                {Array(adjustedFirstDay).fill(null).map((_, i) => <div key={`e-${i}`} />)}
+                {Array(daysInMonth).fill(null).map((_, i) => {
+                  const day = i + 1;
+                  const isToday = year === today.getFullYear() && month === today.getMonth() && day === today.getDate();
+                  const isSelected = selectedDate &&
+                    year === selectedDate.getFullYear() &&
+                    month === selectedDate.getMonth() &&
+                    day === selectedDate.getDate();
+                  return (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => selectDate(day)}
+                      className={`h-8 w-full rounded-lg text-xs font-medium transition-all hover:scale-105 ${
+                        isSelected
+                          ? 'bg-gold-500 text-white shadow-sm shadow-gold-500/30'
+                          : isToday
+                          ? 'bg-gold-400/20 text-gold-700 font-bold ring-1 ring-gold-400/40'
+                          : 'text-brown-700 hover:bg-beige-200'
+                      }`}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
 
-            {/* Clear */}
-            {value && (
-              <button
-                type="button"
-                onClick={() => { onChange(''); setSelectedDate(null); setOpen(false); }}
-                className="mt-3 w-full text-xs text-brown-400 hover:text-brown-600 py-1 transition-colors"
-              >
-                Effacer la date
-              </button>
-            )}
+              {value && (
+                <button
+                  type="button"
+                  onClick={() => { onChange(''); setSelectedDate(null); setOpen(false); }}
+                  className="mt-3 w-full text-xs text-brown-400 hover:text-brown-600 py-1 transition-colors"
+                >
+                  Effacer la date
+                </button>
+              )}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -741,7 +733,14 @@ function BuilderContent() {
       form.fields = fields;
       setFormId(form.id);
     }
+    // Save locally
     saveForm(form);
+    // Sync to server (cross-device)
+    fetch('/api/forms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    }).catch(() => {/* silently ignore if KV not set up */});
     setSaving(false);
     return form;
   };
