@@ -13,14 +13,15 @@ export async function POST(req: NextRequest) {
   try {
     const { amount, currency = 'eur', description } = await req.json();
 
-    if (!amount || amount < 50) {
+    const amountInCents = Math.round(amount * 100);
+    if (!amount || amountInCents < 50) {
       return NextResponse.json({ error: 'Montant invalide (minimum 0.50€)' }, { status: 400 });
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(amount * 100), // centimes
+      amount: amountInCents,
       currency,
-      description: description ?? 'Paiement FormLux',
+      description: description ?? 'Paiement HabadLyon',
       automatic_payment_methods: { enabled: true },
     });
 

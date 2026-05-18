@@ -1,7 +1,8 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { getForms, deleteForm } from '@/lib/store';
 import { Form } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
@@ -186,13 +187,22 @@ function FormCard({ form, onDelete, index }: { form: Form; onDelete: () => void;
   );
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const [forms, setForms] = useState<Form[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     setForms(getForms());
     setLoaded(true);
+    if (searchParams.get('created') === '1') {
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
+      router.replace('/dashboard');
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDelete = (id: string) => {
@@ -209,6 +219,21 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen pt-24 pb-20">
+      {/* Toast succès */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-green-500 text-white shadow-xl shadow-green-500/20"
+          >
+            <span className="text-lg">✓</span>
+            <span className="text-sm font-medium">Formulaire créé avec succès !</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
         <motion.div
@@ -228,11 +253,10 @@ export default function DashboardPage() {
 
         {/* Stats */}
         {loaded && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-12">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
             <StatCard label="Formulaires" value={forms.length} icon="◈" delay={0.1} />
             <StatCard label="Réponses" value={totalResponses} icon="✦" delay={0.15} />
-            <StatCard label="Champs total" value={forms.reduce((s, f) => s + f.fields.length, 0)} icon="⬡" delay={0.2} />
-            <StatCard label="Revenus (€)" value={totalPayments} icon="◆" delay={0.25} />
+            <StatCard label="Revenus (€)" value={totalPayments} icon="◆" delay={0.2} />
           </div>
         )}
 
@@ -295,5 +319,13 @@ export default function DashboardPage() {
         </AnimatePresence>
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense>
+      <DashboardContent />
+    </Suspense>
   );
 }

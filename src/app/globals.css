@@ -24,7 +24,7 @@
 }
 
 * {
-  cursor: none !important;
+  cursor: auto;
 }
 
 html {

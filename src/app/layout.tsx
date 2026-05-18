@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Cormorant_Garamond, Inter } from 'next/font/google';
 import './globals.css';
-import Cursor from '@/components/Cursor';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Navbar from '@/components/Navbar';
 
@@ -19,8 +18,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'FormLux — Formulaires d\'exception',
-  description: 'Créez des formulaires élégants avec paiement Stripe intégré.',
+  title: 'HabadLyon',
+  description: 'Gestion des réservations HabadLyon.',
 };
 
 export default function RootLayout({
@@ -31,7 +30,6 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${cormorant.variable} ${inter.variable}`}>
       <body className="min-h-screen antialiased">
-        <Cursor />
         <AnimatedBackground />
         <Navbar />
         <main>{children}</main>

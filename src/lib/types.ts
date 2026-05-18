@@ -35,10 +35,12 @@ export interface FormField {
 export interface FormResponse {
   id: string;
   formId: string;
+  userId?: string;
   data: Record<string, string | boolean>;
   submittedAt: string;
-  paymentStatus?: 'paid' | 'unpaid' | 'pending';
+  paymentStatus?: 'paid' | 'unpaid' | 'pending' | 'cash';
   paymentAmount?: number;
+  paymentMethod?: 'card' | 'cash';
 }
 
 export interface Form {
@@ -50,4 +52,13 @@ export interface Form {
   updatedAt: string;
   responses: FormResponse[];
   coverImage?: string;
+}
+
+export interface AppUser {
+  id: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  createdAt: string;
 }

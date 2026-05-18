@@ -1,17 +1,13 @@
 'use client';
 import { use, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getForm, addResponse } from '@/lib/store';
+import { getForm, addResponse, getCurrentUser } from '@/lib/store';
 import { Form, FormField } from '@/lib/types';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 
 const StripePayment = dynamic(() => import('@/components/StripePayment'), { ssr: false });
 
-/* ─── Spring scroll config ──────────────────────────
-   Pure Y translation — no opacity fade — feels like
-   physically scrolling a real page from the bottom.
-─────────────────────────────────────────────────── */
 const SPRING = { type: 'spring' as const, stiffness: 260, damping: 30, mass: 0.9 };
 
 function makeSlide(dir: number) {
@@ -22,7 +18,14 @@ function makeSlide(dir: number) {
   };
 }
 
-/* ─── Progress bar ──────────────────────────────── */
+interface IdentityData {
+  civility: 'M.' | 'Mme';
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
+/* ─── Progress bar ──────────────────────────────────────────── */
 function ProgressBar({ pct }: { pct: number }) {
   return (
     <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-beige-200">
@@ -35,7 +38,7 @@ function ProgressBar({ pct }: { pct: number }) {
   );
 }
 
-/* ─── Cover / Flyer screen ──────────────────────── */
+/* ─── Cover / Flyer screen ──────────────────────────────────── */
 function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
   const eventDateField = form.fields.find((f) => f.type === 'event_date');
 
@@ -51,7 +54,6 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
         <div className="relative flex-1">
           <Image src={form.coverImage} alt="Flyer" fill className="object-cover object-top" priority unoptimized />
           <div className="absolute inset-0 bg-gradient-to-t from-brown-900/90 via-brown-900/20 to-transparent" />
-
           <div className="absolute inset-x-0 bottom-0 p-8 sm:p-14">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.7 }}>
               {eventDateField?.presetValue && (
@@ -70,7 +72,7 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
                 className="inline-flex items-center gap-3 px-10 py-4 bg-beige-50 text-brown-900 rounded-2xl font-semibold text-base shadow-2xl"
                 whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
               >
-                Je m&apos;inscris
+                Commencer
                 <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
               </motion.button>
               <p className="mt-4 text-beige-400/40 text-xs">Entrée ↵</p>
@@ -82,7 +84,6 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
           <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none"
             style={{ background: 'radial-gradient(circle, rgba(201,169,110,0.12) 0%, transparent 70%)' }}
             animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 6 }} />
-
           <motion.div className="relative z-10 max-w-lg"
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }}>
             {eventDateField?.presetValue && (
@@ -101,7 +102,7 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
               className="btn-liquid inline-flex items-center gap-3 px-10 py-4 bg-brown-900 text-beige-50 rounded-2xl font-medium text-base overflow-hidden"
               whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.97 }}>
               <span className="relative z-10 flex items-center gap-3">
-                Je m&apos;inscris
+                Commencer
                 <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
               </span>
             </motion.button>
@@ -113,7 +114,128 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
   );
 }
 
-/* ─── People count field ────────────────────────── */
+/* ─── Identity screen (step 2 — always shown) ───────────────── */
+function IdentityScreen({
+  onNext, onBack, direction,
+}: {
+  onNext: (data: IdentityData) => void;
+  onBack: () => void;
+  direction: number;
+}) {
+  const [civility, setCivility] = useState<'M.' | 'Mme' | ''>('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const slide = makeSlide(direction);
+
+  const canProceed = civility !== '' && firstName.trim() !== '' && lastName.trim() !== '' && phone.trim() !== '';
+
+  const handleSubmit = () => {
+    if (!canProceed) return;
+    onNext({ civility: civility as 'M.' | 'Mme', firstName: firstName.trim(), lastName: lastName.trim(), phone: phone.trim() });
+  };
+
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => { if (e.key === 'Enter' && canProceed) handleSubmit(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  });
+
+  return (
+    <motion.div
+      key="identity"
+      initial={slide.enter}
+      animate={slide.center}
+      exit={slide.exit}
+      className="absolute inset-0 flex items-center justify-center overflow-y-auto"
+    >
+      <div className="w-full max-w-2xl mx-auto px-6 py-20">
+        <h2 className="text-4xl sm:text-5xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
+          Vos informations
+        </h2>
+        <p className="text-brown-400 text-sm mb-10">Toutes les informations sont requises.</p>
+
+        {/* Civilité */}
+        <div className="mb-8">
+          <label className="text-xs text-brown-400 uppercase tracking-wide mb-3 block font-medium">Civilité</label>
+          <div className="flex gap-3">
+            {(['M.', 'Mme'] as const).map((c) => (
+              <motion.button
+                key={c}
+                type="button"
+                onClick={() => setCivility(c)}
+                className={`flex-1 py-4 rounded-2xl border-2 font-semibold text-base transition-all ${
+                  civility === c
+                    ? 'border-gold-500 bg-gold-400/15 text-brown-900'
+                    : 'border-beige-200 bg-beige-50 text-brown-500 hover:border-gold-400/50'
+                }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                {c}
+              </motion.button>
+            ))}
+          </div>
+        </div>
+
+        {/* Prénom */}
+        <div className="mb-7">
+          <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Prénom</label>
+          <input
+            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            placeholder="Votre prénom"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+            autoFocus
+          />
+        </div>
+
+        {/* Nom */}
+        <div className="mb-7">
+          <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Nom</label>
+          <input
+            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            placeholder="Votre nom de famille"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+        </div>
+
+        {/* Téléphone */}
+        <div className="mb-10">
+          <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Téléphone</label>
+          <input
+            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            placeholder="06 12 34 56 78"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            inputMode="tel"
+          />
+        </div>
+
+        <div className="flex items-center gap-4">
+          <motion.button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!canProceed}
+            className="btn-liquid flex items-center gap-2 px-8 py-3.5 bg-brown-900 text-beige-50 rounded-xl font-medium text-sm overflow-hidden disabled:opacity-30 disabled:cursor-not-allowed"
+            whileHover={canProceed ? { scale: 1.03 } : {}}
+            whileTap={canProceed ? { scale: 0.97 } : {}}
+          >
+            <span className="relative z-10">Continuer ↵</span>
+          </motion.button>
+          <motion.button type="button" onClick={onBack}
+            className="px-4 py-3.5 rounded-xl text-brown-400 hover:text-brown-700 text-sm transition-colors"
+            whileHover={{ x: -2 }}>
+            ← Retour
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── People count field ────────────────────────────────────── */
 function PeopleCountField({ value, onChange, max = 8 }: { value: string; onChange: (v: string) => void; max?: number }) {
   const count = parseInt(value || '0', 10);
   return (
@@ -148,7 +270,7 @@ function PeopleCountField({ value, onChange, max = 8 }: { value: string; onChang
   );
 }
 
-/* ─── Info block (read-only text) ───────────────── */
+/* ─── Info block ────────────────────────────────────────────── */
 function InfoBlock({ field }: { field: FormField }) {
   return (
     <motion.div
@@ -165,7 +287,7 @@ function InfoBlock({ field }: { field: FormField }) {
   );
 }
 
-/* ─── Event date display ────────────────────────── */
+/* ─── Event date display ────────────────────────────────────── */
 function EventDateDisplay({ field }: { field: FormField }) {
   return (
     <motion.div className="mt-6 p-6 rounded-2xl bg-beige-100 border border-gold-400/20 text-center"
@@ -180,7 +302,7 @@ function EventDateDisplay({ field }: { field: FormField }) {
   );
 }
 
-/* ─── Question screen (physical scroll container) ─ */
+/* ─── Question screen ───────────────────────────────────────── */
 function QuestionScreen({
   field, index, total, value, onChange, onNext, onBack, isLast, direction,
 }: {
@@ -222,7 +344,6 @@ function QuestionScreen({
       className="absolute inset-0 flex items-center justify-center overflow-y-auto"
     >
       <div className="w-full max-w-2xl mx-auto px-6 py-20">
-        {/* Step counter */}
         {!isAutoAdvance && (
           <div className="flex items-center gap-2 mb-8">
             <span className="text-gold-500 font-medium text-sm tabular-nums">{index + 1}</span>
@@ -231,7 +352,6 @@ function QuestionScreen({
           </div>
         )}
 
-        {/* Field image */}
         {field.imageUrl && (
           <div className="mb-8 rounded-2xl overflow-hidden">
             <Image src={field.imageUrl} alt={field.label} width={600} height={300}
@@ -239,25 +359,15 @@ function QuestionScreen({
           </div>
         )}
 
-        {/* Label */}
         <h2 className={`font-light text-brown-900 leading-snug mb-2 ${isAutoAdvance ? 'text-2xl sm:text-3xl' : 'text-3xl sm:text-4xl'}`}
           style={{ fontFamily: 'var(--font-cormorant)' }}>
           {field.label}
           {field.required && !isAutoAdvance && <span className="text-gold-500 ml-1.5 text-2xl">*</span>}
         </h2>
 
-        {/* Input area */}
         <div className="mt-4">
           {field.type === 'event_date' && <EventDateDisplay field={field} />}
-
           {field.type === 'info_block' && <InfoBlock field={field} />}
-
-          {(field.type === 'text' || field.type === 'email' || field.type === 'phone' || field.type === 'number') && (
-            <input ref={inputRef as React.RefObject<HTMLInputElement>}
-              type={field.type === 'email' ? 'email' : field.type === 'phone' ? 'tel' : field.type === 'number' ? 'number' : 'text'}
-              className={baseInput} placeholder={field.placeholder ?? 'Votre réponse ici…'}
-              value={value as string} onChange={(e) => onChange(e.target.value)} />
-          )}
 
           {field.type === 'textarea' && (
             <textarea ref={inputRef as React.RefObject<HTMLTextAreaElement>}
@@ -314,24 +424,29 @@ function QuestionScreen({
               <span className="text-lg text-brown-700">{field.label}</span>
             </motion.button>
           )}
+
+          {(field.type === 'text' || field.type === 'email' || field.type === 'phone' || field.type === 'number') && (
+            <input ref={inputRef as React.RefObject<HTMLInputElement>}
+              type={field.type === 'email' ? 'email' : field.type === 'number' ? 'number' : 'text'}
+              inputMode={field.type === 'phone' ? 'tel' : field.type === 'number' ? 'numeric' : undefined}
+              className={baseInput} placeholder={field.placeholder ?? 'Votre réponse ici…'}
+              value={value as string} onChange={(e) => onChange(e.target.value)} />
+          )}
         </div>
 
-        {/* Navigation */}
         <div className="flex items-center gap-4 mt-10">
           <motion.button type="button" onClick={onNext} disabled={!canProceed}
             className="btn-liquid flex items-center gap-2 px-8 py-3.5 bg-brown-900 text-beige-50 rounded-xl font-medium text-sm overflow-hidden disabled:opacity-30 disabled:cursor-not-allowed"
             whileHover={canProceed ? { scale: 1.03 } : {}} whileTap={canProceed ? { scale: 0.97 } : {}}>
-            <span className="relative z-10">{isLast ? 'Envoyer' : 'Continuer'}</span>
+            <span className="relative z-10">{isLast ? 'Terminer' : 'Continuer'}</span>
             <span className="relative z-10">↵</span>
           </motion.button>
 
-          {index > 0 && (
-            <motion.button type="button" onClick={onBack}
-              className="px-4 py-3.5 rounded-xl text-brown-400 hover:text-brown-700 text-sm transition-colors"
-              whileHover={{ x: -2 }}>
-              ← Retour
-            </motion.button>
-          )}
+          <motion.button type="button" onClick={onBack}
+            className="px-4 py-3.5 rounded-xl text-brown-400 hover:text-brown-700 text-sm transition-colors"
+            whileHover={{ x: -2 }}>
+            ← Retour
+          </motion.button>
 
           {!isAutoAdvance && field.type !== 'radio' && field.type !== 'select' && field.type !== 'checkbox' && field.type !== 'people_count' && (
             <span className="text-xs text-brown-300 ml-auto">Entrée ↵</span>
@@ -342,8 +457,66 @@ function QuestionScreen({
   );
 }
 
-/* ─── Success screen ────────────────────────────── */
-function SuccessScreen({ hasPayment }: { hasPayment: boolean }) {
+/* ─── Payment choice screen ─────────────────────────────────── */
+function PaymentChoiceScreen({
+  amount, onCash, onCard, onBack, direction,
+}: {
+  amount: number; onCash: () => void; onCard: () => void; onBack: () => void; direction: number;
+}) {
+  const slide = makeSlide(direction);
+  return (
+    <motion.div
+      key="payment_choice"
+      initial={slide.enter}
+      animate={slide.center}
+      exit={slide.exit}
+      className="absolute inset-0 flex items-center justify-center px-6"
+    >
+      <div className="w-full max-w-md">
+        <button onClick={onBack} className="mb-8 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">
+          ← Retour
+        </button>
+        <h2 className="text-4xl sm:text-5xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
+          Mode de paiement
+        </h2>
+        <p className="text-brown-400 text-sm mb-10">Montant total : <span className="font-semibold text-brown-700">{amount.toFixed(2)} €</span></p>
+
+        <div className="grid grid-cols-2 gap-4">
+          <motion.button
+            onClick={onCash}
+            className="flex flex-col items-center gap-3 p-8 rounded-3xl border-2 border-beige-200 bg-beige-50 hover:border-gold-400/60 hover:bg-gold-400/5 transition-all"
+            whileHover={{ scale: 1.03, y: -3 }}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <span className="text-4xl">💵</span>
+            <span className="font-semibold text-brown-900 text-base">Espèces</span>
+            <span className="text-xs text-brown-400 text-center">Payez sur place</span>
+          </motion.button>
+
+          <motion.button
+            onClick={onCard}
+            className="flex flex-col items-center gap-3 p-8 rounded-3xl border-2 border-gold-400/40 bg-gold-400/8 hover:border-gold-500 hover:bg-gold-400/15 transition-all"
+            whileHover={{ scale: 1.03, y: -3 }}
+            whileTap={{ scale: 0.97 }}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.15 }}
+          >
+            <span className="text-4xl">💳</span>
+            <span className="font-semibold text-brown-900 text-base">Carte</span>
+            <span className="text-xs text-brown-400 text-center">Paiement sécurisé</span>
+          </motion.button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Success screen ────────────────────────────────────────── */
+function SuccessScreen({ paymentMethod }: { paymentMethod?: 'card' | 'cash' }) {
   return (
     <motion.div key="success" className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
       initial={{ y: '100%' }} animate={{ y: '0%', transition: SPRING }} exit={{ y: '-100%' }}>
@@ -366,22 +539,27 @@ function SuccessScreen({ hasPayment }: { hasPayment: boolean }) {
       </motion.h2>
       <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
         className="text-brown-500 text-lg max-w-sm">
-        Votre réponse a bien été enregistrée.
-        {hasPayment && ' Paiement confirmé avec succès.'}
+        {paymentMethod === 'cash'
+          ? 'Votre inscription est enregistrée. Le paiement sera effectué sur place.'
+          : paymentMethod === 'card'
+          ? 'Votre réservation et paiement ont bien été confirmés.'
+          : 'Votre réponse a bien été enregistrée.'}
       </motion.p>
     </motion.div>
   );
 }
 
-/* ─── Main page ─────────────────────────────────── */
+/* ─── Main page ─────────────────────────────────────────────── */
 export default function FormPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [form, setForm] = useState<Form | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [screen, setScreen] = useState<'cover' | 'questions' | 'payment' | 'success'>('cover');
+  const [screen, setScreen] = useState<'cover' | 'identity' | 'questions' | 'payment_choice' | 'payment' | 'success'>('cover');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [formData, setFormData] = useState<Record<string, string | boolean>>({});
+  const [identityData, setIdentityData] = useState<IdentityData | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | undefined>(undefined);
 
   useEffect(() => {
     const f = getForm(id);
@@ -409,9 +587,32 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
   const handleStart = useCallback(() => {
     if (!form) return;
-    if (form.fields.length > 0) { setDirection(1); setScreen('questions'); }
-    else { addResponse(id, {}); setScreen('success'); }
-  }, [form, id]);
+    setDirection(1);
+    setScreen('identity');
+  }, [form]);
+
+  const buildFinalData = (identity: IdentityData) => ({
+    _civility: identity.civility,
+    _firstName: identity.firstName,
+    _lastName: identity.lastName,
+    _phone: identity.phone,
+    ...formData,
+  });
+
+  const handleIdentityNext = (data: IdentityData) => {
+    setIdentityData(data);
+    setDirection(1);
+    if (questionFields.length > 0) {
+      setCurrentIndex(0);
+      setScreen('questions');
+    } else if (paymentField) {
+      setScreen('payment_choice');
+    } else {
+      const currentUser = getCurrentUser();
+      addResponse(id, buildFinalData(data), currentUser?.id, undefined);
+      setScreen('success');
+    }
+  };
 
   if (!form) {
     if (notFound) return (
@@ -434,36 +635,68 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const paymentField = form.fields.find((f) => f.type === 'payment');
   const currentField = questionFields[currentIndex];
   const realTotal = questionFields.filter(f => f.type !== 'event_date' && f.type !== 'info_block').length;
-  const pct = screen === 'payment' ? 100 : Math.round((currentIndex / Math.max(questionFields.length, 1)) * 100);
+  const pct = screen === 'payment_choice' || screen === 'payment' ? 100
+    : screen === 'questions' ? Math.round(((currentIndex + 1) / Math.max(questionFields.length + 1, 1)) * 90)
+    : screen === 'identity' ? 20
+    : 0;
 
   const handleNext = () => {
     if (currentIndex < questionFields.length - 1) {
       setDirection(1); setCurrentIndex((i) => i + 1);
     } else if (paymentField) {
-      setDirection(1); setScreen('payment');
+      setDirection(1); setScreen('payment_choice');
     } else {
-      addResponse(id, formData); setScreen('success');
+      const currentUser = getCurrentUser();
+      addResponse(id, buildFinalData(identityData!), currentUser?.id, undefined);
+      setScreen('success');
     }
   };
 
   const handleBack = () => {
-    if (currentIndex > 0) { setDirection(-1); setCurrentIndex((i) => i - 1); }
-    else { setDirection(-1); setScreen('cover'); }
+    if (currentIndex > 0) {
+      setDirection(-1); setCurrentIndex((i) => i - 1);
+    } else {
+      setDirection(-1); setScreen('identity');
+    }
+  };
+
+  const handleCash = () => {
+    setPaymentMethod('cash');
+    const currentUser = getCurrentUser();
+    addResponse(id, buildFinalData(identityData!), currentUser?.id, 'cash');
+    setScreen('success');
+  };
+
+  const handleCard = () => {
+    setPaymentMethod('card');
+    setDirection(1);
+    setScreen('payment');
   };
 
   return (
-    /* overflow-hidden is critical — clips the slides entering from above/below */
     <div className="fixed inset-0 overflow-hidden bg-beige-50">
-      {(screen === 'questions' || screen === 'payment') && <ProgressBar pct={pct} />}
+      {(screen === 'identity' || screen === 'questions' || screen === 'payment_choice' || screen === 'payment') && (
+        <ProgressBar pct={pct} />
+      )}
 
       <div className="fixed bottom-5 right-5 z-50">
-        <span className="text-xs text-brown-300/40" style={{ fontFamily: 'var(--font-cormorant)' }}>FormLux</span>
+        <span className="text-xs text-brown-300/40" style={{ fontFamily: 'var(--font-cormorant)' }}>HabadLyon</span>
       </div>
 
-      {/* All screens share the same overflow-hidden container */}
       <AnimatePresence mode="wait">
         {screen === 'cover' && (
           <CoverScreen key="cover" form={form} onStart={handleStart} />
+        )}
+
+        {screen === 'identity' && (
+          <AnimatePresence mode="wait" key="identity-host">
+            <IdentityScreen
+              key="identity"
+              direction={direction}
+              onNext={handleIdentityNext}
+              onBack={() => { setDirection(-1); setScreen('cover'); }}
+            />
+          </AnimatePresence>
         )}
 
         {screen === 'questions' && currentField && (
@@ -483,22 +716,50 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </AnimatePresence>
         )}
 
+        {screen === 'payment_choice' && paymentField && (
+          <AnimatePresence mode="wait" key="pc-host">
+            <PaymentChoiceScreen
+              key="payment_choice"
+              amount={paymentField.amount ?? 0}
+              direction={direction}
+              onCash={handleCash}
+              onCard={handleCard}
+              onBack={() => {
+                setDirection(-1);
+                if (questionFields.length > 0) {
+                  setCurrentIndex(questionFields.length - 1);
+                  setScreen('questions');
+                } else {
+                  setScreen('identity');
+                }
+              }}
+            />
+          </AnimatePresence>
+        )}
+
         {screen === 'payment' && paymentField && (
           <motion.div key="payment" className="absolute inset-0 flex items-center justify-center px-6"
             initial={{ y: '100%' }} animate={{ y: '0%', transition: SPRING }}
             exit={{ y: '-100%', transition: { ...SPRING, stiffness: 340 } }}>
             <div className="w-full max-w-md">
-              <button onClick={() => { setDirection(-1); setScreen('questions'); }}
+              <button onClick={() => { setDirection(-1); setScreen('payment_choice'); }}
                 className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">← Retour</button>
               <h2 className="text-4xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>Paiement sécurisé</h2>
               <p className="text-brown-400 text-sm mb-8">{paymentField.label} · {paymentField.amount?.toFixed(2)} €</p>
-              <StripePayment amount={paymentField.amount ?? 50} description={form.title}
-                onSuccess={() => { addResponse(id, { ...formData, payment_status: 'paid' }); setScreen('success'); }} />
+              <StripePayment
+                amount={paymentField.amount ?? 50}
+                description={form.title}
+                onSuccess={() => {
+                  const currentUser = getCurrentUser();
+                  addResponse(id, { ...buildFinalData(identityData!), payment_status: 'paid' }, currentUser?.id, 'card');
+                  setScreen('success');
+                }}
+              />
             </div>
           </motion.div>
         )}
 
-        {screen === 'success' && <SuccessScreen key="success" hasPayment={!!paymentField} />}
+        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} />}
       </AnimatePresence>
     </div>
   );
