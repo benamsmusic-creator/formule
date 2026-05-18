@@ -1,26 +1,163 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-beige-50: #FAF7F2;
+  --color-beige-100: #F5EFE6;
+  --color-beige-200: #EDE0D4;
+  --color-beige-300: #DFC9B5;
+  --color-beige-400: #C9B99A;
+  --color-gold-300: #E8C97E;
+  --color-gold-400: #C9A96E;
+  --color-gold-500: #B8934A;
+  --color-gold-600: #9A7A3A;
+  --color-brown-600: #A07850;
+  --color-brown-700: #8B6E4E;
+  --color-brown-800: #5C4030;
+  --color-brown-900: #2C1810;
+
+  --font-cormorant: var(--font-cormorant);
+  --font-inter: var(--font-inter);
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-3xl: 2rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  cursor: none !important;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: #FAF7F2;
+  color: #2C1810;
+  font-family: var(--font-inter), system-ui, sans-serif;
+  overflow-x: hidden;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F5EFE6;
+}
+::-webkit-scrollbar-thumb {
+  background: #C9A96E;
+  border-radius: 999px;
+}
+
+/* Selection */
+::selection {
+  background: #C9A96E44;
+  color: #2C1810;
+}
+
+/* Animated gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #C9A96E, #8B6E4E, #C9A96E, #E8C97E);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradientShift 4s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Button liquid fill */
+.btn-liquid {
+  position: relative;
+  overflow: hidden;
+  transition: color 0.4s ease;
+}
+.btn-liquid::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 200%;
+  height: 200%;
+  background: #2C1810;
+  border-radius: 50% 50% 0 0;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  transform-origin: bottom center;
+}
+.btn-liquid:hover::before {
+  transform: translateX(-50%) scaleX(1) scaleY(1.5);
+}
+.btn-liquid:hover {
+  color: #FAF7F2 !important;
+}
+
+/* Shimmer effect */
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: shimmer 2.5s infinite;
+}
+@keyframes shimmer {
+  100% { left: 100%; }
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-20px) rotate(1deg); }
+  66% { transform: translateY(-10px) rotate(-1deg); }
+}
+
+@keyframes floatReverse {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(15px) rotate(-1deg); }
+  66% { transform: translateY(8px) rotate(1deg); }
+}
+
+.float-1 { animation: float 8s ease-in-out infinite; }
+.float-2 { animation: floatReverse 10s ease-in-out infinite; }
+.float-3 { animation: float 12s ease-in-out infinite 2s; }
+
+/* Glass card */
+.glass {
+  background: rgba(250, 247, 242, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(201, 169, 110, 0.2);
+}
+
+/* Gold border animated */
+@keyframes borderRotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gold-border {
+  position: relative;
+  background: linear-gradient(#FAF7F2, #FAF7F2) padding-box,
+    linear-gradient(135deg, #C9A96E, #E8C97E, #8B6E4E, #C9A96E) border-box;
+  border: 1px solid transparent;
+}
+
+/* Field focus ring */
+.field-focus:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.4);
 }
