@@ -1,7 +1,7 @@
 'use client';
 import { use, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getForm, addResponse, getCurrentUser } from '@/lib/store';
+import { getForm, addResponse, getCurrentUser } from '@/lib/store'; // getCurrentUser used inside submitForm
 import { Form, FormField } from '@/lib/types';
 import { extractYouTubeId } from '@/lib/utils';
 import dynamic from 'next/dynamic';
@@ -31,7 +31,9 @@ interface IdentityData {
   civility: 'M.' | 'Mme';
   firstName: string;
   lastName: string;
+  email: string;
   phone: string;
+  address: string;
 }
 
 /* ─── YouTube Ambiance Player ───────────────────────────────── */
@@ -237,14 +239,23 @@ function IdentityScreen({
   const [civility, setCivility] = useState<'M.' | 'Mme' | ''>('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const slide = makeSlide(direction);
 
-  const canProceed = civility !== '' && firstName.trim() !== '' && lastName.trim() !== '' && phone.trim() !== '';
+  const canProceed = civility !== '' && firstName.trim() !== '' && lastName.trim() !== '' && email.trim() !== '' && phone.trim() !== '';
 
   const handleSubmit = () => {
     if (!canProceed) return;
-    onNext({ civility: civility as 'M.' | 'Mme', firstName: firstName.trim(), lastName: lastName.trim(), phone: phone.trim() });
+    onNext({
+      civility: civility as 'M.' | 'Mme',
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
+      phone: phone.trim(),
+      address: address.trim(),
+    });
   };
 
   useEffect(() => {
@@ -313,8 +324,21 @@ function IdentityScreen({
           />
         </div>
 
+        {/* Email */}
+        <div className="mb-7">
+          <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Email</label>
+          <input
+            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            placeholder="votre@email.com"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            inputMode="email"
+          />
+        </div>
+
         {/* Téléphone */}
-        <div className="mb-10">
+        <div className="mb-7">
           <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Téléphone</label>
           <input
             className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
@@ -322,6 +346,19 @@ function IdentityScreen({
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             inputMode="tel"
+          />
+        </div>
+
+        {/* Adresse */}
+        <div className="mb-10">
+          <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">
+            Adresse <span className="normal-case text-brown-300">(optionnel)</span>
+          </label>
+          <input
+            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            placeholder="12 rue des Acacia, Lyon"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
           />
         </div>
 
@@ -679,6 +716,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const [formData, setFormData] = useState<Record<string, string | boolean>>({});
   const [identityData, setIdentityData] = useState<IdentityData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | undefined>(undefined);
+  // États de soumission — jamais de succès simulé
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   useEffect(() => {
     const initForm = (f: Form) => {
@@ -725,13 +765,104 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     return () => window.removeEventListener('keydown', h);
   }, [screen, handleStart]);
 
-  const buildFinalData = (identity: IdentityData) => ({
-    _civility: identity.civility,
-    _firstName: identity.firstName,
-    _lastName: identity.lastName,
-    _phone: identity.phone,
-    ...formData,
-  });
+  /** Calcule le montant réel (prix unitaire × nombre de personnes si applicable) */
+  const computePaymentAmount = useCallback((): number | undefined => {
+    const pf = form?.fields.find((f) => f.type === 'payment');
+    if (!pf?.amount) return undefined;
+    const peopleField = form?.fields.find((f) => f.type === 'people_count');
+    if (peopleField) {
+      const count = parseInt(formData[peopleField.id] as string || '1', 10) || 1;
+      return pf.amount * count;
+    }
+    return pf.amount;
+  }, [form, formData]);
+
+  /**
+   * Construit le payload complet à insérer en base.
+   * Captures obligatoires : nom complet, téléphone, adresse,
+   * nombre d'invités, montant total calculé, mode de paiement.
+   */
+  const buildFinalData = useCallback((identity: IdentityData): Record<string, string | boolean> => {
+    const peopleField = form?.fields.find((f) => f.type === 'people_count');
+    const guestCount = peopleField
+      ? parseInt(formData[peopleField.id] as string || '1', 10) || 1
+      : 1;
+    const total = computePaymentAmount();
+
+    return {
+      // Identité
+      _civility:   identity.civility,
+      _firstName:  identity.firstName,
+      _lastName:   identity.lastName,
+      _fullName:   `${identity.civility} ${identity.firstName} ${identity.lastName}`,
+      _email:      identity.email,
+      _phone:      identity.phone,
+      _address:    identity.address || '',
+      // Réservation
+      _guestCount: String(guestCount),
+      ...(total !== undefined ? { _totalAmount: String(total) } : {}),
+      // Réponses aux champs du formulaire
+      ...formData,
+    };
+  }, [form, formData, computePaymentAmount]);
+
+  /**
+   * Point d'entrée unique pour soumettre une inscription.
+   * Attend la confirmation DB avant d'afficher le succès.
+   * Affiche une erreur explicite si l'écriture échoue.
+   */
+  const submitForm = useCallback(async (
+    identity: IdentityData,
+    method?: 'card' | 'cash',
+  ): Promise<void> => {
+    if (submitting) return;
+    setSubmitting(true);
+    setSubmitError(null);
+
+    const amount = computePaymentAmount();
+    const currentUser = getCurrentUser();
+    const payload = buildFinalData(identity);
+
+    console.log(
+      '[submitForm] Soumission — formId:', id,
+      '| method:', method ?? 'none',
+      '| amount:', amount,
+      '| guest:', payload._guestCount,
+    );
+
+    try {
+      await addResponse(id, payload, currentUser?.id, method, amount);
+      // ✓ Ligne physiquement écrite en DB → on peut afficher le succès
+      setPaymentMethod(method);
+      setScreen('success');
+
+      // Email de confirmation — toujours envoyé à l'email saisi dans l'identité
+      const eventDateField = form?.fields.find((f) => f.type === 'event_date');
+      fetch('/api/send-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: identity.email,
+          name: `${identity.firstName} ${identity.lastName}`,
+          phone: identity.phone,
+          address: identity.address,
+          formTitle: form?.title ?? '',
+          eventDate: eventDateField?.presetValue,
+          guestCount: payload._guestCount,
+          paymentMethod: method,
+          totalAmount: amount,
+        }),
+      }).catch(() => {});
+    } catch (err) {
+      const msg = err instanceof Error
+        ? err.message
+        : "Erreur d'enregistrement. Veuillez réessayer.";
+      console.error('[submitForm] ✗ Échec:', msg);
+      setSubmitError(msg);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [submitting, id, computePaymentAmount, buildFinalData]);
 
   const goToPayment = (fromIdentity = false) => {
     setDirection(1);
@@ -756,10 +887,8 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     } else if (paymentField) {
       goToPayment(true);
     } else {
-      const currentUser = getCurrentUser();
-      addResponse(id, buildFinalData(data), currentUser?.id, undefined)
-        .catch(() => {})
-        .finally(() => { setScreen('success'); });
+      // Pas de questions ni paiement → soumission directe
+      submitForm(data, undefined);
     }
   };
 
@@ -795,10 +924,8 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     } else if (paymentField) {
       goToPayment();
     } else {
-      const currentUser = getCurrentUser();
-      addResponse(id, buildFinalData(identityData!), currentUser?.id, undefined)
-        .catch(() => {})
-        .finally(() => { setScreen('success'); });
+      // Dernière question, pas de paiement → soumission
+      submitForm(identityData!, undefined);
     }
   };
 
@@ -811,11 +938,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   };
 
   const handleCash = () => {
-    setPaymentMethod('cash');
-    const currentUser = getCurrentUser();
-    addResponse(id, buildFinalData(identityData!), currentUser?.id, 'cash')
-      .catch(() => {})
-      .finally(() => { setScreen('success'); });
+    submitForm(identityData!, 'cash');
   };
 
   const handleCard = () => {
@@ -836,6 +959,53 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       <div className="fixed bottom-5 right-5 z-40">
         <span className="text-xs text-brown-300/40" style={{ fontFamily: 'var(--font-cormorant)' }}>HabadLyon</span>
       </div>
+
+      {/* ─── Error banner ───────────────────────────────────────── */}
+      <AnimatePresence>
+        {submitError && (
+          <motion.div
+            key="submit-error"
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 40 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-full max-w-sm px-5 py-4 bg-red-50 border border-red-200 rounded-2xl shadow-xl flex items-start gap-3"
+          >
+            <span className="text-red-500 text-lg flex-shrink-0 mt-0.5">⚠</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-red-700 mb-0.5">Erreur d&apos;enregistrement</p>
+              <p className="text-xs text-red-600 break-words">{submitError}</p>
+            </div>
+            <button
+              onClick={() => setSubmitError(null)}
+              className="text-red-400 hover:text-red-600 text-lg leading-none flex-shrink-0 transition-colors"
+              aria-label="Fermer"
+            >×</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Submitting overlay ──────────────────────────────────── */}
+      <AnimatePresence>
+        {submitting && (
+          <motion.div
+            key="submitting-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex items-center justify-center bg-beige-50/70 backdrop-blur-sm"
+          >
+            <div className="flex flex-col items-center gap-4">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                className="w-10 h-10 border-2 border-gold-400 border-t-transparent rounded-full"
+              />
+              <p className="text-sm text-brown-500">Enregistrement en cours…</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence mode="wait">
         {screen === 'cover' && (
@@ -905,12 +1075,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
                 <StripePayment
                   amount={paymentField.amount ?? 50}
                   description={form.title}
-                  onSuccess={() => {
-                    const currentUser = getCurrentUser();
-                    addResponse(id, { ...buildFinalData(identityData!), payment_status: 'paid' }, currentUser?.id, 'card')
-                      .catch(() => {})
-                      .finally(() => { setScreen('success'); });
-                  }}
+                  onSuccess={() => { submitForm(identityData!, 'card'); }}
                 />
                 <div className="h-10" />
               </div>
