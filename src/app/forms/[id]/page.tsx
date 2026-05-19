@@ -2,7 +2,7 @@
 import { use, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getForm, addResponse, getCurrentUser } from '@/lib/store'; // getCurrentUser used inside submitForm
-import { Form, FormField } from '@/lib/types';
+import { Form, FormField, PromoCode } from '@/lib/types';
 import { extractYouTubeId } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -142,12 +142,26 @@ function YouTubeAmbiance({ url }: { url: string }) {
 /* ─── Progress bar ──────────────────────────────────────────── */
 function ProgressBar({ pct }: { pct: number }) {
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-beige-200">
-      <motion.div
-        className="h-full bg-gradient-to-r from-gold-400 to-gold-300"
-        animate={{ width: `${pct}%` }}
-        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      />
+    <div className="fixed top-0 left-0 right-0 z-50">
+      <div className="h-0.5 bg-beige-200">
+        <motion.div
+          className="h-full bg-gradient-to-r from-gold-400 to-gold-300"
+          animate={{ width: `${pct}%` }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
+      <AnimatePresence>
+        {pct > 0 && pct < 100 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute right-3 top-2 text-[10px] font-semibold text-gold-600 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border border-gold-400/20"
+          >
+            {Math.round(pct)}%
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -705,17 +719,178 @@ function SuccessScreen({ paymentMethod }: { paymentMethod?: 'card' | 'cash' }) {
   );
 }
 
+/* ─── Disabled screen ───────────────────────────────────────── */
+function DisabledScreen({ title }: { title: string }) {
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center px-6 text-center bg-beige-50">
+      <motion.div
+        initial={{ scale: 0, rotate: -20 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+        className="text-6xl text-beige-300 mb-6"
+      >
+        🔒
+      </motion.div>
+      <motion.h2
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="text-3xl font-light text-brown-900 mb-3"
+        style={{ fontFamily: 'var(--font-cormorant)' }}
+      >
+        {title}
+      </motion.h2>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.35 }}
+        className="text-brown-400 text-base max-w-xs"
+      >
+        Ce formulaire est temporairement indisponible. Revenez plus tard.
+      </motion.p>
+    </div>
+  );
+}
+
+/* ─── Promo code screen ─────────────────────────────────────── */
+function PromoScreen({
+  promoCodes,
+  paymentAmount,
+  onApply,
+  onSkip,
+  direction,
+}: {
+  promoCodes: PromoCode[];
+  paymentAmount: number;
+  onApply: (promo: PromoCode) => void;
+  onSkip: () => void;
+  direction: number;
+}) {
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+  const [applied, setApplied] = useState<PromoCode | null>(null);
+  const slide = makeSlide(direction);
+
+  const handleApply = () => {
+    const found = promoCodes.find((p) => p.code.toUpperCase() === code.trim().toUpperCase());
+    if (!found) { setError('Code invalide.'); return; }
+    setError('');
+    setApplied(found);
+  };
+
+  const discountAmount = applied
+    ? applied.type === 'percent'
+      ? Math.round(paymentAmount * applied.discount) / 100
+      : applied.discount
+    : 0;
+  const finalAmount = Math.max(0, paymentAmount - discountAmount);
+
+  return (
+    <motion.div
+      key="promo"
+      initial={slide.enter}
+      animate={slide.center}
+      exit={slide.exit}
+      className="absolute inset-0 flex items-center justify-center px-6"
+    >
+      <div className="w-full max-w-md">
+        <h2 className="text-4xl sm:text-5xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
+          Code promo
+        </h2>
+        <p className="text-brown-400 text-sm mb-8">Entrez votre code pour obtenir une réduction.</p>
+
+        {!applied ? (
+          <div className="space-y-3 mb-6">
+            <div className="flex gap-2">
+              <input
+                className="flex-1 px-4 py-3 rounded-xl border-2 border-beige-300 focus:border-gold-500 text-brown-900 text-base uppercase tracking-widest focus:outline-none transition-colors bg-transparent"
+                placeholder="MONCODE"
+                value={code}
+                onChange={(e) => { setCode(e.target.value.toUpperCase()); setError(''); }}
+                onKeyDown={(e) => e.key === 'Enter' && handleApply()}
+                autoFocus
+              />
+              <motion.button
+                onClick={handleApply}
+                disabled={!code.trim()}
+                className="px-5 py-3 rounded-xl bg-brown-900 text-beige-50 font-medium text-sm disabled:opacity-30"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Appliquer
+              </motion.button>
+            </div>
+            {error && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-red-500 px-1">
+                ⚠ {error}
+              </motion.p>
+            )}
+          </div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-6 p-5 rounded-2xl bg-green-50 border border-green-200"
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-2xl">✓</span>
+              <div>
+                <p className="font-semibold text-green-800 text-sm">Code appliqué !</p>
+                <p className="text-green-600 text-xs">{applied.code}</p>
+              </div>
+            </div>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between text-brown-600">
+                <span>Prix initial</span><span>{paymentAmount} €</span>
+              </div>
+              <div className="flex justify-between text-green-700 font-medium">
+                <span>Réduction ({applied.type === 'percent' ? `${applied.discount}%` : `${applied.discount}€`})</span>
+                <span>−{discountAmount} €</span>
+              </div>
+              <div className="flex justify-between text-brown-900 font-bold text-base pt-2 border-t border-green-200">
+                <span>Total</span><span>{finalAmount} €</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        <div className="flex flex-col gap-3">
+          {applied && (
+            <motion.button
+              onClick={() => onApply(applied)}
+              className="btn-liquid w-full py-4 bg-brown-900 text-beige-50 rounded-xl font-medium text-sm overflow-hidden"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <span className="relative z-10">Continuer avec {finalAmount} € →</span>
+            </motion.button>
+          )}
+          <button
+            onClick={onSkip}
+            className="w-full py-3 text-brown-400 hover:text-brown-700 text-sm transition-colors"
+          >
+            {applied ? 'Annuler le code' : 'Passer sans code promo →'}
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ─── Main page ─────────────────────────────────────────────── */
 export default function FormPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [form, setForm] = useState<Form | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [screen, setScreen] = useState<'cover' | 'identity' | 'questions' | 'payment_choice' | 'payment' | 'success'>('cover');
+  const [screen, setScreen] = useState<'cover' | 'identity' | 'questions' | 'promo' | 'payment_choice' | 'payment' | 'success'>('cover');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [formData, setFormData] = useState<Record<string, string | boolean>>({});
   const [identityData, setIdentityData] = useState<IdentityData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | undefined>(undefined);
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   // États de soumission — jamais de succès simulé
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -765,17 +940,25 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     return () => window.removeEventListener('keydown', h);
   }, [screen, handleStart]);
 
-  /** Calcule le montant réel (prix unitaire × nombre de personnes si applicable) */
-  const computePaymentAmount = useCallback((): number | undefined => {
+  /** Calcule le montant réel (prix unitaire × nb personnes − promo si applicable) */
+  const computePaymentAmount = useCallback((promo?: PromoCode | null): number | undefined => {
     const pf = form?.fields.find((f) => f.type === 'payment');
     if (!pf?.amount) return undefined;
     const peopleField = form?.fields.find((f) => f.type === 'people_count');
+    let base = pf.amount;
     if (peopleField) {
       const count = parseInt(formData[peopleField.id] as string || '1', 10) || 1;
-      return pf.amount * count;
+      base = pf.amount * count;
     }
-    return pf.amount;
-  }, [form, formData]);
+    const activePromo = promo !== undefined ? promo : appliedPromo;
+    if (activePromo) {
+      const discount = activePromo.type === 'percent'
+        ? Math.round(base * activePromo.discount) / 100
+        : activePromo.discount;
+      return Math.max(0, base - discount);
+    }
+    return base;
+  }, [form, formData, appliedPromo]);
 
   /**
    * Construit le payload complet à insérer en base.
@@ -864,7 +1047,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     }
   }, [submitting, id, computePaymentAmount, buildFinalData]);
 
-  const goToPayment = (fromIdentity = false) => {
+  const goToPayment = () => {
     setDirection(1);
     if (paymentField) {
       if (paymentField.allowCash) {
@@ -873,8 +1056,15 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
         setPaymentMethod('card');
         setScreen('payment');
       }
-    } else if (!fromIdentity) {
-      // no payment — submit
+    }
+  };
+
+  const goToPromoOrPayment = () => {
+    setDirection(1);
+    if (paymentField && (form?.promoCodes?.length ?? 0) > 0) {
+      setScreen('promo');
+    } else {
+      goToPayment();
     }
   };
 
@@ -885,12 +1075,13 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       setCurrentIndex(0);
       setScreen('questions');
     } else if (paymentField) {
-      goToPayment(true);
+      goToPromoOrPayment();
     } else {
-      // Pas de questions ni paiement → soumission directe
       submitForm(data, undefined);
     }
   };
+
+  if (form?.disabled) return <DisabledScreen title={form.title} />;
 
   if (!form) {
     if (notFound) return (
@@ -913,18 +1104,18 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const paymentField = form.fields.find((f) => f.type === 'payment');
   const currentField = questionFields[currentIndex];
   const realTotal = questionFields.filter(f => f.type !== 'event_date' && f.type !== 'info_block').length;
-  const pct = screen === 'payment_choice' || screen === 'payment' ? 100
-    : screen === 'questions' ? Math.round(((currentIndex + 1) / Math.max(questionFields.length + 1, 1)) * 90)
-    : screen === 'identity' ? 20
+  const pct = screen === 'payment_choice' || screen === 'payment' || screen === 'promo' ? 95
+    : screen === 'questions' ? Math.round(20 + ((currentIndex + 1) / Math.max(questionFields.length, 1)) * 70)
+    : screen === 'identity' ? 15
+    : screen === 'success' ? 100
     : 0;
 
   const handleNext = () => {
     if (currentIndex < questionFields.length - 1) {
       setDirection(1); setCurrentIndex((i) => i + 1);
     } else if (paymentField) {
-      goToPayment();
+      goToPromoOrPayment();
     } else {
-      // Dernière question, pas de paiement → soumission
       submitForm(identityData!, undefined);
     }
   };
@@ -949,7 +1140,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="fixed inset-0 overflow-hidden bg-beige-50">
-      {(screen === 'identity' || screen === 'questions' || screen === 'payment_choice' || screen === 'payment') && (
+      {screen !== 'cover' && screen !== 'success' && (
         <ProgressBar pct={pct} />
       )}
 
@@ -1040,18 +1231,33 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </AnimatePresence>
         )}
 
+          {screen === 'promo' && paymentField && (
+          <AnimatePresence mode="wait" key="promo-host">
+            <PromoScreen
+              key="promo"
+              promoCodes={form.promoCodes ?? []}
+              paymentAmount={computePaymentAmount(null) ?? 0}
+              direction={direction}
+              onApply={(promo) => { setAppliedPromo(promo); goToPayment(); }}
+              onSkip={() => { setAppliedPromo(null); goToPayment(); }}
+            />
+          </AnimatePresence>
+        )}
+
         {screen === 'payment_choice' && paymentField && (
           <AnimatePresence mode="wait" key="pc-host">
             <PaymentChoiceScreen
               key="payment_choice"
-              amount={paymentField.amount ?? 0}
+              amount={computePaymentAmount() ?? paymentField.amount ?? 0}
               allowCash={paymentField.allowCash}
               direction={direction}
               onCash={handleCash}
               onCard={handleCard}
               onBack={() => {
                 setDirection(-1);
-                if (questionFields.length > 0) {
+                if ((form.promoCodes?.length ?? 0) > 0) {
+                  setScreen('promo');
+                } else if (questionFields.length > 0) {
                   setCurrentIndex(questionFields.length - 1);
                   setScreen('questions');
                 } else {
@@ -1071,7 +1277,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
                 <button onClick={() => { setDirection(-1); setScreen('payment_choice'); }}
                   className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">← Retour</button>
                 <h2 className="text-4xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>Paiement sécurisé</h2>
-                <p className="text-brown-400 text-sm mb-8">{paymentField.label} · {paymentField.amount?.toFixed(2)} €</p>
+                <p className="text-brown-400 text-sm mb-8">{paymentField.label} · {(computePaymentAmount() ?? paymentField.amount ?? 0).toFixed(2)} €</p>
                 <StripePayment
                   amount={paymentField.amount ?? 50}
                   description={form.title}

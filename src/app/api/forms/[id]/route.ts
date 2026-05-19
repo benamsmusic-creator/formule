@@ -24,6 +24,9 @@ function rowToForm(row: Record<string, unknown>): Form {
     youtubeUrl: row.youtube_url as string | undefined,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+    disabled: row.is_disabled as boolean | undefined,
+    archived: row.is_archived as boolean | undefined,
+    promoCodes: (row.promo_codes as Form['promoCodes']) ?? [],
     responses,
   };
 }

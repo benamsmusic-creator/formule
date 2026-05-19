@@ -7,6 +7,43 @@ import { Form, FormResponse } from '@/lib/types';
 import { getForm } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 
+/* ─── Noms lisibles pour les champs système ───────────────────── */
+const FIELD_LABELS: Record<string, string> = {
+  _civility:    'Civilité',
+  _firstName:   'Prénom',
+  _lastName:    'Nom',
+  _fullName:    'Nom complet',
+  _phone:       'Téléphone',
+  _address:     'Adresse',
+  _guestCount:  'Nombre de personnes',
+  _totalAmount: 'Montant total (€)',
+};
+
+// Champs à masquer car redondants avec l'en-tête
+const HIDDEN_FIELDS = new Set(['_fullName', '_civility', '_firstName', '_lastName']);
+
+function fieldLabel(key: string): string {
+  return FIELD_LABELS[key] ?? key;
+}
+
+function paymentBadge(resp: FormResponse) {
+  const { paymentStatus, paymentMethod, paymentAmount } = resp;
+  if (paymentAmount === undefined && !paymentMethod) return null;
+
+  const amount = paymentAmount !== undefined ? `${paymentAmount} €` : '';
+
+  if (paymentMethod === 'card' || paymentStatus === 'paid') {
+    return { label: `✓ ${amount} — Carte`, color: 'bg-green-100 text-green-700' };
+  }
+  if (paymentMethod === 'cash' || paymentStatus === 'cash') {
+    return { label: `${amount} — Espèces`, color: 'bg-amber-100 text-amber-700' };
+  }
+  if (amount) {
+    return { label: `${amount} en attente`, color: 'bg-beige-200 text-brown-500' };
+  }
+  return null;
+}
+
 export default function ResponsesPage() {
   const { id } = useParams<{ id: string }>();
   const [form, setForm] = useState<Form | null>(null);
@@ -18,9 +55,8 @@ export default function ResponsesPage() {
     fetch(`/api/forms/${id}`)
       .then((r) => r.ok ? r.json() : null)
       .then((data: Form | null) => {
-        if (data?.id) {
-          setForm(data);
-        } else {
+        if (data?.id) setForm(data);
+        else {
           const local = getForm(id);
           if (local) setForm(local);
           else setError(true);
@@ -76,7 +112,7 @@ export default function ResponsesPage() {
             Réponses — <em className="gradient-text not-italic">{form.title}</em>
           </h1>
           <p className="text-brown-500 text-sm">
-            {responses.length} réponse{responses.length !== 1 ? 's' : ''} enregistrée{responses.length !== 1 ? 's' : ''}
+            {responses.length} inscription{responses.length !== 1 ? 's' : ''} enregistrée{responses.length !== 1 ? 's' : ''}
           </p>
         </motion.div>
 
@@ -88,11 +124,8 @@ export default function ResponsesPage() {
             className="flex flex-col items-center justify-center py-24 rounded-3xl border-2 border-dashed border-beige-300 text-center"
           >
             <div className="text-5xl text-beige-300 mb-5 float-1">✦</div>
-            <p
-              className="text-2xl font-light text-brown-600 mb-2"
-              style={{ fontFamily: 'var(--font-cormorant)' }}
-            >
-              Aucune réponse pour l&apos;instant
+            <p className="text-2xl font-light text-brown-600 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
+              Aucune inscription pour l&apos;instant
             </p>
             <p className="text-sm text-brown-400">Les inscriptions apparaîtront ici dès qu&apos;un participant soumettra le formulaire.</p>
           </motion.div>
@@ -103,7 +136,28 @@ export default function ResponsesPage() {
           <AnimatePresence>
             {responses.map((resp: FormResponse, i: number) => {
               const isOpen = expanded === resp.id;
-              const isPaid = resp.paymentStatus === 'paid';
+              const data = resp.data ?? {};
+
+              // Nom affiché dans l'en-tête
+              const fullName = data._fullName as string | undefined;
+              const firstName = data._firstName as string | undefined;
+              const lastName = data._lastName as string | undefined;
+              const civility = data._civility as string | undefined;
+              const displayName = fullName
+                ?? (firstName && lastName ? `${civility ? civility + ' ' : ''}${firstName} ${lastName}` : undefined)
+                ?? (data.email as string | undefined)
+                ?? `Inscription #${i + 1}`;
+
+              const phone = data._phone as string | undefined;
+              const guests = data._guestCount as string | undefined;
+
+              const badge = paymentBadge(resp);
+
+              // Champs à afficher dans le détail (exclut les champs masqués)
+              const detailEntries = Object.entries(data).filter(
+                ([key]) => !HIDDEN_FIELDS.has(key)
+              );
+
               return (
                 <motion.div
                   key={resp.id}
@@ -122,18 +176,20 @@ export default function ResponsesPage() {
                         <span className="text-gold-600 text-xs font-bold">{i + 1}</span>
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-brown-900 truncate">
-                          {(resp.data?.firstName && resp.data?.lastName)
-                            ? `${resp.data.firstName} ${resp.data.lastName}`
-                            : resp.data?.email ?? `Réponse #${i + 1}`}
-                        </p>
-                        <p className="text-xs text-brown-400">{formatDate(resp.submittedAt)}</p>
+                        <p className="text-sm font-medium text-brown-900 truncate">{displayName}</p>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-xs text-brown-400">{formatDate(resp.submittedAt)}</p>
+                          {phone && <p className="text-xs text-brown-400">· {phone}</p>}
+                          {guests && parseInt(guests) > 1 && (
+                            <p className="text-xs text-brown-400">· {guests} pers.</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                      {resp.paymentAmount !== undefined && (
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${isPaid ? 'bg-green-100 text-green-700' : 'bg-beige-200 text-brown-500'}`}>
-                          {isPaid ? `✓ ${resp.paymentAmount}€` : `${resp.paymentAmount}€ en attente`}
+                      {badge && (
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badge.color}`}>
+                          {badge.label}
                         </span>
                       )}
                       <span className="text-brown-400 text-xs">{isOpen ? '▲' : '▼'}</span>
@@ -152,18 +208,15 @@ export default function ResponsesPage() {
                       >
                         <div className="px-5 pb-5 pt-1 border-t border-beige-200">
                           <div className="grid sm:grid-cols-2 gap-3 mt-3">
-                            {Object.entries(resp.data ?? {}).map(([key, value]) => (
+                            {detailEntries.map(([key, value]) => (
                               <div key={key} className="p-3 rounded-xl bg-beige-100">
-                                <p className="text-[10px] text-brown-400 uppercase tracking-wide mb-0.5">{key}</p>
+                                <p className="text-[10px] text-brown-400 uppercase tracking-wide mb-0.5">
+                                  {fieldLabel(key)}
+                                </p>
                                 <p className="text-sm text-brown-900 break-words">{String(value)}</p>
                               </div>
                             ))}
                           </div>
-                          {resp.paymentMethod && (
-                            <p className="mt-3 text-xs text-brown-400">
-                              Paiement : <span className="text-brown-600 font-medium">{resp.paymentMethod === 'online' ? 'En ligne (Stripe)' : 'Sur place'}</span>
-                            </p>
-                          )}
                         </div>
                       </motion.div>
                     )}

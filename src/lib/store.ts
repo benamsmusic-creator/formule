@@ -22,18 +22,42 @@ export function getForm(id: string): Form | null {
   return getForms().find((f) => f.id === id) ?? null;
 }
 
-export function saveForm(form: Form): void {
+/** Sauvegarde uniquement dans localStorage (synchrone, toujours disponible) */
+export function saveFormLocally(form: Form): void {
   const forms = getForms();
   const idx = forms.findIndex((f) => f.id === form.id);
   if (idx >= 0) forms[idx] = form;
   else forms.push(form);
   localStorage.setItem(FORMS_KEY, JSON.stringify(forms));
-  // Persist to Supabase via API route admin
-  fetch('/api/forms', {
+}
+
+/**
+ * Persiste le formulaire sur le serveur (Supabase via /api/forms).
+ * Attend la confirmation de l'écriture et lève une erreur si elle échoue.
+ * Doit toujours être appelée après saveFormLocally.
+ */
+export async function saveFormToServer(form: Form): Promise<void> {
+  console.log('[saveFormToServer] Début sauvegarde — id:', form.id);
+  const res = await fetch('/api/forms', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(form),
-  }).catch(() => {});
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`;
+    console.error('[saveFormToServer] ERREUR serveur:', msg);
+    throw new Error(msg);
+  }
+  console.log('[saveFormToServer] ✓ Sauvegardé sur le serveur — id:', form.id);
+}
+
+/** Compatibilité : sauvegarde locale + envoi serveur en arrière-plan (non bloquant) */
+export function saveForm(form: Form): void {
+  saveFormLocally(form);
+  saveFormToServer(form).catch((err) =>
+    console.warn('[saveForm] Sync serveur échouée (non bloquant):', err)
+  );
 }
 
 export function deleteForm(id: string): void {
@@ -56,36 +80,67 @@ export function createForm(title: string): Form {
     updatedAt: new Date().toISOString(),
     responses: [],
   };
-  saveForm(form);
+  // Sauvegarde locale uniquement — le serveur est synchronisé par doSave()
+  // avec le formulaire complet (fields inclus) pour éviter la race condition.
+  saveFormLocally(form);
   return form;
 }
 
 /* ─── Responses — Supabase direct (RLS enforced) ─────────────── */
 
+/**
+ * Insère une réponse de formulaire en base de données.
+ * Attend la confirmation de l'écriture (await) avant de retourner.
+ * Lève une Error détaillée si l'insertion échoue — NE SIMULE JAMAIS UN SUCCÈS.
+ */
 export async function addResponse(
   formId: string,
   data: Record<string, string | boolean>,
   userId?: string,
-  paymentMethod?: 'card' | 'cash'
+  paymentMethod?: 'card' | 'cash',
+  paymentAmount?: number,
 ): Promise<FormResponse> {
   const id = crypto.randomUUID();
   const submittedAt = new Date().toISOString();
   const paymentStatus =
     paymentMethod === 'cash' ? 'cash' : paymentMethod === 'card' ? 'paid' : undefined;
 
-  const { error } = await supabase.from('form_responses').insert({
+  console.log(
+    '[addResponse] Insertion — formId:', formId,
+    '| method:', paymentMethod ?? 'aucun',
+    '| amount:', paymentAmount ?? 'N/A',
+    '| userId:', userId ?? 'anonyme',
+  );
+
+  const { error } = await supabase.from('responses').insert({
     id,
-    form_id: formId,
+    form_id: formId,          // clé étrangère vers forms.id
     user_id: userId ?? null,
-    data,
+    data,                     // JSON : tous les champs du formulaire
     submitted_at: submittedAt,
     payment_method: paymentMethod ?? null,
     payment_status: paymentStatus ?? null,
+    payment_amount: paymentAmount ?? null,  // montant réel enregistré en DB
   });
 
-  if (error) throw new Error("Erreur lors de l'enregistrement");
+  if (error) {
+    // Log complet côté client pour debug
+    console.error(
+      '[addResponse] ERREUR Supabase:',
+      '| code:', error.code,
+      '| message:', error.message,
+      '| details:', error.details,
+      '| hint:', error.hint,
+    );
+    throw new Error(
+      error.message
+        ? `Erreur base de données : ${error.message}`
+        : "L'enregistrement a échoué. Veuillez réessayer."
+    );
+  }
 
-  return { id, formId, userId, data, submittedAt, paymentMethod, paymentStatus };
+  console.log('[addResponse] ✓ Réponse enregistrée en base — id:', id);
+  return { id, formId, userId, data, submittedAt, paymentMethod, paymentStatus, paymentAmount };
 }
 
 /* ─── Session — cache localStorage (accès synchrone) ────────── */
@@ -184,7 +239,7 @@ export async function getUserResponses(
   userId: string
 ): Promise<{ form: Form; response: FormResponse }[]> {
   const { data, error } = await supabase
-    .from('form_responses')
+    .from('responses')
     .select('*, forms(*)')
     .eq('user_id', userId)
     .order('submitted_at', { ascending: false });

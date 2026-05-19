@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { getForms, deleteForm } from '@/lib/store';
+import { getForms } from '@/lib/store';
 import { Form } from '@/lib/types';
 import { formatDate } from '@/lib/utils';
 
@@ -50,12 +50,23 @@ function StatCard({ label, value, icon, delay }: { label: string; value: number;
   );
 }
 
-function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: () => void; index: number; onCopied: () => void }) {
+function FormCard({
+  form, onArchive, onToggleDisabled, index, onCopied,
+}: {
+  form: Form;
+  onArchive: () => void;
+  onToggleDisabled: () => void;
+  index: number;
+  onCopied: () => void;
+}) {
   const [showConfirm, setShowConfirm] = useState(false);
-  const paymentFields = form.fields.filter((f) => f.type === 'payment');
-  const totalRevenue = form.responses
-    .filter((r) => r.paymentStatus === 'paid')
+
+  // Fix revenus: compter carte ET espèces
+  const totalRevenue = (form.responses ?? [])
+    .filter((r) => r.paymentStatus === 'paid' || r.paymentStatus === 'cash')
     .reduce((sum, r) => sum + (r.paymentAmount ?? 0), 0);
+
+  const hasPayment = form.fields.some((f) => f.type === 'payment');
 
   return (
     <motion.div
@@ -63,34 +74,34 @@ function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: (
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -40, scale: 0.95 }}
       transition={{ delay: index * 0.07, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-      className="group relative bg-beige-50 rounded-2xl border border-beige-200 overflow-hidden hover:border-gold-400/40 transition-all duration-300"
+      className={`group relative bg-beige-50 rounded-2xl border overflow-hidden transition-all duration-300 ${
+        form.disabled ? 'border-orange-200 opacity-75' : 'border-beige-200 hover:border-gold-400/40'
+      }`}
       whileHover={{ y: -4, boxShadow: '0 20px 60px rgba(44,24,16,0.08)' }}
       layout
     >
-      <div className="h-0.5 bg-gradient-to-r from-gold-400/60 to-transparent" />
+      <div className={`h-0.5 bg-gradient-to-r ${form.disabled ? 'from-orange-300' : 'from-gold-400/60'} to-transparent`} />
       <div className="p-6">
         <div className="flex items-start justify-between gap-4 mb-4">
           <div className="flex-1 min-w-0">
-            <h3
-              className="text-xl font-medium text-brown-900 truncate mb-0.5"
-              style={{ fontFamily: 'var(--font-cormorant)' }}
-            >
+            <h3 className="text-xl font-medium text-brown-900 truncate mb-0.5" style={{ fontFamily: 'var(--font-cormorant)' }}>
               {form.title}
             </h3>
-            {form.description && (
-              <p className="text-xs text-brown-400 truncate">{form.description}</p>
-            )}
+            {form.description && <p className="text-xs text-brown-400 truncate">{form.description}</p>}
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {paymentFields.length > 0 && (
-              <span className="text-xs px-2 py-1 rounded-full bg-gold-400/10 text-gold-600 border border-gold-400/20">
-                ◆ Stripe
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {form.disabled && (
+              <span className="text-xs px-2 py-1 rounded-full bg-orange-100 text-orange-600 border border-orange-200 font-medium">
+                Désactivé
               </span>
+            )}
+            {hasPayment && !form.disabled && (
+              <span className="text-xs px-2 py-1 rounded-full bg-gold-400/10 text-gold-600 border border-gold-400/20">◆ Stripe</span>
             )}
           </div>
         </div>
 
-        {/* Stats row */}
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-5">
           {[
             { label: 'Champs', value: form.fields.length, icon: '◈' },
@@ -105,51 +116,48 @@ function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: (
           ))}
         </div>
 
-        <p className="text-xs text-brown-300 mb-4">
-          Créé le {formatDate(form.createdAt)}
-        </p>
+        <p className="text-xs text-brown-300 mb-4">Créé le {formatDate(form.createdAt)}</p>
 
-        {/* Actions — row 1: primary */}
+        {/* Row 1 */}
         <div className="grid grid-cols-2 gap-2 mb-2">
           <Link href={`/forms/${form.id}`}>
-            <motion.button
-              className="w-full py-3 rounded-xl border-2 border-beige-200 text-brown-700 text-xs font-semibold hover:border-gold-400/50 hover:bg-beige-100 transition-colors"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Voir le formulaire →
+            <motion.button className="w-full py-3 rounded-xl border-2 border-beige-200 text-brown-700 text-xs font-semibold hover:border-gold-400/50 hover:bg-beige-100 transition-colors" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+              Voir →
             </motion.button>
           </Link>
           <Link href={`/dashboard/responses/${form.id}`}>
-            <motion.button
-              className="w-full py-3 rounded-xl bg-brown-900 text-beige-50 text-xs font-semibold"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Réponses {form.responses?.length > 0 ? `(${form.responses.length})` : ''}
+            <motion.button className="w-full py-3 rounded-xl bg-brown-900 text-beige-50 text-xs font-semibold" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+              Réponses {(form.responses?.length ?? 0) > 0 ? `(${form.responses.length})` : ''}
             </motion.button>
           </Link>
         </div>
 
-        {/* Actions — row 2: secondary */}
+        {/* Row 2 */}
         <div className="flex items-center gap-2">
           <Link href={`/builder?id=${form.id}`} className="flex-1">
-            <motion.button
-              className="w-full py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-600 text-xs font-medium hover:border-gold-400/40 transition-colors"
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
-            >
+            <motion.button className="w-full py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-600 text-xs font-medium hover:border-gold-400/40 transition-colors" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
               Éditer
             </motion.button>
           </Link>
 
+          {/* Disable toggle */}
+          <motion.button
+            className={`h-9 px-3 rounded-xl border text-xs font-medium transition-colors flex-shrink-0 ${
+              form.disabled
+                ? 'bg-orange-50 border-orange-200 text-orange-600 hover:bg-orange-100'
+                : 'bg-beige-100 border-beige-200 text-brown-500 hover:border-gold-400/40'
+            }`}
+            whileTap={{ scale: 0.95 }}
+            onClick={onToggleDisabled}
+            title={form.disabled ? 'Réactiver' : 'Désactiver'}
+          >
+            {form.disabled ? '▶ Activer' : '⏸ Off'}
+          </motion.button>
+
           <motion.button
             className="w-10 h-9 rounded-xl bg-beige-100 border border-beige-200 text-brown-500 text-sm flex items-center justify-center hover:bg-beige-200 transition-colors flex-shrink-0"
             whileTap={{ scale: 0.95 }}
-            onClick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/forms/${form.id}`);
-              onCopied();
-            }}
+            onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/forms/${form.id}`); onCopied(); }}
             title="Copier le lien"
           >
             🔗
@@ -159,37 +167,25 @@ function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: (
             className="w-10 h-9 rounded-xl bg-beige-100 border border-beige-200 text-brown-400 text-sm flex items-center justify-center hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors flex-shrink-0"
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowConfirm(true)}
-            title="Supprimer"
+            title="Archiver"
           >
-            ✕
+            🗂
           </motion.button>
         </div>
       </div>
 
-      {/* Delete confirm overlay */}
+      {/* Archive confirm overlay */}
       <AnimatePresence>
         {showConfirm && (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="absolute inset-0 bg-beige-50/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center"
           >
-            <p className="text-brown-900 font-medium mb-1">Supprimer ce formulaire ?</p>
-            <p className="text-xs text-brown-400 mb-5">Cette action est irréversible.</p>
+            <p className="text-brown-900 font-medium mb-1">Archiver ce formulaire ?</p>
+            <p className="text-xs text-brown-400 mb-5">Il sera conservé dans vos archives et pourra être restauré.</p>
             <div className="flex gap-3">
-              <button
-                onClick={() => setShowConfirm(false)}
-                className="px-5 py-2 rounded-lg bg-beige-200 text-brown-700 text-sm"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={onDelete}
-                className="px-5 py-2 rounded-lg bg-red-500 text-white text-sm"
-              >
-                Supprimer
-              </button>
+              <button onClick={() => setShowConfirm(false)} className="px-5 py-2 rounded-lg bg-beige-200 text-brown-700 text-sm">Annuler</button>
+              <button onClick={() => { setShowConfirm(false); onArchive(); }} className="px-5 py-2 rounded-lg bg-brown-800 text-white text-sm">Archiver</button>
             </div>
           </motion.div>
         )}
@@ -201,6 +197,7 @@ function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: (
 function DashboardContent() {
   const [forms, setForms] = useState<Form[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [showArchives, setShowArchives] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const isCreated = searchParams.get('created') === '1';
@@ -213,15 +210,11 @@ function DashboardContent() {
   };
 
   useEffect(() => {
-    // Try server first (cross-device), fallback to localStorage
     fetch('/api/forms')
       .then((r) => r.json())
       .then((serverForms) => {
-        if (Array.isArray(serverForms) && serverForms.length > 0) {
-          setForms(serverForms);
-        } else {
-          setForms(getForms());
-        }
+        if (Array.isArray(serverForms)) setForms(serverForms);
+        else setForms(getForms());
       })
       .catch(() => setForms(getForms()))
       .finally(() => setLoaded(true));
@@ -235,15 +228,45 @@ function DashboardContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleDelete = (id: string) => {
-    deleteForm(id);
-    setForms(getForms());
+  // Archive — met à jour l'état immédiatement, sans re-fetch
+  const handleArchive = (id: string) => {
+    fetch('/api/forms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_archived: true }),
+    }).catch(() => {});
+    setForms((prev) => prev.map((f) => f.id === id ? { ...f, archived: true } : f));
   };
 
-  const totalResponses = forms.reduce((sum, f) => sum + (f.responses?.length ?? 0), 0);
-  const totalPayments = forms.reduce(
+  // Restore
+  const handleRestore = (id: string) => {
+    fetch('/api/forms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_archived: false }),
+    }).catch(() => {});
+    setForms((prev) => prev.map((f) => f.id === id ? { ...f, archived: false } : f));
+  };
+
+  // Désactiver / Réactiver — état immédiat
+  const handleToggleDisabled = (id: string, current: boolean) => {
+    fetch('/api/forms', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, is_disabled: !current }),
+    }).catch(() => {});
+    setForms((prev) => prev.map((f) => f.id === id ? { ...f, disabled: !current } : f));
+  };
+
+  const activeForms = forms.filter((f) => !f.archived);
+  const archivedForms = forms.filter((f) => f.archived);
+
+  const totalResponses = activeForms.reduce((sum, f) => sum + (f.responses?.length ?? 0), 0);
+  // Fix: compter carte ET espèces
+  const totalPayments = activeForms.reduce(
     (sum, f) =>
-      sum + (f.responses?.filter((r) => r.paymentStatus === 'paid').reduce((s, r) => s + (r.paymentAmount ?? 0), 0) ?? 0),
+      sum + (f.responses?.filter((r) => r.paymentStatus === 'paid' || r.paymentStatus === 'cash')
+        .reduce((s, r) => s + (r.paymentAmount ?? 0), 0) ?? 0),
     0
   );
 
@@ -300,7 +323,7 @@ function DashboardContent() {
         {/* Stats */}
         {loaded && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
-            <StatCard label="Formulaires" value={forms.length} icon="◈" delay={0.1} />
+            <StatCard label="Formulaires" value={activeForms.length} icon="◈" delay={0.1} />
             <StatCard label="Réponses" value={totalResponses} icon="✦" delay={0.15} />
             <StatCard label="Revenus (€)" value={totalPayments} icon="◆" delay={0.2} />
           </div>
@@ -337,44 +360,76 @@ function DashboardContent() {
         </div>
 
         <AnimatePresence mode="popLayout">
-          {forms.length === 0 && loaded ? (
+          {activeForms.length === 0 && loaded ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center justify-center py-24 text-center rounded-3xl border-2 border-dashed border-beige-300"
             >
               <div className="text-5xl text-beige-300 mb-6 float-1">◈</div>
-              <h3
-                className="text-2xl font-light text-brown-600 mb-3"
-                style={{ fontFamily: 'var(--font-cormorant)' }}
-              >
+              <h3 className="text-2xl font-light text-brown-600 mb-3" style={{ fontFamily: 'var(--font-cormorant)' }}>
                 Aucun formulaire pour l&apos;instant
               </h3>
               <p className="text-brown-400 text-sm mb-8">Créez votre premier formulaire en quelques secondes.</p>
               <Link href="/builder">
-                <motion.button
-                  className="btn-liquid px-8 py-3.5 bg-brown-900 text-beige-50 rounded-xl text-sm font-medium overflow-hidden"
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
+                <motion.button className="btn-liquid px-8 py-3.5 bg-brown-900 text-beige-50 rounded-xl text-sm font-medium overflow-hidden" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                   <span className="relative z-10">Créer mon premier formulaire →</span>
                 </motion.button>
               </Link>
             </motion.div>
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {forms.map((form, i) => (
+              {activeForms.map((form, i) => (
                 <FormCard
                   key={form.id}
                   form={form}
                   index={i}
-                  onDelete={() => handleDelete(form.id)}
+                  onArchive={() => handleArchive(form.id)}
+                  onToggleDisabled={() => handleToggleDisabled(form.id, !!form.disabled)}
                   onCopied={handleCopied}
                 />
               ))}
             </div>
           )}
         </AnimatePresence>
+
+        {/* Archives */}
+        {loaded && archivedForms.length > 0 && (
+          <div className="mt-14">
+            <button
+              onClick={() => setShowArchives((v) => !v)}
+              className="flex items-center gap-2 text-sm text-brown-400 hover:text-brown-700 transition-colors mb-4"
+            >
+              <span>{showArchives ? '▾' : '▸'}</span>
+              <span>Archives ({archivedForms.length})</span>
+            </button>
+            <AnimatePresence>
+              {showArchives && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {archivedForms.map((form) => (
+                      <div key={form.id} className="p-4 rounded-2xl bg-beige-100 border border-beige-200 opacity-60">
+                        <p className="font-medium text-brown-700 text-sm truncate mb-1">{form.title}</p>
+                        <p className="text-xs text-brown-400 mb-3">{form.responses?.length ?? 0} réponse(s)</p>
+                        <button
+                          onClick={() => handleRestore(form.id)}
+                          className="text-xs text-brown-600 hover:text-brown-900 font-medium transition-colors border border-beige-300 px-3 py-1.5 rounded-lg hover:bg-beige-200"
+                        >
+                          ↩ Restaurer
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
     </div>
   );

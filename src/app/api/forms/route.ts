@@ -20,8 +20,8 @@ function rowToResponse(r: Record<string, unknown>): FormResponse {
 }
 
 function rowToForm(row: Record<string, unknown>): Form {
-  const responses = Array.isArray(row.form_responses)
-    ? (row.form_responses as Record<string, unknown>[]).map(rowToResponse)
+  const responses = Array.isArray(row.responses)
+    ? (row.responses as Record<string, unknown>[]).map(rowToResponse)
     : [];
   return {
     id: row.id as string,
@@ -32,6 +32,9 @@ function rowToForm(row: Record<string, unknown>): Form {
     youtubeUrl: row.youtube_url as string | undefined,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
+    disabled: row.is_disabled as boolean | undefined,
+    archived: row.is_archived as boolean | undefined,
+    promoCodes: (row.promo_codes as Form['promoCodes']) ?? [],
     responses,
   };
 }
@@ -39,11 +42,22 @@ function rowToForm(row: Record<string, unknown>): Form {
 export async function GET() {
   const { data, error } = await supabaseAdmin
     .from('forms')
-    .select('*, form_responses(*)')
+    .select('*, responses(*)')
     .order('created_at', { ascending: false });
 
   if (error) return NextResponse.json([], { status: 200 });
   return NextResponse.json((data ?? []).map((r) => rowToForm(r as Record<string, unknown>)));
+}
+
+export async function PATCH(req: NextRequest) {
+  if (!isAdmin(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+  const { id, ...updates } = await req.json();
+  const dbUpdates: Record<string, unknown> = {};
+  if ('is_disabled' in updates) dbUpdates.is_disabled = updates.is_disabled;
+  if ('is_archived' in updates) dbUpdates.is_archived = updates.is_archived;
+  const { error } = await supabaseAdmin.from('forms').update(dbUpdates).eq('id', id);
+  if (error) return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  return NextResponse.json({ ok: true });
 }
 
 export async function POST(req: NextRequest) {
@@ -58,6 +72,7 @@ export async function POST(req: NextRequest) {
     fields: form.fields,
     cover_image: form.coverImage ?? null,
     youtube_url: form.youtubeUrl ?? null,
+    promo_codes: form.promoCodes ?? [],
     created_at: form.createdAt,
     updated_at: new Date().toISOString(),
   });

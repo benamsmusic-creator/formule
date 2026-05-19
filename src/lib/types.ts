@@ -12,6 +12,12 @@ export type FieldType =
   | 'number'
   | 'payment';
 
+export interface PromoCode {
+  code: string;
+  type: 'percent' | 'fixed';
+  discount: number;
+}
+
 export interface FieldOption {
   label: string;
   imageUrl?: string;
@@ -55,6 +61,9 @@ export interface Form {
   responses: FormResponse[];
   coverImage?: string;
   youtubeUrl?: string;
+  disabled?: boolean;
+  archived?: boolean;
+  promoCodes?: PromoCode[];
 }
 
 export interface AppUser {

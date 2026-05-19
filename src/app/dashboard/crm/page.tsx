@@ -320,9 +320,9 @@ export default function CRMPage() {
           return sum + (isNaN(gc) ? 1 : gc);
         }, 0);
 
-        const totalRevenue = form.responses.reduce(
-          (sum, r) => sum + (r.paymentAmount ?? 0), 0
-        );
+        const totalRevenue = form.responses
+          .filter((r) => r.paymentStatus === 'paid' || r.paymentStatus === 'cash')
+          .reduce((sum, r) => sum + (r.paymentAmount ?? 0), 0);
 
         return {
           formId: form.id,
@@ -364,7 +364,7 @@ export default function CRMPage() {
         const fullName = getStr(r.data, '_fullName') ||
           `${getStr(r.data, '_firstName')} ${getStr(r.data, '_lastName')}`.trim();
         const address = getStr(r.data, '_address');
-        const amount = r.paymentAmount ?? 0;
+        const amount = (r.paymentStatus === 'paid' || r.paymentStatus === 'cash') ? (r.paymentAmount ?? 0) : 0;
 
         if (!map.has(key)) {
           map.set(key, {

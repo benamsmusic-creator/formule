@@ -2,8 +2,8 @@
 import { useState, useCallback, useEffect, useRef, Suspense } from 'react';
 import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createForm, saveForm, getForm } from '@/lib/store';
-import { FormField, FieldType, Form, FieldOption } from '@/lib/types';
+import { createForm, saveFormLocally, saveFormToServer, getForm } from '@/lib/store';
+import { FormField, FieldType, Form, FieldOption, PromoCode } from '@/lib/types';
 import { generateId, extractYouTubeId } from '@/lib/utils';
 import { useToast, Toaster } from '@/components/Toast';
 import Image from 'next/image';
@@ -807,6 +807,10 @@ function BuilderContent() {
     const id = searchParams.get('id');
     return id ? (getForm(id)?.fields ?? []) : [];
   });
+  const [promoCodes, setPromoCodes] = useState<PromoCode[]>(() => {
+    const id = searchParams.get('id');
+    return id ? (getForm(id)?.promoCodes ?? []) : [];
+  });
   const [saving, setSaving] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
@@ -853,21 +857,29 @@ function BuilderContent() {
   const doSave = async (): Promise<Form> => {
     setSaving(true);
     try {
-      await new Promise((r) => setTimeout(r, 300));
-      let form: Form;
       const existing = formId ? getForm(formId) : null;
+      let form: Form;
       if (existing) {
-        form = { ...existing, title, description, coverImage, youtubeUrl: youtubeUrl || undefined, fields, updatedAt: new Date().toISOString() };
+        form = { ...existing, title, description, coverImage, youtubeUrl: youtubeUrl || undefined, fields, promoCodes, updatedAt: new Date().toISOString() };
       } else {
         form = createForm(title);
         form.description = description;
         form.coverImage = coverImage;
         form.youtubeUrl = youtubeUrl || undefined;
         form.fields = fields;
+        form.promoCodes = promoCodes;
         setFormId(form.id);
       }
-      // Save locally
-      saveForm(form);
+      // 1. Sauvegarde locale immédiate (synchrone)
+      saveFormLocally(form);
+      // 2. Synchronisation serveur (attend la confirmation DB)
+      try {
+        await saveFormToServer(form);
+      } catch (serverErr) {
+        const msg = serverErr instanceof Error ? serverErr.message : 'Erreur de sauvegarde serveur.';
+        addToast(msg, 'error');
+        // On continue : le formulaire est déjà sauvegardé localement
+      }
       return form;
     } finally {
       setSaving(false);
@@ -1050,6 +1062,66 @@ function BuilderContent() {
                     {youtubeUrl && extractYouTubeId(youtubeUrl) && (
                       <p className="mt-1 text-[11px] text-green-600">✓ Musique configurée</p>
                     )}
+                  </div>
+
+                  {/* Codes promo */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">
+                        Codes promo 🏷
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setPromoCodes((prev) => [...prev, { code: '', type: 'percent', discount: 10 }])}
+                        className="text-xs text-gold-600 hover:text-gold-500 font-medium px-3 py-1.5 rounded-lg hover:bg-gold-400/10 transition-colors"
+                      >
+                        + Ajouter
+                      </button>
+                    </div>
+                    {promoCodes.length === 0 && (
+                      <p className="text-[11px] text-brown-400">Aucun code promo. Cliquez sur + Ajouter pour en créer un.</p>
+                    )}
+                    <div className="space-y-2">
+                      {promoCodes.map((pc, i) => (
+                        <div key={i} className="p-3 rounded-xl bg-beige-100 border border-beige-200 space-y-2">
+                          <div className="flex gap-2">
+                            <input
+                              className="flex-1 px-3 py-2 rounded-lg bg-beige-50 border border-beige-200 text-sm text-brown-900 uppercase tracking-widest focus:outline-none focus:border-gold-400"
+                              placeholder="CODE"
+                              value={pc.code}
+                              onChange={(e) => setPromoCodes((prev) => prev.map((p, idx) => idx === i ? { ...p, code: e.target.value.toUpperCase() } : p))}
+                            />
+                            <select
+                              className="px-2 py-2 rounded-lg bg-beige-50 border border-beige-200 text-sm text-brown-700 focus:outline-none focus:border-gold-400"
+                              value={pc.type}
+                              onChange={(e) => setPromoCodes((prev) => prev.map((p, idx) => idx === i ? { ...p, type: e.target.value as 'percent' | 'fixed' } : p))}
+                            >
+                              <option value="percent">%</option>
+                              <option value="fixed">€ fixe</option>
+                            </select>
+                            <input
+                              type="number"
+                              min="1"
+                              className="w-16 px-2 py-2 rounded-lg bg-beige-50 border border-beige-200 text-sm text-brown-900 focus:outline-none focus:border-gold-400"
+                              value={pc.discount}
+                              onChange={(e) => setPromoCodes((prev) => prev.map((p, idx) => idx === i ? { ...p, discount: parseFloat(e.target.value) || 0 } : p))}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setPromoCodes((prev) => prev.filter((_, idx) => idx !== i))}
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-brown-300 hover:text-red-400 hover:bg-red-50 transition-colors text-lg"
+                            >
+                              ×
+                            </button>
+                          </div>
+                          {pc.code && (
+                            <p className="text-[11px] text-brown-400">
+                              Code <span className="font-mono font-bold text-brown-700">{pc.code}</span> → {pc.type === 'percent' ? `${pc.discount}% de réduction` : `${pc.discount}€ de réduction`}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
