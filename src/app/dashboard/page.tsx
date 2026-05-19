@@ -314,15 +314,26 @@ function DashboardContent() {
           >
             Mes formulaires
           </h2>
-          <Link href="/builder">
-            <motion.button
-              className="btn-liquid px-5 py-2.5 bg-brown-900 text-beige-50 rounded-xl text-sm font-medium overflow-hidden"
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              <span className="relative z-10">+ Nouveau</span>
-            </motion.button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/dashboard/crm">
+              <motion.button
+                className="px-5 py-2.5 border border-gold-400/40 text-brown-700 rounded-xl text-sm font-medium hover:bg-gold-400/10 transition-colors"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                CRM →
+              </motion.button>
+            </Link>
+            <Link href="/builder">
+              <motion.button
+                className="btn-liquid px-5 py-2.5 bg-brown-900 text-beige-50 rounded-xl text-sm font-medium overflow-hidden"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <span className="relative z-10">+ Nouveau</span>
+              </motion.button>
+            </Link>
+          </div>
         </div>
 
         <AnimatePresence mode="popLayout">
