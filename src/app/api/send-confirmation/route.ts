@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: 'benamsmusic@gmail.com',
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -93,21 +99,16 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`;
 
-    const { data, error } = await resend.emails.send({
-      from: 'HabadLyon <info@habadlyon.com>',
+    await transporter.sendMail({
+      from: `"HabadLyon" <benamsmusic@gmail.com>`,
       to: to || 'benamsmusic@gmail.com',
       subject: `✦ ${name} — ${formTitle}${totalAmount ? ` · ${totalAmount}€` : ''}`,
       html,
     });
 
-    if (error) {
-      console.error('[send-confirmation] Resend error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ ok: true, id: data?.id });
+    return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error('[send-confirmation] Unexpected error:', err);
+    console.error('[send-confirmation] Error:', err);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }
