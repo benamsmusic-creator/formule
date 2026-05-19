@@ -30,6 +30,8 @@ export interface FormField {
   imageUrl?: string;
   presetValue?: string;
   maxPeople?: number;
+  venue?: string;
+  allowCash?: boolean;
 }
 
 export interface FormResponse {
@@ -52,6 +54,7 @@ export interface Form {
   updatedAt: string;
   responses: FormResponse[];
   coverImage?: string;
+  youtubeUrl?: string;
 }
 
 export interface AppUser {

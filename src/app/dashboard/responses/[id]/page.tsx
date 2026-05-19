@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { Form, FormResponse } from '@/lib/types';
+import { getForm } from '@/lib/store';
 import { formatDate } from '@/lib/utils';
 
 export default function ResponsesPage() {
@@ -15,12 +16,21 @@ export default function ResponsesPage() {
 
   useEffect(() => {
     fetch(`/api/forms/${id}`)
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json();
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: Form | null) => {
+        if (data?.id) {
+          setForm(data);
+        } else {
+          const local = getForm(id);
+          if (local) setForm(local);
+          else setError(true);
+        }
       })
-      .then((data: Form) => setForm(data))
-      .catch(() => setError(true))
+      .catch(() => {
+        const local = getForm(id);
+        if (local) setForm(local);
+        else setError(true);
+      })
       .finally(() => setLoading(false));
   }, [id]);
 

@@ -20,9 +20,31 @@ create table if not exists forms (
   description  text default '',
   fields       jsonb default '[]'::jsonb,
   cover_image  text,
+  youtube_url  text,
   created_at   timestamptz default now(),
   updated_at   timestamptz default now()
 );
+
+-- Migration : ajoute youtube_url si la table existe déjà
+alter table forms add column if not exists youtube_url text;
+
+-- ============================================================
+-- Storage — bucket pour les images de formulaires
+-- À exécuter dans l'éditeur SQL Supabase (ou via Dashboard > Storage)
+-- ============================================================
+-- insert into storage.buckets (id, name, public)
+-- values ('form-images', 'form-images', true)
+-- on conflict do nothing;
+--
+-- Politique d'accès public en lecture :
+-- create policy "Public read form-images"
+--   on storage.objects for select
+--   using (bucket_id = 'form-images');
+--
+-- Politique d'écriture via service role (API) uniquement :
+-- create policy "Service role upload form-images"
+--   on storage.objects for insert
+--   with check (bucket_id = 'form-images');
 
 -- Table des réponses
 create table if not exists form_responses (

@@ -3,6 +3,7 @@ import { use, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getForm, addResponse, getCurrentUser } from '@/lib/store';
 import { Form, FormField } from '@/lib/types';
+import { extractYouTubeId } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 
@@ -31,6 +32,109 @@ interface IdentityData {
   firstName: string;
   lastName: string;
   phone: string;
+}
+
+/* ─── YouTube Ambiance Player ───────────────────────────────── */
+/**
+ * Lit une vidéo YouTube en fond sonore.
+ * Stratégie autoplay : démarre muet (supporté par tous les navigateurs),
+ * puis affiche un bouton flottant pour activer le son via postMessage API.
+ * Si l'autoplay est complètement bloqué, le bouton permet aussi de démarrer.
+ */
+function YouTubeAmbiance({ url }: { url: string }) {
+  const videoId = extractYouTubeId(url);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [muted, setMuted] = useState(true);   // démarre muet
+  const [playing, setPlaying] = useState(false);
+
+  // Envoie une commande à l'API YT IFrame via postMessage
+  const send = useCallback((func: string, args: unknown[] = []) => {
+    iframeRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: 'command', func, args }),
+      '*'
+    );
+  }, []);
+
+  // Écoute les événements de statut YouTube (onStateChange)
+  useEffect(() => {
+    const handler = (e: MessageEvent) => {
+      const ytOrigins = ['https://www.youtube.com', 'https://www.youtube-nocookie.com'];
+      if (!ytOrigins.includes(e.origin)) return;
+      try {
+        const d = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        // state 1 = playing
+        if (d.event === 'onStateChange' && d.info === 1) setPlaying(true);
+      } catch { /* ignore */ }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
+  // Force play après chargement (certains navigateurs nécessitent un délai)
+  const handleIframeLoad = useCallback(() => {
+    setTimeout(() => send('playVideo'), 800);
+  }, [send]);
+
+  const handleToggle = () => {
+    if (!playing) {
+      // Autoplay n'a pas démarré → on lance manuellement avec son
+      send('playVideo');
+      send('unMute');
+      send('setVolume', [75]);
+      setMuted(false);
+      setPlaying(true);
+    } else if (muted) {
+      // Joue mais muet → activer le son
+      send('unMute');
+      send('setVolume', [75]);
+      setMuted(false);
+    } else {
+      // Joue avec son → couper
+      send('mute');
+      setMuted(true);
+    }
+  };
+
+  if (!videoId) return null;
+
+  const label = !playing ? 'Jouer la musique' : muted ? 'Activer le son' : 'Couper le son';
+  const icon  = !playing ? '▶' : muted ? '🔇' : '🔊';
+
+  return (
+    <>
+      {/* Iframe cachée — 1×1px, hors viewport */}
+      <iframe
+        ref={iframeRef}
+        src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&enablejsapi=1&controls=0&disablekb=1&fs=0&iv_load_policy=3&modestbranding=1&rel=0`}
+        allow="autoplay; encrypted-media"
+        onLoad={handleIframeLoad}
+        style={{ position: 'absolute', width: 1, height: 1, top: -9999, left: -9999, opacity: 0, pointerEvents: 'none' }}
+        title="Musique d'ambiance"
+      />
+
+      {/* Bouton flottant — apparaît 1 s après le chargement */}
+      <motion.button
+        onClick={handleToggle}
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ delay: 1.2, type: 'spring', stiffness: 320, damping: 24 }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.93 }}
+        className="fixed bottom-12 right-4 z-50 flex items-center gap-2 px-3.5 py-2 rounded-full bg-brown-900/85 backdrop-blur-md text-beige-50 text-xs font-medium shadow-xl border border-white/10 max-w-[180px]"
+        aria-label={label}
+      >
+        {/* Icône avec animation de pulsation si muet ou en attente */}
+        <motion.span
+          animate={(!playing || muted) ? { scale: [1, 1.25, 1] } : { scale: 1 }}
+          transition={{ repeat: (!playing || muted) ? Infinity : 0, duration: 1.6 }}
+          className="text-sm flex-shrink-0"
+        >
+          {icon}
+        </motion.span>
+        <span className="truncate">{label}</span>
+      </motion.button>
+    </>
+  );
 }
 
 /* ─── Progress bar ──────────────────────────────────────────── */
@@ -305,6 +409,11 @@ function EventDateDisplay({ field }: { field: FormField }) {
       <p className="text-3xl font-light text-brown-900 mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>
         {field.presetValue}
       </p>
+      {field.venue && (
+        <p className="flex items-center justify-center gap-1.5 text-brown-500 text-sm mt-2">
+          <span>📍</span><span>{field.venue}</span>
+        </p>
+      )}
       {field.description && <p className="text-brown-400 text-sm mt-2">{field.description}</p>}
     </motion.div>
   );
@@ -467,9 +576,9 @@ function QuestionScreen({
 
 /* ─── Payment choice screen ─────────────────────────────────── */
 function PaymentChoiceScreen({
-  amount, onCash, onCard, onBack, direction,
+  amount, onCash, onCard, onBack, direction, allowCash,
 }: {
-  amount: number; onCash: () => void; onCard: () => void; onBack: () => void; direction: number;
+  amount: number; onCash: () => void; onCard: () => void; onBack: () => void; direction: number; allowCash?: boolean;
 }) {
   const slide = makeSlide(direction);
   return (
@@ -489,28 +598,30 @@ function PaymentChoiceScreen({
         </h2>
         <p className="text-brown-400 text-sm mb-10">Montant total : <span className="font-semibold text-brown-700">{amount.toFixed(2)} €</span></p>
 
-        <div className="grid grid-cols-2 gap-4">
-          <motion.button
-            onClick={onCash}
-            className="flex flex-col items-center gap-3 p-8 rounded-3xl border-2 border-beige-200 bg-beige-50 hover:border-gold-400/60 hover:bg-gold-400/5 transition-all"
-            whileHover={{ scale: 1.03, y: -3 }}
-            whileTap={{ scale: 0.97 }}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <span className="text-4xl">💵</span>
-            <span className="font-semibold text-brown-900 text-base">Espèces</span>
-            <span className="text-xs text-brown-400 text-center">Payez sur place</span>
-          </motion.button>
+        <div className={`grid gap-4 ${allowCash ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {allowCash && (
+            <motion.button
+              onClick={onCash}
+              className="flex flex-col items-center gap-3 p-8 rounded-3xl border-2 border-beige-200 bg-beige-50 hover:border-gold-400/60 hover:bg-gold-400/5 transition-all"
+              whileHover={{ scale: 1.03, y: -3 }}
+              whileTap={{ scale: 0.97 }}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              <span className="text-4xl">💵</span>
+              <span className="font-semibold text-brown-900 text-base">Espèces</span>
+              <span className="text-xs text-brown-400 text-center">Payez sur place</span>
+            </motion.button>
+          )}
 
           <motion.button
             onClick={onCard}
             className="flex flex-col items-center gap-3 p-8 rounded-3xl border-2 border-gold-400/40 bg-gold-400/8 hover:border-gold-500 hover:bg-gold-400/15 transition-all"
             whileHover={{ scale: 1.03, y: -3 }}
             whileTap={{ scale: 0.97 }}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, x: allowCash ? 20 : 0, y: allowCash ? 0 : 20 }}
+            animate={{ opacity: 1, x: 0, y: 0 }}
             transition={{ delay: 0.15 }}
           >
             <span className="text-4xl">💳</span>
@@ -622,6 +733,20 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     ...formData,
   });
 
+  const goToPayment = (fromIdentity = false) => {
+    setDirection(1);
+    if (paymentField) {
+      if (paymentField.allowCash) {
+        setScreen('payment_choice');
+      } else {
+        setPaymentMethod('card');
+        setScreen('payment');
+      }
+    } else if (!fromIdentity) {
+      // no payment — submit
+    }
+  };
+
   const handleIdentityNext = (data: IdentityData) => {
     setIdentityData(data);
     setDirection(1);
@@ -629,7 +754,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       setCurrentIndex(0);
       setScreen('questions');
     } else if (paymentField) {
-      setScreen('payment_choice');
+      goToPayment(true);
     } else {
       const currentUser = getCurrentUser();
       addResponse(id, buildFinalData(data), currentUser?.id, undefined)
@@ -668,7 +793,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     if (currentIndex < questionFields.length - 1) {
       setDirection(1); setCurrentIndex((i) => i + 1);
     } else if (paymentField) {
-      setDirection(1); setScreen('payment_choice');
+      goToPayment();
     } else {
       const currentUser = getCurrentUser();
       addResponse(id, buildFinalData(identityData!), currentUser?.id, undefined)
@@ -705,7 +830,10 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
         <ProgressBar pct={pct} />
       )}
 
-      <div className="fixed bottom-5 right-5 z-50">
+      {/* Musique d'ambiance — active dès le chargement du formulaire */}
+      {form.youtubeUrl && <YouTubeAmbiance url={form.youtubeUrl} />}
+
+      <div className="fixed bottom-5 right-5 z-40">
         <span className="text-xs text-brown-300/40" style={{ fontFamily: 'var(--font-cormorant)' }}>HabadLyon</span>
       </div>
 
@@ -747,6 +875,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
             <PaymentChoiceScreen
               key="payment_choice"
               amount={paymentField.amount ?? 0}
+              allowCash={paymentField.allowCash}
               direction={direction}
               onCash={handleCash}
               onCard={handleCard}

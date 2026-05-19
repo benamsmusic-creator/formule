@@ -29,6 +29,7 @@ function rowToForm(row: Record<string, unknown>): Form {
     description: row.description as string | undefined,
     fields: row.fields as Form['fields'],
     coverImage: row.cover_image as string | undefined,
+    youtubeUrl: row.youtube_url as string | undefined,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     responses,
@@ -56,6 +57,7 @@ export async function POST(req: NextRequest) {
     description: form.description ?? '',
     fields: form.fields,
     cover_image: form.coverImage ?? null,
+    youtube_url: form.youtubeUrl ?? null,
     created_at: form.createdAt,
     updated_at: new Date().toISOString(),
   });

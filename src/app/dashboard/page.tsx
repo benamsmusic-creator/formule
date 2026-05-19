@@ -109,29 +109,33 @@ function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: (
           Créé le {formatDate(form.createdAt)}
         </p>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          <Link href={`/forms/${form.id}`} className="flex-1">
+        {/* Actions — row 1: primary */}
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <Link href={`/forms/${form.id}`}>
             <motion.button
-              className="w-full py-2.5 rounded-xl bg-brown-900 text-beige-50 text-xs font-medium"
+              className="w-full py-3 rounded-xl border-2 border-beige-200 text-brown-700 text-xs font-semibold hover:border-gold-400/50 hover:bg-beige-100 transition-colors"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
-              Voir le formulaire
+              Voir le formulaire →
             </motion.button>
           </Link>
           <Link href={`/dashboard/responses/${form.id}`}>
             <motion.button
-              className="py-2.5 px-4 rounded-xl gold-border text-brown-700 text-xs font-medium"
+              className="w-full py-3 rounded-xl bg-brown-900 text-beige-50 text-xs font-semibold"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
-              Réponses
+              Réponses {form.responses?.length > 0 ? `(${form.responses.length})` : ''}
             </motion.button>
           </Link>
-          <Link href={`/builder?id=${form.id}`}>
+        </div>
+
+        {/* Actions — row 2: secondary */}
+        <div className="flex items-center gap-2">
+          <Link href={`/builder?id=${form.id}`} className="flex-1">
             <motion.button
-              className="py-2.5 px-3 rounded-xl bg-beige-100 border border-beige-200 text-brown-700 text-xs font-medium"
+              className="w-full py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-600 text-xs font-medium hover:border-gold-400/40 transition-colors"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -139,11 +143,9 @@ function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: (
             </motion.button>
           </Link>
 
-          {/* Copy link */}
           <motion.button
-            className="py-2.5 px-3 rounded-xl bg-beige-100 border border-beige-200 text-brown-500 text-xs"
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
+            className="w-10 h-9 rounded-xl bg-beige-100 border border-beige-200 text-brown-500 text-sm flex items-center justify-center hover:bg-beige-200 transition-colors flex-shrink-0"
+            whileTap={{ scale: 0.95 }}
             onClick={() => {
               navigator.clipboard.writeText(`${window.location.origin}/forms/${form.id}`);
               onCopied();
@@ -154,9 +156,8 @@ function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: (
           </motion.button>
 
           <motion.button
-            className="py-2.5 px-3 rounded-xl bg-beige-100 border border-beige-200 text-brown-400 text-xs hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors"
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
+            className="w-10 h-9 rounded-xl bg-beige-100 border border-beige-200 text-brown-400 text-sm flex items-center justify-center hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors flex-shrink-0"
+            whileTap={{ scale: 0.95 }}
             onClick={() => setShowConfirm(true)}
             title="Supprimer"
           >

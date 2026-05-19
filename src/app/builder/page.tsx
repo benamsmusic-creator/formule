@@ -4,8 +4,39 @@ import { motion, AnimatePresence, Reorder } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createForm, saveForm, getForm } from '@/lib/store';
 import { FormField, FieldType, Form, FieldOption } from '@/lib/types';
-import { generateId } from '@/lib/utils';
+import { generateId, extractYouTubeId } from '@/lib/utils';
+import { useToast, Toaster } from '@/components/Toast';
 import Image from 'next/image';
+
+/** Compresse une image côté client et retourne un Blob JPEG */
+async function compressImage(file: File, maxPx: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = document.createElement('img');
+      img.onerror = reject;
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxPx || height > maxPx) {
+          if (width > height) { height = Math.round((height * maxPx) / width); width = maxPx; }
+          else { width = Math.round((width * maxPx) / height); height = maxPx; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => (blob ? resolve(blob) : reject(new Error('Compression échouée'))),
+          'image/jpeg',
+          0.78
+        );
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 const FIELD_TYPES: { type: FieldType; label: string; icon: string; desc: string; hint: string }[] = [
   { type: 'event_date', label: "Date de l'événement", icon: '📅', desc: 'Affiche la date aux participants', hint: 'Sélectionnez une date via le calendrier.' },
@@ -154,39 +185,48 @@ function ImagePicker({
   onChange,
   label,
   compact = false,
+  onToast,
 }: {
   value?: string;
   onChange: (url?: string) => void;
   label?: string;
   compact?: boolean;
+  onToast?: (msg: string, type: 'success' | 'error') => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    e.target.value = '';
+    e.target.value = ''; // reset input
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const img = document.createElement('img');
-      img.onload = () => {
-        // Redimensionne et compresse pour rester sous ~200 Ko
-        const MAX = compact ? 600 : 1200;
-        let { width, height } = img;
-        if (width > MAX || height > MAX) {
-          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
-          else { width = Math.round((width * MAX) / height); height = MAX; }
-        }
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
-        onChange(canvas.toDataURL('image/jpeg', 0.75));
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
+    setUploading(true);
+    try {
+      // 1. Compression côté client (réduit la taille avant upload)
+      const maxPx = compact ? 600 : 1200;
+      const blob = await compressImage(file, maxPx);
+
+      // 2. Upload vers /api/upload → Supabase Storage
+      const fd = new FormData();
+      fd.append('file', blob, 'image.jpg');
+
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const data: { url?: string; error?: string } = await res.json();
+
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "L'upload a échoué");
+      }
+
+      // 3. L'URL publique est rattachée à l'objet
+      onChange(data.url);
+      onToast?.('Image sauvegardée avec succès', 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Erreur lors de l'upload";
+      onToast?.(msg, 'error');
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -202,37 +242,63 @@ function ImagePicker({
         <div className={`relative rounded-xl overflow-hidden border border-beige-200 ${compact ? 'h-20' : 'h-36'}`}>
           <Image src={value} alt="" fill className="object-cover" unoptimized />
           <div className="absolute inset-0 bg-gradient-to-t from-brown-900/40 to-transparent" />
-          <div className="absolute bottom-2 right-2 flex gap-1.5">
-            <button
-              type="button"
-              onClick={() => fileRef.current?.click()}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brown-900/70 text-white text-xs hover:bg-brown-700/80 transition-colors"
-            >
-              📷 Changer
-            </button>
-            <button
-              type="button"
-              onClick={() => onChange(undefined)}
-              className="w-6 h-6 rounded-lg bg-red-600/80 text-white text-xs flex items-center justify-center hover:bg-red-600 transition-colors"
-            >
-              ×
-            </button>
-          </div>
+          {/* Spinner d'upload superposé */}
+          {uploading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-brown-900/50 backdrop-blur-sm">
+              <motion.div
+                animate={{ rotate: 360 }}
+                transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                className="w-6 h-6 border-2 border-white border-t-transparent rounded-full"
+              />
+            </div>
+          )}
+          {!uploading && (
+            <div className="absolute bottom-2 right-2 flex gap-1.5">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-brown-900/70 text-white text-xs hover:bg-brown-700/80 transition-colors"
+              >
+                📷 Changer
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange(undefined)}
+                className="w-6 h-6 rounded-lg bg-red-600/80 text-white text-xs flex items-center justify-center hover:bg-red-600 transition-colors"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-2">
           <button
             type="button"
-            onClick={() => fileRef.current?.click()}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-beige-300 text-brown-400 text-sm hover:border-gold-400/50 hover:text-gold-600 hover:bg-gold-400/5 transition-all"
+            onClick={() => !uploading && fileRef.current?.click()}
+            disabled={uploading}
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-beige-300 text-brown-400 text-sm hover:border-gold-400/50 hover:text-gold-600 hover:bg-gold-400/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            📷 Ajouter une image
+            {uploading ? (
+              <>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
+                  className="w-4 h-4 border-2 border-gold-400 border-t-transparent rounded-full"
+                />
+                <span>Upload en cours…</span>
+              </>
+            ) : (
+              <>📷 Ajouter une image</>
+            )}
           </button>
-          <input
-            className="w-full px-3 py-2 rounded-xl bg-beige-100 border border-beige-200 text-brown-700 text-xs focus:outline-none focus:border-gold-400 transition-colors"
-            placeholder="Ou coller une URL…"
-            onBlur={(e) => { if (e.target.value) onChange(e.target.value); }}
-          />
+          {!uploading && (
+            <input
+              className="w-full px-3 py-2 rounded-xl bg-beige-100 border border-beige-200 text-brown-700 text-xs focus:outline-none focus:border-gold-400 transition-colors"
+              placeholder="Ou coller une URL…"
+              onBlur={(e) => { if (e.target.value) onChange(e.target.value); }}
+            />
+          )}
         </div>
       )}
     </div>
@@ -244,10 +310,12 @@ function OptionEditor({
   option,
   onChange,
   onDelete,
+  onToast,
 }: {
   option: FieldOption;
   onChange: (o: FieldOption) => void;
   onDelete: () => void;
+  onToast?: (msg: string, type: 'success' | 'error') => void;
 }) {
   return (
     <div className="p-3 rounded-xl bg-beige-100 border border-beige-200 space-y-2">
@@ -269,6 +337,7 @@ function OptionEditor({
         value={option.imageUrl}
         onChange={(url) => onChange({ ...option, imageUrl: url })}
         compact
+        onToast={onToast}
       />
     </div>
   );
@@ -280,11 +349,13 @@ function FieldEditor({
   onChange,
   onDelete,
   autoOpen = false,
+  onToast,
 }: {
   field: FormField;
   onChange: (f: FormField) => void;
   onDelete: () => void;
   autoOpen?: boolean;
+  onToast?: (msg: string, type: 'success' | 'error') => void;
 }) {
   const [open, setOpen] = useState(autoOpen);
   const ref = useRef<HTMLDivElement>(null);
@@ -385,23 +456,36 @@ function FieldEditor({
                 </div>
               )}
 
-              {/* EVENT DATE — calendar picker */}
+              {/* EVENT DATE — calendar picker + lieu */}
               {field.type === 'event_date' && (
-                <div>
-                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium mb-1.5 block">
-                    Date de l&apos;événement
-                  </label>
-                  <MiniCalendar
-                    value={field.presetValue}
-                    onChange={(text) => onChange({ ...field, presetValue: text })}
-                  />
-                  <p className="mt-1.5 text-[11px] text-brown-400">Ou saisissez manuellement ci-dessous :</p>
-                  <input
-                    className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
-                    value={field.presetValue ?? ''}
-                    onChange={(e) => onChange({ ...field, presetValue: e.target.value })}
-                    placeholder="Ex: Samedi 14 juin 2025 — 20h00"
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium mb-1.5 block">
+                      Date de l&apos;événement
+                    </label>
+                    <MiniCalendar
+                      value={field.presetValue}
+                      onChange={(text) => onChange({ ...field, presetValue: text })}
+                    />
+                    <p className="mt-1.5 text-[11px] text-brown-400">Ou saisissez manuellement :</p>
+                    <input
+                      className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                      value={field.presetValue ?? ''}
+                      onChange={(e) => onChange({ ...field, presetValue: e.target.value })}
+                      placeholder="Ex: Samedi 14 juin 2025 — 20h00"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium mb-1.5 block">
+                      Lieu
+                    </label>
+                    <input
+                      className="w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                      value={field.venue ?? ''}
+                      onChange={(e) => onChange({ ...field, venue: e.target.value || undefined })}
+                      placeholder="Ex: Salle Yaguel Yaakov, Lyon 6e"
+                    />
+                  </div>
                 </div>
               )}
 
@@ -434,23 +518,41 @@ function FieldEditor({
                 </div>
               )}
 
-              {/* PAYMENT amount */}
+              {/* PAYMENT amount + cash toggle */}
               {field.type === 'payment' && (
-                <div>
-                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Montant (€)</label>
-                  <input
-                    type="number"
-                    min="1"
-                    step="1"
-                    className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
-                    value={field.amount ?? ''}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      onChange({ ...field, amount: val === '' ? undefined : parseFloat(val) });
-                    }}
-                    placeholder="50"
-                  />
-                  <p className="mt-1 text-[11px] text-brown-400">Montant en euros entiers (ex: 30, 50, 80)</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Montant (€)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                      value={field.amount ?? ''}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        onChange({ ...field, amount: val === '' ? undefined : parseFloat(val) });
+                      }}
+                      placeholder="50"
+                    />
+                    <p className="mt-1 text-[11px] text-brown-400">Montant en euros entiers (ex: 30, 50, 80)</p>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-beige-100 border border-beige-200">
+                    <div>
+                      <p className="text-xs font-semibold text-brown-800">Paiement en espèces</p>
+                      <p className="text-[11px] text-brown-400 mt-0.5">Autoriser le paiement sur place (cash)</p>
+                    </div>
+                    <div
+                      className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${field.allowCash ? 'bg-gold-500' : 'bg-beige-300'}`}
+                      onClick={() => onChange({ ...field, allowCash: !field.allowCash })}
+                    >
+                      <motion.div
+                        className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm"
+                        animate={{ left: field.allowCash ? '18px' : '2px' }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -460,6 +562,7 @@ function FieldEditor({
                   label="Image au-dessus de la question"
                   value={field.imageUrl}
                   onChange={(url) => onChange({ ...field, imageUrl: url })}
+                  onToast={onToast}
                 />
               )}
 
@@ -501,6 +604,7 @@ function FieldEditor({
                         onDelete={() => {
                           onChange({ ...field, options: (field.options ?? []).filter((_, idx) => idx !== i) });
                         }}
+                        onToast={onToast}
                       />
                     ))}
                   </div>
@@ -695,6 +799,10 @@ function BuilderContent() {
     const id = searchParams.get('id');
     return id ? getForm(id)?.coverImage : undefined;
   });
+  const [youtubeUrl, setYoutubeUrl] = useState<string>(() => {
+    const id = searchParams.get('id');
+    return id ? (getForm(id)?.youtubeUrl ?? '') : '';
+  });
   const [fields, setFields] = useState<FormField[]>(() => {
     const id = searchParams.get('id');
     return id ? (getForm(id)?.fields ?? []) : [];
@@ -703,6 +811,9 @@ function BuilderContent() {
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [showAI, setShowAI] = useState(false);
+
+  // Système de notifications toast
+  const { toasts, toast: addToast } = useToast();
 
   const isEditing = !!formId;
 
@@ -746,11 +857,12 @@ function BuilderContent() {
       let form: Form;
       const existing = formId ? getForm(formId) : null;
       if (existing) {
-        form = { ...existing, title, description, coverImage, fields, updatedAt: new Date().toISOString() };
+        form = { ...existing, title, description, coverImage, youtubeUrl: youtubeUrl || undefined, fields, updatedAt: new Date().toISOString() };
       } else {
         form = createForm(title);
         form.description = description;
         form.coverImage = coverImage;
+        form.youtubeUrl = youtubeUrl || undefined;
         form.fields = fields;
         setFormId(form.id);
       }
@@ -816,6 +928,9 @@ function BuilderContent() {
 
   return (
     <>
+      {/* Notifications toast — z-300, top de l'écran */}
+      <Toaster toasts={toasts} />
+
       <AnimatePresence>
         {showAI && (
           <AIModal
@@ -912,7 +1027,30 @@ function BuilderContent() {
                     label="Image de couverture — affichée plein écran au départ"
                     value={coverImage}
                     onChange={setCoverImage}
+                    onToast={addToast}
                   />
+
+                  {/* Musique d'ambiance YouTube */}
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">
+                      Musique d&apos;ambiance (YouTube)
+                    </label>
+                    <div className="mt-1 relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm select-none">🎵</span>
+                      <input
+                        className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-700 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                        value={youtubeUrl}
+                        onChange={(e) => setYoutubeUrl(e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                      />
+                    </div>
+                    {youtubeUrl && !extractYouTubeId(youtubeUrl) && (
+                      <p className="mt-1 text-[11px] text-red-400">⚠ URL YouTube non reconnue</p>
+                    )}
+                    {youtubeUrl && extractYouTubeId(youtubeUrl) && (
+                      <p className="mt-1 text-[11px] text-green-600">✓ Musique configurée</p>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -950,6 +1088,7 @@ function BuilderContent() {
                               setFields((prev) => prev.map((f) => (f.id === updated.id ? updated : f)))
                             }
                             onDelete={() => setFields((prev) => prev.filter((f) => f.id !== field.id))}
+                            onToast={addToast}
                           />
                         </Reorder.Item>
                       ))}

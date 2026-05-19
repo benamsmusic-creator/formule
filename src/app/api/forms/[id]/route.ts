@@ -21,6 +21,7 @@ function rowToForm(row: Record<string, unknown>): Form {
     description: row.description as string | undefined,
     fields: row.fields as Form['fields'],
     coverImage: row.cover_image as string | undefined,
+    youtubeUrl: row.youtube_url as string | undefined,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
     responses,
