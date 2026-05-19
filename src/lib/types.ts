@@ -57,7 +57,6 @@ export interface Form {
 export interface AppUser {
   id: string;
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
   createdAt: string;

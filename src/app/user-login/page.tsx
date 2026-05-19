@@ -19,7 +19,7 @@ export default function UserLoginPage() {
     setError('');
 
     await new Promise((r) => setTimeout(r, 300));
-    const user = loginUser(email.trim(), password);
+    const user = await loginUser(email.trim(), password);
 
     if (user) {
       router.push('/compte');

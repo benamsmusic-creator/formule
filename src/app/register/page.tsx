@@ -38,7 +38,7 @@ export default function RegisterPage() {
     setLoading(true);
     await new Promise((r) => setTimeout(r, 300));
 
-    const result = registerUser(email.trim(), password, firstName.trim(), lastName.trim());
+    const result = await registerUser(email.trim(), password, firstName.trim(), lastName.trim());
 
     if ('error' in result) {
       setError(result.error);

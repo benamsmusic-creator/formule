@@ -9,23 +9,23 @@ import { formatDate } from '@/lib/utils';
 
 export default function ComptePage() {
   const router = useRouter();
-  const [user, setUser] = useState<AppUser | null>(null);
+  const [user] = useState<AppUser | null>(() => getCurrentUser());
   const [reservations, setReservations] = useState<{ form: Form; response: FormResponse }[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
-    const u = getCurrentUser();
-    if (!u) {
+    if (!user) {
       router.push('/user-login');
       return;
     }
-    setUser(u);
-    setReservations(getUserResponses(u.id));
-    setLoaded(true);
-  }, [router]);
+    getUserResponses(user.id).then((r) => {
+      setReservations(r);
+      setLoaded(true);
+    });
+  }, [router, user]);
 
-  const handleLogout = () => {
-    logoutUser();
+  const handleLogout = async () => {
+    await logoutUser();
     router.push('/');
   };
 

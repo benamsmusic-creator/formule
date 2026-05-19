@@ -165,10 +165,28 @@ function ImagePicker({
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => onChange(reader.result as string);
-    reader.readAsDataURL(file);
     e.target.value = '';
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = document.createElement('img');
+      img.onload = () => {
+        // Redimensionne et compresse pour rester sous ~200 Ko
+        const MAX = compact ? 600 : 1200;
+        let { width, height } = img;
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX; }
+          else { width = Math.round((width * MAX) / height); height = MAX; }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, width, height);
+        onChange(canvas.toDataURL('image/jpeg', 0.75));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -659,32 +677,34 @@ function AIModal({
 function BuilderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [title, setTitle] = useState('Mon formulaire');
-  const [description, setDescription] = useState('');
-  const [coverImage, setCoverImage] = useState<string | undefined>(undefined);
-  const [fields, setFields] = useState<FormField[]>([]);
+
+  // Initialise depuis ?id= au premier rendu (lazy initializer — pas d'effect)
+  const [formId, setFormId] = useState<string | null>(() => {
+    const id = searchParams.get('id');
+    return id && getForm(id) ? id : null;
+  });
+  const [title, setTitle] = useState(() => {
+    const id = searchParams.get('id');
+    return id ? (getForm(id)?.title ?? 'Mon formulaire') : 'Mon formulaire';
+  });
+  const [description, setDescription] = useState(() => {
+    const id = searchParams.get('id');
+    return id ? (getForm(id)?.description ?? '') : '';
+  });
+  const [coverImage, setCoverImage] = useState<string | undefined>(() => {
+    const id = searchParams.get('id');
+    return id ? getForm(id)?.coverImage : undefined;
+  });
+  const [fields, setFields] = useState<FormField[]>(() => {
+    const id = searchParams.get('id');
+    return id ? (getForm(id)?.fields ?? []) : [];
+  });
   const [saving, setSaving] = useState(false);
-  const [formId, setFormId] = useState<string | null>(null);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [showAI, setShowAI] = useState(false);
 
   const isEditing = !!formId;
-
-  // Load existing form if ?id= param
-  useEffect(() => {
-    const id = searchParams.get('id');
-    if (id) {
-      const form = getForm(id);
-      if (form) {
-        setFormId(id);
-        setTitle(form.title);
-        setDescription(form.description ?? '');
-        setCoverImage(form.coverImage);
-        setFields(form.fields);
-      }
-    }
-  }, [searchParams]);
 
   // Clear justAddedId after scroll
   useEffect(() => {
@@ -721,28 +741,25 @@ function BuilderContent() {
 
   const doSave = async (): Promise<Form> => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 300));
-    let form: Form;
-    const existing = formId ? getForm(formId) : null;
-    if (existing) {
-      form = { ...existing, title, description, coverImage, fields, updatedAt: new Date().toISOString() };
-    } else {
-      form = createForm(title);
-      form.description = description;
-      form.coverImage = coverImage;
-      form.fields = fields;
-      setFormId(form.id);
+    try {
+      await new Promise((r) => setTimeout(r, 300));
+      let form: Form;
+      const existing = formId ? getForm(formId) : null;
+      if (existing) {
+        form = { ...existing, title, description, coverImage, fields, updatedAt: new Date().toISOString() };
+      } else {
+        form = createForm(title);
+        form.description = description;
+        form.coverImage = coverImage;
+        form.fields = fields;
+        setFormId(form.id);
+      }
+      // Save locally
+      saveForm(form);
+      return form;
+    } finally {
+      setSaving(false);
     }
-    // Save locally
-    saveForm(form);
-    // Sync to server (cross-device)
-    fetch('/api/forms', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
-    }).catch(() => {/* silently ignore if KV not set up */});
-    setSaving(false);
-    return form;
   };
 
   const handleSave = async () => {

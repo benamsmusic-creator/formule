@@ -50,7 +50,7 @@ function StatCard({ label, value, icon, delay }: { label: string; value: number;
   );
 }
 
-function FormCard({ form, onDelete, index }: { form: Form; onDelete: () => void; index: number }) {
+function FormCard({ form, onDelete, index, onCopied }: { form: Form; onDelete: () => void; index: number; onCopied: () => void }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const paymentFields = form.fields.filter((f) => f.type === 'payment');
   const totalRevenue = form.responses
@@ -120,9 +120,18 @@ function FormCard({ form, onDelete, index }: { form: Form; onDelete: () => void;
               Voir le formulaire
             </motion.button>
           </Link>
-          <Link href={`/builder?id=${form.id}`}>
+          <Link href={`/dashboard/responses/${form.id}`}>
             <motion.button
               className="py-2.5 px-4 rounded-xl gold-border text-brown-700 text-xs font-medium"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Réponses
+            </motion.button>
+          </Link>
+          <Link href={`/builder?id=${form.id}`}>
+            <motion.button
+              className="py-2.5 px-3 rounded-xl bg-beige-100 border border-beige-200 text-brown-700 text-xs font-medium"
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -137,6 +146,7 @@ function FormCard({ form, onDelete, index }: { form: Form; onDelete: () => void;
             whileTap={{ scale: 0.98 }}
             onClick={() => {
               navigator.clipboard.writeText(`${window.location.origin}/forms/${form.id}`);
+              onCopied();
             }}
             title="Copier le lien"
           >
@@ -190,9 +200,16 @@ function FormCard({ form, onDelete, index }: { form: Form; onDelete: () => void;
 function DashboardContent() {
   const [forms, setForms] = useState<Form[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [showToast, setShowToast] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
+  const isCreated = searchParams.get('created') === '1';
+  const [showToast, setShowToast] = useState(isCreated);
+  const [showCopyToast, setShowCopyToast] = useState(false);
+
+  const handleCopied = () => {
+    setShowCopyToast(true);
+    setTimeout(() => setShowCopyToast(false), 3000);
+  };
 
   useEffect(() => {
     // Try server first (cross-device), fallback to localStorage
@@ -207,12 +224,13 @@ function DashboardContent() {
       })
       .catch(() => setForms(getForms()))
       .finally(() => setLoaded(true));
+  }, []);
 
-    if (searchParams.get('created') === '1') {
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 4000);
-      router.replace('/dashboard');
-    }
+  useEffect(() => {
+    if (!isCreated) return;
+    router.replace('/dashboard');
+    const t = setTimeout(() => setShowToast(false), 4000);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -230,7 +248,7 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen pt-24 pb-20">
-      {/* Toast succès */}
+      {/* Toast succès formulaire créé */}
       <AnimatePresence>
         {showToast && (
           <motion.div
@@ -242,6 +260,22 @@ function DashboardContent() {
           >
             <span className="text-lg">✓</span>
             <span className="text-sm font-medium">Formulaire créé avec succès !</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast copie de lien */}
+      <AnimatePresence>
+        {showCopyToast && (
+          <motion.div
+            initial={{ y: -80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -80, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-brown-900 text-beige-50 shadow-xl shadow-brown-900/20 whitespace-nowrap"
+          >
+            <span className="text-lg">🔗</span>
+            <span className="text-sm font-medium">Le lien a bien été copié !</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -323,6 +357,7 @@ function DashboardContent() {
                   form={form}
                   index={i}
                   onDelete={() => handleDelete(form.id)}
+                  onCopied={handleCopied}
                 />
               ))}
             </div>

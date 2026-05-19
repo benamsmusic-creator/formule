@@ -95,15 +95,13 @@ export default function StripePayment({
   onSuccess: () => void;
 }) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(
+    !stripePublicKey ? 'Clés Stripe non configurées. Ajoutez NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY et STRIPE_SECRET_KEY dans .env.local' : null
+  );
+  const [loading, setLoading] = useState(!!stripePublicKey);
 
   useEffect(() => {
-    if (!stripePublicKey) {
-      setError('Clés Stripe non configurées. Ajoutez NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY et STRIPE_SECRET_KEY dans .env.local');
-      setLoading(false);
-      return;
-    }
+    if (!stripePublicKey) return;
 
     fetch('/api/stripe', {
       method: 'POST',

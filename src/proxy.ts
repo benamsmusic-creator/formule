@@ -4,7 +4,7 @@ const PROTECTED = ['/dashboard', '/builder'];
 // Note: /compte is protected client-side (redirects to /user-login if no session in localStorage)
 const COOKIE_NAME = 'hl_admin';
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   const isProtected = PROTECTED.some((p) => pathname.startsWith(p));

@@ -1,0 +1,169 @@
+'use client';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
+import { Form, FormResponse } from '@/lib/types';
+import { formatDate } from '@/lib/utils';
+
+export default function ResponsesPage() {
+  const { id } = useParams<{ id: string }>();
+  const [form, setForm] = useState<Form | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [expanded, setExpanded] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/forms/${id}`)
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then((data: Form) => setForm(data))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-gold-400 border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  if (error || !form) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+        <p className="text-brown-500">Formulaire introuvable.</p>
+        <Link href="/dashboard" className="text-sm text-gold-600 hover:underline">← Retour au dashboard</Link>
+      </div>
+    );
+  }
+
+  const responses = form.responses ?? [];
+
+  return (
+    <div className="min-h-screen pt-24 pb-20">
+      <div className="max-w-4xl mx-auto px-6">
+        {/* Header */}
+        <motion.div
+          className="mb-10"
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <Link
+            href="/dashboard"
+            className="inline-flex items-center gap-1.5 text-sm text-brown-400 hover:text-brown-700 transition-colors mb-6"
+          >
+            ← Retour au dashboard
+          </Link>
+          <h1
+            className="text-4xl font-light text-brown-900 mb-1"
+            style={{ fontFamily: 'var(--font-cormorant)' }}
+          >
+            Réponses — <em className="gradient-text not-italic">{form.title}</em>
+          </h1>
+          <p className="text-brown-500 text-sm">
+            {responses.length} réponse{responses.length !== 1 ? 's' : ''} enregistrée{responses.length !== 1 ? 's' : ''}
+          </p>
+        </motion.div>
+
+        {/* Empty state */}
+        {responses.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center justify-center py-24 rounded-3xl border-2 border-dashed border-beige-300 text-center"
+          >
+            <div className="text-5xl text-beige-300 mb-5 float-1">✦</div>
+            <p
+              className="text-2xl font-light text-brown-600 mb-2"
+              style={{ fontFamily: 'var(--font-cormorant)' }}
+            >
+              Aucune réponse pour l&apos;instant
+            </p>
+            <p className="text-sm text-brown-400">Les inscriptions apparaîtront ici dès qu&apos;un participant soumettra le formulaire.</p>
+          </motion.div>
+        )}
+
+        {/* Responses list */}
+        <div className="space-y-3">
+          <AnimatePresence>
+            {responses.map((resp: FormResponse, i: number) => {
+              const isOpen = expanded === resp.id;
+              const isPaid = resp.paymentStatus === 'paid';
+              return (
+                <motion.div
+                  key={resp.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.4 }}
+                  className="bg-beige-50 border border-beige-200 rounded-2xl overflow-hidden"
+                >
+                  {/* Row header */}
+                  <button
+                    onClick={() => setExpanded(isOpen ? null : resp.id)}
+                    className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-beige-100/60 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-gold-400/15 flex items-center justify-center flex-shrink-0">
+                        <span className="text-gold-600 text-xs font-bold">{i + 1}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-brown-900 truncate">
+                          {(resp.data?.firstName && resp.data?.lastName)
+                            ? `${resp.data.firstName} ${resp.data.lastName}`
+                            : resp.data?.email ?? `Réponse #${i + 1}`}
+                        </p>
+                        <p className="text-xs text-brown-400">{formatDate(resp.submittedAt)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                      {resp.paymentAmount !== undefined && (
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${isPaid ? 'bg-green-100 text-green-700' : 'bg-beige-200 text-brown-500'}`}>
+                          {isPaid ? `✓ ${resp.paymentAmount}€` : `${resp.paymentAmount}€ en attente`}
+                        </span>
+                      )}
+                      <span className="text-brown-400 text-xs">{isOpen ? '▲' : '▼'}</span>
+                    </div>
+                  </button>
+
+                  {/* Expanded details */}
+                  <AnimatePresence>
+                    {isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-5 pb-5 pt-1 border-t border-beige-200">
+                          <div className="grid sm:grid-cols-2 gap-3 mt-3">
+                            {Object.entries(resp.data ?? {}).map(([key, value]) => (
+                              <div key={key} className="p-3 rounded-xl bg-beige-100">
+                                <p className="text-[10px] text-brown-400 uppercase tracking-wide mb-0.5">{key}</p>
+                                <p className="text-sm text-brown-900 break-words">{String(value)}</p>
+                              </div>
+                            ))}
+                          </div>
+                          {resp.paymentMethod && (
+                            <p className="mt-3 text-xs text-brown-400">
+                              Paiement : <span className="text-brown-600 font-medium">{resp.paymentMethod === 'online' ? 'En ligne (Stripe)' : 'Sur place'}</span>
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -1,16 +1,12 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { getCurrentUser, logoutUser } from '@/lib/store';
 import { AppUser } from '@/lib/types';
 
 export default function LandingPage() {
-  const [user, setUser] = useState<AppUser | null>(null);
-
-  useEffect(() => {
-    setUser(getCurrentUser());
-  }, []);
+  const [user, setUser] = useState<AppUser | null>(() => getCurrentUser());
 
   const handleLogout = () => {
     logoutUser();
@@ -64,26 +60,15 @@ export default function LandingPage() {
               </button>
             </>
           ) : (
-            <>
-              <Link href="/user-login">
-                <motion.button
-                  className="px-4 py-2 rounded-xl text-brown-700 text-sm font-medium hover:bg-beige-200 transition-colors"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  Se connecter
-                </motion.button>
-              </Link>
-              <Link href="/register">
-                <motion.button
-                  className="btn-liquid px-5 py-2 rounded-xl bg-brown-900 text-beige-50 text-sm font-medium overflow-hidden"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  <span className="relative z-10">Créer un compte</span>
-                </motion.button>
-              </Link>
-            </>
+            <Link href="/events">
+              <motion.button
+                className="btn-liquid px-5 py-2 rounded-xl bg-brown-900 text-beige-50 text-sm font-medium overflow-hidden"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <span className="relative z-10">Voir les événements futurs</span>
+              </motion.button>
+            </Link>
           )}
 
           {/* Admin link — discreet */}
@@ -153,22 +138,13 @@ export default function LandingPage() {
             </div>
           ) : (
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/register">
+              <Link href="/events">
                 <motion.button
                   className="btn-liquid px-10 py-4 bg-brown-900 text-beige-50 rounded-2xl font-medium text-base overflow-hidden"
                   whileHover={{ scale: 1.04, y: -2 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <span className="relative z-10">Créer mon compte →</span>
-                </motion.button>
-              </Link>
-              <Link href="/user-login">
-                <motion.button
-                  className="px-8 py-4 rounded-2xl border-2 border-beige-300 text-brown-700 font-medium text-base hover:border-gold-400/50 transition-colors"
-                  whileHover={{ scale: 1.02, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  J&apos;ai déjà un compte
+                  <span className="relative z-10">Voir les événements futurs →</span>
                 </motion.button>
               </Link>
             </div>

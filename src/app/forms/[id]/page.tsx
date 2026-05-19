@@ -10,6 +10,14 @@ const StripePayment = dynamic(() => import('@/components/StripePayment'), { ssr:
 
 const SPRING = { type: 'spring' as const, stiffness: 260, damping: 30, mass: 0.9 };
 
+// Pré-calculé une fois au chargement du module — Math.random() interdit dans le render
+const CONFETTI = Array.from({ length: 14 }, (_, i) => ({
+  width: Math.random() * 8 + 4,
+  height: Math.random() * 8 + 4,
+  animX: Math.cos((i / 14) * Math.PI * 2) * (150 + Math.random() * 100),
+  animY: Math.sin((i / 14) * Math.PI * 2) * (150 + Math.random() * 100),
+}));
+
 function makeSlide(dir: number) {
   return {
     enter:  { y: dir >= 0 ? '100%' : '-100%' },
@@ -524,11 +532,11 @@ function SuccessScreen({ paymentMethod }: { paymentMethod?: 'card' | 'cash' }) {
         transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.15 }}
         className="text-8xl text-gold-400 mb-8 select-none">✦</motion.div>
 
-      {[...Array(14)].map((_, i) => (
+      {CONFETTI.map((p, i) => (
         <motion.div key={i} className="absolute rounded-full bg-gold-400/40"
-          style={{ width: Math.random() * 8 + 4, height: Math.random() * 8 + 4, top: '50%', left: '50%' }}
+          style={{ width: p.width, height: p.height, top: '50%', left: '50%' }}
           initial={{ x: 0, y: 0, opacity: 1 }}
-          animate={{ x: Math.cos((i / 14) * Math.PI * 2) * (150 + Math.random() * 100), y: Math.sin((i / 14) * Math.PI * 2) * (150 + Math.random() * 100), opacity: 0 }}
+          animate={{ x: p.animX, y: p.animY, opacity: 0 }}
           transition={{ duration: 1.4, delay: 0.3 + i * 0.03, ease: [0.22, 1, 0.36, 1] }} />
       ))}
 
@@ -593,18 +601,18 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       });
   }, [id]);
 
-  useEffect(() => {
-    if (screen !== 'cover') return;
-    const h = (e: KeyboardEvent) => { if (e.key === 'Enter') handleStart(); };
-    window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  });
-
   const handleStart = useCallback(() => {
     if (!form) return;
     setDirection(1);
     setScreen('identity');
   }, [form]);
+
+  useEffect(() => {
+    if (screen !== 'cover') return;
+    const h = (e: KeyboardEvent) => { if (e.key === 'Enter') handleStart(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [screen, handleStart]);
 
   const buildFinalData = (identity: IdentityData) => ({
     _civility: identity.civility,
@@ -624,8 +632,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       setScreen('payment_choice');
     } else {
       const currentUser = getCurrentUser();
-      addResponse(id, buildFinalData(data), currentUser?.id, undefined);
-      setScreen('success');
+      addResponse(id, buildFinalData(data), currentUser?.id, undefined)
+        .catch(() => {})
+        .finally(() => { setScreen('success'); });
     }
   };
 
@@ -662,8 +671,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       setDirection(1); setScreen('payment_choice');
     } else {
       const currentUser = getCurrentUser();
-      addResponse(id, buildFinalData(identityData!), currentUser?.id, undefined);
-      setScreen('success');
+      addResponse(id, buildFinalData(identityData!), currentUser?.id, undefined)
+        .catch(() => {})
+        .finally(() => { setScreen('success'); });
     }
   };
 
@@ -678,8 +688,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const handleCash = () => {
     setPaymentMethod('cash');
     const currentUser = getCurrentUser();
-    addResponse(id, buildFinalData(identityData!), currentUser?.id, 'cash');
-    setScreen('success');
+    addResponse(id, buildFinalData(identityData!), currentUser?.id, 'cash')
+      .catch(() => {})
+      .finally(() => { setScreen('success'); });
   };
 
   const handleCard = () => {
@@ -767,8 +778,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
                   description={form.title}
                   onSuccess={() => {
                     const currentUser = getCurrentUser();
-                    addResponse(id, { ...buildFinalData(identityData!), payment_status: 'paid' }, currentUser?.id, 'card');
-                    setScreen('success');
+                    addResponse(id, { ...buildFinalData(identityData!), payment_status: 'paid' }, currentUser?.id, 'card')
+                      .catch(() => {})
+                      .finally(() => { setScreen('success'); });
                   }}
                 />
                 <div className="h-10" />
