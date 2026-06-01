@@ -6,6 +6,7 @@ import { Form, FormField, PromoCode, TableOption } from '@/lib/types';
 import { extractYouTubeId } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import QRCode from 'qrcode';
 
 const StripePayment = dynamic(() => import('@/components/StripePayment'), { ssr: false });
 
@@ -819,35 +820,60 @@ function PaymentChoiceScreen({
 }
 
 /* ─── Success screen ────────────────────────────────────────── */
-function SuccessScreen({ paymentMethod }: { paymentMethod?: 'card' | 'cash' }) {
+function SuccessScreen({ paymentMethod, ticketId }: { paymentMethod?: 'card' | 'cash'; ticketId?: string | null }) {
+  const [qr, setQr] = useState<string>('');
+
+  useEffect(() => {
+    if (!ticketId) return;
+    const url = `${window.location.origin}/billet/${ticketId}`;
+    QRCode.toDataURL(url, { margin: 1, width: 320, color: { dark: '#2C1810', light: '#FAF7F2' } })
+      .then(setQr)
+      .catch(() => {});
+  }, [ticketId]);
+
   return (
-    <motion.div key="success" className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
+    <motion.div key="success" className="absolute inset-0 overflow-y-auto flex flex-col items-center justify-center px-6 py-16 text-center"
       initial={{ y: '100%' }} animate={{ y: '0%', transition: SPRING }} exit={{ y: '-100%' }}>
       <motion.div initial={{ scale: 0, rotate: -20 }} animate={{ scale: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 200, damping: 15, delay: 0.15 }}
-        className="text-8xl text-gold-400 mb-8 select-none">✦</motion.div>
+        className="text-7xl text-gold-400 mb-6 select-none">✦</motion.div>
 
       {CONFETTI.map((p, i) => (
         <motion.div key={i} className="absolute rounded-full bg-gold-400/40"
-          style={{ width: p.width, height: p.height, top: '50%', left: '50%' }}
+          style={{ width: p.width, height: p.height, top: '40%', left: '50%' }}
           initial={{ x: 0, y: 0, opacity: 1 }}
           animate={{ x: p.animX, y: p.animY, opacity: 0 }}
           transition={{ duration: 1.4, delay: 0.3 + i * 0.03, ease: [0.22, 1, 0.36, 1] }} />
       ))}
 
       <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6 }}
-        className="text-[clamp(2.5rem,6vw,5rem)] font-light text-brown-900 leading-tight mb-4"
+        className="text-[clamp(2.2rem,6vw,4rem)] font-light text-brown-900 leading-tight mb-3"
         style={{ fontFamily: 'var(--font-cormorant)' }}>
         Inscription confirmée.
       </motion.h2>
       <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
-        className="text-brown-500 text-lg max-w-sm">
+        className="text-brown-500 text-base max-w-sm mb-8">
         {paymentMethod === 'cash'
           ? 'Votre inscription est enregistrée. Le paiement sera effectué sur place.'
           : paymentMethod === 'card'
           ? 'Votre réservation et paiement ont bien été confirmés.'
           : 'Votre réponse a bien été enregistrée.'}
       </motion.p>
+
+      {/* Billet avec QR code */}
+      {qr && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.5 }}
+          className="rounded-3xl bg-beige-50 border border-beige-200 p-6 shadow-sm"
+        >
+          <p className="text-xs uppercase tracking-widest text-brown-400 mb-3">Votre billet d&apos;entrée</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={qr} alt="QR code de votre billet" className="w-44 h-44 mx-auto rounded-xl" />
+          <p className="mt-3 text-xs text-brown-500 max-w-[200px]">
+            Présentez ce QR code à l&apos;entrée. Conservez cette page ou votre email.
+          </p>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
@@ -1027,6 +1053,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   // États de soumission — jamais de succès simulé
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [ticketId, setTicketId] = useState<string | null>(null);
 
   useEffect(() => {
     const initForm = (f: Form) => {
@@ -1196,8 +1223,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     );
 
     try {
-      await addResponse(id, payload, currentUser?.id, method, amount);
+      const resp = await addResponse(id, payload, currentUser?.id, method, amount);
       // ✓ Ligne physiquement écrite en DB → on peut afficher le succès
+      setTicketId(resp.id);
       setPaymentMethod(method);
       setScreen('success');
 
@@ -1480,7 +1508,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </motion.div>
         )}
 
-        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} />}
+        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} ticketId={ticketId} />}
       </AnimatePresence>
     </div>
   );
