@@ -14,6 +14,7 @@ export default function OrgPublicPage() {
   const [logo, setLogo] = useState<string>('');
   const [forms, setForms] = useState<Form[]>([]);
   const [hasDonation, setHasDonation] = useState(false);
+  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [state, setState] = useState<'loading' | 'ready' | 'notfound'>('loading');
 
   useEffect(() => {
@@ -32,6 +33,10 @@ export default function OrgPublicPage() {
       const all: Form[] = Array.isArray(data) ? data : [];
       setForms(all.filter((f) => !f.archived && !f.disabled && !f.id.startsWith('dons-')));
       setHasDonation(all.some((f) => f.id === `dons-${slug}` && !f.archived && !f.disabled));
+      try {
+        const g = await (await fetch(`/api/gallery?org=${encodeURIComponent(slug)}`)).json();
+        if (Array.isArray(g)) setPhotos(g);
+      } catch { /* ignore */ }
       setState('ready');
     })().catch(() => { if (alive) setState('notfound'); });
     return () => { alive = false; };
@@ -125,6 +130,18 @@ export default function OrgPublicPage() {
                 </motion.div>
               );
             })}
+          </div>
+        )}
+
+        {photos.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-light text-brown-900 mb-5 text-center" style={{ fontFamily: 'var(--font-cormorant)' }}>Galerie</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {photos.map((p) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={p.id} src={p.url} alt="" className="w-full aspect-square object-cover rounded-2xl border border-beige-200" />
+              ))}
+            </div>
           </div>
         )}
       </div>

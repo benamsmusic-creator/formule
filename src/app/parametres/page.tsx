@@ -13,6 +13,32 @@ export default function ParametresPage() {
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
+  const [photoUploading, setPhotoUploading] = useState(false);
+
+  const loadPhotos = () => {
+    fetch('/api/gallery').then((r) => r.json()).then((d) => { if (Array.isArray(d)) setPhotos(d); });
+  };
+  useEffect(loadPhotos, []);
+
+  const addPhoto = async (file: File) => {
+    setPhotoUploading(true);
+    try {
+      const fd = new FormData(); fd.append('file', file);
+      const up = await fetch('/api/upload', { method: 'POST', body: fd });
+      const ud = await up.json();
+      if (!up.ok || !ud.url) throw new Error();
+      await fetch('/api/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url: ud.url }) });
+      loadPhotos();
+    } finally {
+      setPhotoUploading(false);
+    }
+  };
+
+  const removePhoto = async (id: string) => {
+    await fetch('/api/gallery', { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }) });
+    setPhotos((p) => p.filter((x) => x.id !== id));
+  };
 
   useEffect(() => {
     fetch('/api/org-settings').then((r) => r.json()).then((d) => {
@@ -129,6 +155,35 @@ export default function ParametresPage() {
               {saving ? 'Enregistrement…' : 'Enregistrer'}
             </motion.button>
           </form>
+        )}
+
+        {/* Galerie photos */}
+        {loaded && (
+          <div className="mt-6 rounded-2xl bg-beige-50 border border-beige-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-medium text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>Galerie photos</h2>
+              <label className="cursor-pointer text-xs font-medium text-brown-600 border border-beige-200 px-4 py-2 rounded-xl hover:border-gold-400/40 transition-colors">
+                {photoUploading ? 'Envoi…' : '+ Ajouter une photo'}
+                <input type="file" accept="image/*" className="hidden" disabled={photoUploading}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) addPhoto(f); }} />
+              </label>
+            </div>
+            {photos.length === 0 ? (
+              <p className="text-sm text-brown-400">Aucune photo. Ajoutez-en pour les afficher sur votre site public.</p>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                {photos.map((p) => (
+                  <div key={p.id} className="relative group aspect-square rounded-xl overflow-hidden border border-beige-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={p.url} alt="" className="w-full h-full object-cover" />
+                    <button onClick={() => removePhoto(p.id)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-brown-900/70 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Supprimer">×</button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>
