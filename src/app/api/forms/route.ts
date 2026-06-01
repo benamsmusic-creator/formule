@@ -40,12 +40,15 @@ function rowToForm(row: Record<string, unknown>): Form {
   };
 }
 
-export async function GET() {
-  const { data, error } = await supabaseAdmin
-    .from('forms')
-    .select('*, responses(*)')
-    .order('created_at', { ascending: false });
+export async function GET(req: NextRequest) {
+  // Si un admin d'organisation est connecté → on ne renvoie que SES formulaires.
+  // Super-admin (cookie hl_org vide) ou contexte public → comportement habituel.
+  const org = req.cookies.get('hl_org')?.value;
 
+  let query = supabaseAdmin.from('forms').select('*, responses(*)').order('created_at', { ascending: false });
+  if (org) query = query.eq('org_id', org);
+
+  const { data, error } = await query;
   if (error) return NextResponse.json([], { status: 200 });
   return NextResponse.json((data ?? []).map((r) => rowToForm(r as Record<string, unknown>)));
 }
@@ -66,6 +69,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
   const form: Form = await req.json();
+  // Organisation propriétaire : celle de l'admin connecté, sinon 'habadlyon' (super-admin)
+  const org = req.cookies.get('hl_org')?.value || 'habadlyon';
   const { error } = await supabaseAdmin.from('forms').upsert({
     id: form.id,
     title: form.title,
@@ -75,6 +80,7 @@ export async function POST(req: NextRequest) {
     youtube_url: form.youtubeUrl ?? null,
     promo_codes: form.promoCodes ?? [],
     max_capacity: form.maxCapacity ?? null,
+    org_id: org,
     created_at: form.createdAt,
     updated_at: new Date().toISOString(),
   });

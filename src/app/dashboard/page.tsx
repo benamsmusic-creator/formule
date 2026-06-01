@@ -231,6 +231,7 @@ function DashboardContent() {
   const [loaded, setLoaded] = useState(false);
   const [showArchives, setShowArchives] = useState(false);
   const [search, setSearch] = useState('');
+  const [me, setMe] = useState<{ superAdmin: boolean; orgName: string | null } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const isCreated = searchParams.get('created') === '1';
@@ -251,6 +252,13 @@ function DashboardContent() {
       })
       .catch(() => setForms(getForms()))
       .finally(() => setLoaded(true));
+  }, []);
+
+  useEffect(() => {
+    fetch('/api/me')
+      .then((r) => r.json())
+      .then((d) => setMe({ superAdmin: !!d.superAdmin, orgName: d.orgName ?? null }))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -353,7 +361,11 @@ function DashboardContent() {
           >
             Votre <em className="gradient-text">Dashboard</em>
           </h1>
-          <p className="text-brown-500">Gérez vos formulaires et suivez vos réponses.</p>
+          <p className="text-brown-500">
+            Gérez vos formulaires et suivez vos réponses.
+            {me?.orgName && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-gold-400/10 text-gold-700 border border-gold-400/20">{me.orgName}</span>}
+            {me?.superAdmin && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-brown-900 text-beige-50">Super-admin · toutes orgs</span>}
+          </p>
         </motion.div>
 
         {/* Stats */}
@@ -388,6 +400,17 @@ function DashboardContent() {
             Mes formulaires
           </h2>
           <div className="flex items-center gap-2">
+            {me?.superAdmin && (
+              <Link href="/clients">
+                <motion.button
+                  className="px-5 py-2.5 border border-gold-400/40 text-brown-700 rounded-xl text-sm font-medium hover:bg-gold-400/10 transition-colors"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  👥 Clients
+                </motion.button>
+              </Link>
+            )}
             <Link href="/dashboard/crm">
               <motion.button
                 className="px-5 py-2.5 border border-gold-400/40 text-brown-700 rounded-xl text-sm font-medium hover:bg-gold-400/10 transition-colors"

@@ -9,6 +9,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const from = searchParams.get('from') ?? '/dashboard';
 
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +23,7 @@ function LoginForm() {
     const res = await fetch('/api/auth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify(email.trim() ? { email: email.trim(), password } : { password }),
     });
 
     if (res.ok) {
@@ -80,13 +81,27 @@ function LoginForm() {
         >
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-gold-400 to-gold-300" />
 
+          <div className="mb-4">
+            <label className="block text-xs text-brown-500 uppercase tracking-widest font-medium mb-2">
+              Email <span className="text-brown-300 normal-case tracking-normal">(comptes admin — laisser vide pour le super-admin)</span>
+            </label>
+            <input
+              type="email"
+              autoComplete="username"
+              className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 transition-colors"
+              placeholder="admin@communaute.fr"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+
           <div className="mb-6">
             <label className="block text-xs text-brown-500 uppercase tracking-widest font-medium mb-2">
               Mot de passe
             </label>
             <input
               type="password"
-              autoFocus
+              autoComplete="current-password"
               className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 transition-colors"
               placeholder="••••••••"
               value={password}

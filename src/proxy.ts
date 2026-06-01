@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROTECTED = ['/dashboard', '/builder'];
+const PROTECTED = ['/dashboard', '/builder', '/clients'];
 // Note: /compte is protected client-side (redirects to /user-login if no session in localStorage)
 const COOKIE_NAME = 'hl_admin';
 
@@ -17,9 +17,14 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // /clients réservé au super-admin (admin sans organisation rattachée)
+  if (pathname.startsWith('/clients') && req.cookies.get('hl_org')?.value) {
+    return NextResponse.redirect(new URL('/dashboard', req.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/builder/:path*'],
+  matcher: ['/dashboard/:path*', '/builder/:path*', '/clients/:path*'],
 };
