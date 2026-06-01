@@ -11,7 +11,9 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, name, phone, address, formTitle, eventDate, guestCount, paymentMethod, totalAmount, ticketId } = await req.json();
+    const { to, name, phone, address, formTitle, eventDate, guestCount, paymentMethod, totalAmount, ticketId, isDonation } = await req.json();
+
+    const headerKicker = isDonation ? 'Reçu de don — Merci 🙏' : 'Nouvelle inscription';
 
     if (!name || !formTitle) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
         <!-- Header -->
         <tr>
           <td style="background:linear-gradient(135deg,#2d1f12 0%,#4a2e18 100%);padding:28px 36px;text-align:center;">
-            <p style="margin:0 0 4px;color:#c9a96e;font-size:11px;letter-spacing:2px;text-transform:uppercase;">Nouvelle inscription</p>
+            <p style="margin:0 0 4px;color:#c9a96e;font-size:11px;letter-spacing:2px;text-transform:uppercase;">${headerKicker}</p>
             <h1 style="margin:0;color:#faf8f4;font-size:24px;font-weight:300;">${formTitle}</h1>
             ${eventDate ? `<p style="margin:8px 0 0;color:#c9a96e;font-size:13px;">📅 ${eventDate}</p>` : ''}
           </td>
@@ -89,8 +91,8 @@ export async function POST(req: NextRequest) {
         ${ticketId ? `<!-- Billet -->
         <tr>
           <td style="padding:0 36px 28px;text-align:center;">
-            <a href="https://www.habadlyon.info/billet/${ticketId}" style="display:inline-block;background:#2d1f12;color:#faf8f4;text-decoration:none;font-size:14px;font-weight:600;padding:14px 28px;border-radius:12px;">🎟️ Voir mon billet (QR code)</a>
-            <p style="margin:10px 0 0;color:#a89280;font-size:11px;">À présenter à l'entrée</p>
+            <a href="https://www.habadlyon.info/billet/${ticketId}" style="display:inline-block;background:#2d1f12;color:#faf8f4;text-decoration:none;font-size:14px;font-weight:600;padding:14px 28px;border-radius:12px;">${isDonation ? '🧾 Voir mon reçu' : '🎟️ Voir mon billet (QR code)'}</a>
+            <p style="margin:10px 0 0;color:#a89280;font-size:11px;">${isDonation ? 'Merci pour votre soutien' : 'À présenter à l\'entrée'}</p>
           </td>
         </tr>` : ''}
 

@@ -1293,6 +1293,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           paymentMethod: method,
           totalAmount: amount,
           ticketId: resp.id,
+          isDonation: form?.fields.some((f) => f.type === 'donation') ?? false,
         }),
       }).catch(() => {});
     } catch (err) {
