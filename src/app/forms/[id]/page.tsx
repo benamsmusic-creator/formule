@@ -277,12 +277,14 @@ function IdentityScreen({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [hp, setHp] = useState(''); // honeypot anti-spam (invisible aux humains)
   const slide = makeSlide(direction);
 
   const canProceed = civility !== '' && firstName.trim() !== '' && lastName.trim() !== '' && email.trim() !== '' && phone.trim() !== '';
 
   const handleSubmit = () => {
     if (!canProceed) return;
+    if (hp) return; // champ piège rempli → bot, on ignore silencieusement
     onNext({
       civility: civility as 'M.' | 'Mme',
       firstName: firstName.trim(),
@@ -312,6 +314,13 @@ function IdentityScreen({
           Vos informations
         </h2>
         <p className="text-brown-400 text-sm mb-10">Toutes les informations sont requises.</p>
+
+        {/* Honeypot anti-spam — invisible, ne pas remplir */}
+        <input
+          type="text" name="company" value={hp} onChange={(e) => setHp(e.target.value)}
+          tabIndex={-1} autoComplete="off" aria-hidden="true"
+          style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }}
+        />
 
         {/* Civilité */}
         <div className="mb-8">
@@ -1264,6 +1273,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           guestCount: payload._guestCount,
           paymentMethod: method,
           totalAmount: amount,
+          ticketId: resp.id,
         }),
       }).catch(() => {});
     } catch (err) {

@@ -113,7 +113,17 @@ function EventCard({ form, index }: { form: Form; index: number }) {
               👥 Jusqu&apos;à {peopleField.maxPeople ?? 8} personnes
             </span>
           )}
-          {eventDate && <Countdown target={eventDate} />}
+          {eventDate && (() => {
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const ev = new Date(eventDate); ev.setHours(0, 0, 0, 0);
+            if (ev.getTime() === today.getTime()) {
+              return <span className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">● Aujourd&apos;hui</span>;
+            }
+            if (ev < today) {
+              return <span className="flex items-center gap-1 text-xs text-brown-400 bg-beige-100 border border-beige-200 px-2.5 py-1 rounded-full">Passé</span>;
+            }
+            return <Countdown target={eventDate} />;
+          })()}
         </div>
 
         <div className="flex items-center gap-2">

@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 
 export async function POST(req: NextRequest) {
   try {
-    const { to, name, phone, address, formTitle, eventDate, guestCount, paymentMethod, totalAmount } = await req.json();
+    const { to, name, phone, address, formTitle, eventDate, guestCount, paymentMethod, totalAmount, ticketId } = await req.json();
 
     if (!name || !formTitle) {
       return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 });
@@ -85,6 +85,14 @@ export async function POST(req: NextRequest) {
             </div>
           </td>
         </tr>
+
+        ${ticketId ? `<!-- Billet -->
+        <tr>
+          <td style="padding:0 36px 28px;text-align:center;">
+            <a href="https://www.habadlyon.info/billet/${ticketId}" style="display:inline-block;background:#2d1f12;color:#faf8f4;text-decoration:none;font-size:14px;font-weight:600;padding:14px 28px;border-radius:12px;">🎟️ Voir mon billet (QR code)</a>
+            <p style="margin:10px 0 0;color:#a89280;font-size:11px;">À présenter à l'entrée</p>
+          </td>
+        </tr>` : ''}
 
         <!-- Footer -->
         <tr>

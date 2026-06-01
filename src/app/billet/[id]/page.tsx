@@ -63,6 +63,10 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
     ? new Date(data.submitted_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
     : '';
 
+  const isDonation = !!donation || data.form_id === 'dons-generaux';
+  const headerLabel = isDonation ? 'Reçu de don' : 'Billet';
+  const qrCaption = isDonation ? 'Merci pour votre soutien 🙏' : 'À présenter à l’entrée';
+
   const qr = await QRCode.toDataURL(`https://www.habadlyon.info/billet/${id}`, {
     margin: 1, width: 360, color: { dark: '#2C1810', light: '#FAF7F2' },
   });
@@ -72,7 +76,7 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
       <div className="w-full max-w-sm">
         {/* En-tête billet */}
         <div className="rounded-t-3xl bg-brown-900 text-beige-50 px-6 pt-7 pb-6 text-center">
-          <p className="text-xs uppercase tracking-widest text-gold-300/80 mb-1">HabadLyon · Billet</p>
+          <p className="text-xs uppercase tracking-widest text-gold-300/80 mb-1">HabadLyon · {headerLabel}</p>
           <h1 className="text-2xl font-light" style={{ fontFamily: 'var(--font-cormorant)' }}>{eventTitle}</h1>
         </div>
 
@@ -80,7 +84,7 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
         <div className="bg-beige-50 border-x border-beige-200 px-6 py-6 flex flex-col items-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qr} alt="QR code du billet" className="w-48 h-48 rounded-xl" />
-          <p className="mt-3 text-xs text-brown-400">À présenter à l&apos;entrée</p>
+          <p className="mt-3 text-xs text-brown-400">{qrCaption}</p>
         </div>
 
         {/* Détails */}
