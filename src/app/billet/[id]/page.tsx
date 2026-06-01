@@ -1,7 +1,9 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
+import { cookies } from 'next/headers';
 import QRCode from 'qrcode';
 import Link from 'next/link';
 import PrintButton from './PrintButton';
+import CheckinButton from './CheckinButton';
 import { ORG } from '@/lib/org';
 
 export const dynamic = 'force-dynamic';
@@ -13,6 +15,7 @@ type ResponseRow = {
   payment_status: string | null;
   payment_method: string | null;
   submitted_at: string | null;
+  checked_in: boolean | null;
   forms: { title: string } | null;
 };
 
@@ -30,9 +33,11 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
 
   const { data, error } = await supabaseAdmin
     .from('responses')
-    .select('id, form_id, data, payment_status, payment_method, submitted_at, forms(title)')
+    .select('id, form_id, data, payment_status, payment_method, submitted_at, checked_in, forms(title)')
     .eq('id', id)
     .single<ResponseRow>();
+
+  const isAdmin = (await cookies()).get('hl_admin')?.value === 'authenticated';
 
   if (error || !data) {
     return (
@@ -134,6 +139,13 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
                 <p>SIRET {ORG.siret}</p>
               </>
             )}
+          </div>
+        )}
+
+        {isAdmin && (
+          <div className="mt-5 print:hidden">
+            <p className="text-[11px] uppercase tracking-wide text-brown-400 mb-2 text-center">Espace admin — pointage</p>
+            <CheckinButton responseId={data.id} initial={!!data.checked_in} />
           </div>
         )}
 
