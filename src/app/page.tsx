@@ -45,7 +45,7 @@ export default function LandingPage() {
             <>
               <Link href="/compte">
                 <motion.button
-                  className="px-4 py-2 rounded-xl bg-gold-400/10 border border-gold-400/30 text-gold-700 text-sm font-medium hover:bg-gold-400/20 transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-gold-400/10 border border-gold-400/30 text-gold-700 text-xs font-medium hover:bg-gold-400/20 transition-colors"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                 >
@@ -54,7 +54,7 @@ export default function LandingPage() {
               </Link>
               <button
                 onClick={handleLogout}
-                className="text-sm text-brown-400 hover:text-brown-700 transition-colors"
+                className="text-xs text-brown-400 hover:text-brown-700 transition-colors"
               >
                 Déconnexion
               </button>
@@ -62,11 +62,11 @@ export default function LandingPage() {
           ) : (
             <Link href="/events">
               <motion.button
-                className="btn-liquid px-5 py-2 rounded-xl bg-brown-900 text-beige-50 text-sm font-medium overflow-hidden"
+                className="btn-liquid px-3 py-1.5 rounded-lg bg-brown-900 text-beige-50 text-xs font-medium overflow-hidden"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
               >
-                <span className="relative z-10">Voir les événements futurs</span>
+                <span className="relative z-10">Voir les événements</span>
               </motion.button>
             </Link>
           )}

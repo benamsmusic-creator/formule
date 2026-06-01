@@ -2,7 +2,7 @@
 import { use, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getForm, addResponse, getCurrentUser } from '@/lib/store'; // getCurrentUser used inside submitForm
-import { Form, FormField, PromoCode } from '@/lib/types';
+import { Form, FormField, PromoCode, TableOption } from '@/lib/types';
 import { extractYouTubeId } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
@@ -433,6 +433,89 @@ function PeopleCountField({ value, onChange, max = 8 }: { value: string; onChang
   );
 }
 
+/* ─── Table reservation (Gala) ──────────────────────────────── */
+/** Décode la valeur stockée d'une réservation de table : { i: index option, q: quantité } */
+export function parseTableSelection(value: unknown): { i: number; q: number } {
+  if (typeof value === 'string' && value) {
+    try {
+      const p = JSON.parse(value);
+      const i = typeof p.i === 'number' ? p.i : -1;
+      const q = typeof p.q === 'number' && p.q > 0 ? p.q : 1;
+      return { i, q };
+    } catch { /* ignore */ }
+  }
+  return { i: -1, q: 1 };
+}
+
+function TableReservationField({
+  field, value, onChange,
+}: { field: FormField; value: string; onChange: (v: string) => void }) {
+  const options: TableOption[] = field.tableOptions ?? [];
+  const sel = parseTableSelection(value);
+  const setSel = (i: number, q: number) => onChange(JSON.stringify({ i, q: Math.max(1, q) }));
+  const chosen = sel.i >= 0 ? options[sel.i] : undefined;
+  const subtotal = chosen ? chosen.price * sel.q : 0;
+
+  return (
+    <div className="mt-2 space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {options.map((opt, i) => (
+          <motion.button
+            key={i} type="button"
+            onClick={() => setSel(i, sel.i === i ? sel.q : 1)}
+            className={`text-left rounded-2xl border-2 px-5 py-4 transition-colors ${
+              sel.i === i ? 'border-gold-500 bg-gold-400/10' : 'border-beige-200 bg-beige-50 hover:border-gold-400/50'
+            }`}
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 + i * 0.07 }}
+            whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                sel.i === i ? 'border-gold-500' : 'border-beige-300'
+              }`}>
+                {sel.i === i && <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3 h-3 rounded-full bg-gold-500" />}
+              </div>
+              <div className="min-w-0">
+                <p className={`text-base font-medium ${sel.i === i ? 'text-brown-900' : 'text-brown-600'}`}>{opt.label}</p>
+                <p className="text-xs text-brown-400 mt-0.5">
+                  {opt.seats} place{opt.seats > 1 ? 's' : ''} · {opt.price} €
+                </p>
+              </div>
+            </div>
+          </motion.button>
+        ))}
+      </div>
+
+      {chosen && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between gap-4 rounded-2xl border border-beige-200 bg-beige-50 px-5 py-4"
+        >
+          <div>
+            <p className="text-xs text-brown-400 uppercase tracking-wide">Quantité</p>
+            <p className="text-sm text-brown-600 mt-0.5">{chosen.seats * sel.q} place{chosen.seats * sel.q > 1 ? 's' : ''} au total</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={() => setSel(sel.i, sel.q - 1)}
+              className="w-9 h-9 rounded-full border-2 border-beige-300 text-brown-600 hover:border-gold-400 transition-colors flex items-center justify-center text-lg leading-none disabled:opacity-40"
+              disabled={sel.q <= 1} aria-label="Diminuer">−</button>
+            <span className="w-6 text-center font-semibold text-brown-900">{sel.q}</span>
+            <button type="button" onClick={() => setSel(sel.i, sel.q + 1)}
+              className="w-9 h-9 rounded-full border-2 border-beige-300 text-brown-600 hover:border-gold-400 transition-colors flex items-center justify-center text-lg leading-none" aria-label="Augmenter">+</button>
+          </div>
+        </motion.div>
+      )}
+
+      {chosen && (
+        <p className="text-right text-brown-600 text-sm">
+          Sous-total : <span className="font-semibold text-brown-900">{subtotal.toFixed(2)} €</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
 /* ─── Info block ────────────────────────────────────────────── */
 function InfoBlock({ field }: { field: FormField }) {
   return (
@@ -546,6 +629,10 @@ function QuestionScreen({
 
           {field.type === 'people_count' && (
             <PeopleCountField value={value as string} onChange={onChange} max={field.maxPeople ?? 8} />
+          )}
+
+          {field.type === 'table_reservation' && (
+            <TableReservationField field={field} value={value as string} onChange={onChange} />
           )}
 
           {(field.type === 'radio' || field.type === 'select') && (
@@ -943,13 +1030,34 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   /** Calcule le montant réel (prix unitaire × nb personnes − promo si applicable) */
   const computePaymentAmount = useCallback((promo?: PromoCode | null): number | undefined => {
     const pf = form?.fields.find((f) => f.type === 'payment');
-    if (!pf?.amount) return undefined;
-    const peopleField = form?.fields.find((f) => f.type === 'people_count');
-    let base = pf.amount;
-    if (peopleField) {
-      const count = parseInt(formData[peopleField.id] as string || '1', 10) || 1;
-      base = pf.amount * count;
+    const tableField = form?.fields.find((f) => f.type === 'table_reservation');
+    let base = 0;
+    let hasCharge = false;
+
+    // Paiement classique (prix unitaire × nb de personnes)
+    if (pf?.amount) {
+      hasCharge = true;
+      const peopleField = form?.fields.find((f) => f.type === 'people_count');
+      if (peopleField) {
+        const count = parseInt(formData[peopleField.id] as string || '1', 10) || 1;
+        base += pf.amount * count;
+      } else {
+        base += pf.amount;
+      }
     }
+
+    // Réservation de table (Gala) : prix de la formule × quantité
+    if (tableField) {
+      const sel = parseTableSelection(formData[tableField.id]);
+      const opt = sel.i >= 0 ? tableField.tableOptions?.[sel.i] : undefined;
+      if (opt) {
+        hasCharge = true;
+        base += opt.price * sel.q;
+      }
+    }
+
+    if (!hasCharge) return undefined;
+
     const activePromo = promo !== undefined ? promo : appliedPromo;
     if (activePromo) {
       const discount = activePromo.type === 'percent'
@@ -967,12 +1075,23 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
    */
   const buildFinalData = useCallback((identity: IdentityData): Record<string, string | boolean> => {
     const peopleField = form?.fields.find((f) => f.type === 'people_count');
-    const guestCount = peopleField
-      ? parseInt(formData[peopleField.id] as string || '1', 10) || 1
-      : 1;
+    const tableField = form?.fields.find((f) => f.type === 'table_reservation');
+    let guestCount = 0;
+    if (peopleField) guestCount += parseInt(formData[peopleField.id] as string || '0', 10) || 0;
+    let tableSummary = '';
+    if (tableField) {
+      const sel = parseTableSelection(formData[tableField.id]);
+      const opt = sel.i >= 0 ? tableField.tableOptions?.[sel.i] : undefined;
+      if (opt) {
+        guestCount += opt.seats * sel.q;
+        tableSummary = `${sel.q}× ${opt.label} (${opt.seats * sel.q} place${opt.seats * sel.q > 1 ? 's' : ''}) — ${(opt.price * sel.q).toFixed(2)} €`;
+      }
+    }
+    if (guestCount < 1) guestCount = 1;
     const total = computePaymentAmount();
 
     return {
+      ...(tableSummary ? { _tableReservation: tableSummary } : {}),
       // Identité
       _civility:   identity.civility,
       _firstName:  identity.firstName,
@@ -1049,8 +1168,8 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
   const goToPayment = () => {
     setDirection(1);
-    if (paymentField) {
-      if (paymentField.allowCash) {
+    if (hasCharge) {
+      if (allowCashCharge) {
         setScreen('payment_choice');
       } else {
         setPaymentMethod('card');
@@ -1061,7 +1180,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
   const goToPromoOrPayment = () => {
     setDirection(1);
-    if (paymentField && (form?.promoCodes?.length ?? 0) > 0) {
+    if (hasCharge && (form?.promoCodes?.length ?? 0) > 0) {
       setScreen('promo');
     } else {
       goToPayment();
@@ -1074,7 +1193,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     if (questionFields.length > 0) {
       setCurrentIndex(0);
       setScreen('questions');
-    } else if (paymentField) {
+    } else if (hasCharge) {
       goToPromoOrPayment();
     } else {
       submitForm(data, undefined);
@@ -1102,6 +1221,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
   const questionFields = form.fields.filter((f) => f.type !== 'payment');
   const paymentField = form.fields.find((f) => f.type === 'payment');
+  const tableField = form.fields.find((f) => f.type === 'table_reservation');
+  const hasCharge = !!paymentField || !!tableField;
+  const allowCashCharge = !!(paymentField?.allowCash || tableField?.allowCash);
   const currentField = questionFields[currentIndex];
   const realTotal = questionFields.filter(f => f.type !== 'event_date' && f.type !== 'info_block').length;
   const pct = screen === 'payment_choice' || screen === 'payment' || screen === 'promo' ? 95
@@ -1113,7 +1235,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const handleNext = () => {
     if (currentIndex < questionFields.length - 1) {
       setDirection(1); setCurrentIndex((i) => i + 1);
-    } else if (paymentField) {
+    } else if (hasCharge) {
       goToPromoOrPayment();
     } else {
       submitForm(identityData!, undefined);
@@ -1231,7 +1353,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </AnimatePresence>
         )}
 
-          {screen === 'promo' && paymentField && (
+          {screen === 'promo' && hasCharge && (
           <AnimatePresence mode="wait" key="promo-host">
             <PromoScreen
               key="promo"
@@ -1244,12 +1366,12 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </AnimatePresence>
         )}
 
-        {screen === 'payment_choice' && paymentField && (
+        {screen === 'payment_choice' && hasCharge && (
           <AnimatePresence mode="wait" key="pc-host">
             <PaymentChoiceScreen
               key="payment_choice"
-              amount={computePaymentAmount() ?? paymentField.amount ?? 0}
-              allowCash={paymentField.allowCash}
+              amount={computePaymentAmount() ?? 0}
+              allowCash={allowCashCharge}
               direction={direction}
               onCash={handleCash}
               onCard={handleCard}
@@ -1268,7 +1390,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </AnimatePresence>
         )}
 
-        {screen === 'payment' && paymentField && (
+        {screen === 'payment' && hasCharge && (
           <motion.div key="payment" className="absolute inset-0 overflow-y-auto"
             initial={{ y: '100%' }} animate={{ y: '0%', transition: SPRING }}
             exit={{ y: '-100%', transition: { ...SPRING, stiffness: 340 } }}>
@@ -1277,9 +1399,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
                 <button onClick={() => { setDirection(-1); setScreen('payment_choice'); }}
                   className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">← Retour</button>
                 <h2 className="text-4xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>Paiement sécurisé</h2>
-                <p className="text-brown-400 text-sm mb-8">{paymentField.label} · {(computePaymentAmount() ?? paymentField.amount ?? 0).toFixed(2)} €</p>
+                <p className="text-brown-400 text-sm mb-8">{paymentField?.label ?? 'Réservation'} · {(computePaymentAmount() ?? 0).toFixed(2)} €</p>
                 <StripePayment
-                  amount={paymentField.amount ?? 50}
+                  amount={computePaymentAmount() ?? paymentField?.amount ?? 50}
                   description={form.title}
                   onSuccess={() => { submitForm(identityData!, 'card'); }}
                 />

@@ -42,6 +42,7 @@ const FIELD_TYPES: { type: FieldType; label: string; icon: string; desc: string;
   { type: 'event_date', label: "Date de l'événement", icon: '📅', desc: 'Affiche la date aux participants', hint: 'Sélectionnez une date via le calendrier.' },
   { type: 'info_block', label: 'Message informatif', icon: '✍', desc: 'Affiche un texte ou une info', hint: 'Ex : règles, tarifs, conditions. Le visiteur lit, ne remplit pas.' },
   { type: 'people_count', label: 'Nombre de personnes', icon: '👥', desc: 'Le visiteur choisit combien de personnes', hint: 'Ex : 1 à 8 personnes. Sélection par bouton.' },
+  { type: 'table_reservation', label: 'Réservation de table (Gala)', icon: '🍽️', desc: 'Tables et places avec prix', hint: 'Définissez vos formules : table complète, place individuelle… chacune avec son nombre de places et son prix. Le visiteur choisit et la quantité.' },
   { type: 'textarea', label: 'Texte long', icon: '¶', desc: 'Le visiteur tape un long message', hint: 'Ex : commentaire, demande particulière.' },
   { type: 'select', label: 'Choix avec photos', icon: '▾', desc: 'Le visiteur choisit parmi des options', hint: 'Ex : Menu du soir, type de place. Vous pouvez ajouter une photo par option.' },
   { type: 'radio', label: 'Choix unique', icon: '◉', desc: 'Le visiteur choisit une seule réponse', hint: 'Ex : Adulte / Enfant. Peut aussi avoir des photos.' },
@@ -556,8 +557,97 @@ function FieldEditor({
                 </div>
               )}
 
+              {/* TABLE RESERVATION (Gala) — formules + cash */}
+              {field.type === 'table_reservation' && (
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Formules (table / place)</label>
+                      <button
+                        onClick={() =>
+                          onChange({
+                            ...field,
+                            tableOptions: [...(field.tableOptions ?? []), { label: 'Nouvelle formule', seats: 1, price: 100 }],
+                          })
+                        }
+                        className="text-xs text-gold-600 hover:text-gold-500 font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gold-400/10 transition-colors"
+                      >
+                        + Ajouter
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {(field.tableOptions ?? []).map((opt, i) => (
+                        <div key={i} className="p-3 rounded-xl bg-beige-100 border border-beige-200 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <input
+                              className="flex-1 px-3 py-2 rounded-lg bg-beige-50 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                              value={opt.label}
+                              placeholder="Ex : Table Or — 10 places"
+                              onChange={(e) => {
+                                const next = [...(field.tableOptions ?? [])];
+                                next[i] = { ...opt, label: e.target.value };
+                                onChange({ ...field, tableOptions: next });
+                              }}
+                            />
+                            <button
+                              onClick={() => onChange({ ...field, tableOptions: (field.tableOptions ?? []).filter((_, idx) => idx !== i) })}
+                              className="text-brown-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50 text-sm"
+                              aria-label="Supprimer la formule"
+                            >×</button>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <label className="text-[11px] text-brown-400">Places</label>
+                              <input
+                                type="number" min="1"
+                                className="mt-0.5 w-full px-3 py-2 rounded-lg bg-beige-50 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                                value={opt.seats}
+                                onChange={(e) => {
+                                  const next = [...(field.tableOptions ?? [])];
+                                  next[i] = { ...opt, seats: parseInt(e.target.value) || 1 };
+                                  onChange({ ...field, tableOptions: next });
+                                }}
+                              />
+                            </div>
+                            <div className="flex-1">
+                              <label className="text-[11px] text-brown-400">Prix (€)</label>
+                              <input
+                                type="number" min="0"
+                                className="mt-0.5 w-full px-3 py-2 rounded-lg bg-beige-50 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                                value={opt.price}
+                                onChange={(e) => {
+                                  const next = [...(field.tableOptions ?? [])];
+                                  next[i] = { ...opt, price: parseFloat(e.target.value) || 0 };
+                                  onChange({ ...field, tableOptions: next });
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-beige-100 border border-beige-200">
+                    <div>
+                      <p className="text-xs font-semibold text-brown-800">Paiement en espèces</p>
+                      <p className="text-[11px] text-brown-400 mt-0.5">Autoriser le paiement sur place (cash)</p>
+                    </div>
+                    <div
+                      className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${field.allowCash ? 'bg-gold-500' : 'bg-beige-300'}`}
+                      onClick={() => onChange({ ...field, allowCash: !field.allowCash })}
+                    >
+                      <motion.div
+                        className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm"
+                        animate={{ left: field.allowCash ? '18px' : '2px' }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Field image */}
-              {field.type !== 'payment' && field.type !== 'checkbox' && field.type !== 'event_date' && field.type !== 'people_count' && (
+              {field.type !== 'payment' && field.type !== 'table_reservation' && field.type !== 'checkbox' && field.type !== 'event_date' && field.type !== 'people_count' && (
                 <ImagePicker
                   label="Image au-dessus de la question"
                   value={field.imageUrl}
@@ -842,6 +932,15 @@ function BuilderContent() {
         ...(type === 'payment' ? { amount: 50, currency: 'eur' } : {}),
         ...(type === 'event_date' ? { presetValue: '' } : {}),
         ...(type === 'people_count' ? { maxPeople: 8 } : {}),
+        ...(type === 'table_reservation'
+          ? {
+              tableOptions: [
+                { label: 'Table complète', seats: 10, price: 1800 },
+                { label: 'Place individuelle', seats: 1, price: 180 },
+              ],
+              allowCash: false,
+            }
+          : {}),
         ...(type === 'info_block'
           ? { presetValue: 'Si vous souhaitez faire un don, vous pouvez verser le montant de votre choix.\n\nMerci 🙏' }
           : {}),

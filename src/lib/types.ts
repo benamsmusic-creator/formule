@@ -10,7 +10,14 @@ export type FieldType =
   | 'people_count'
   | 'info_block'
   | 'number'
+  | 'table_reservation'
   | 'payment';
+
+export interface TableOption {
+  label: string;
+  seats: number;
+  price: number;
+}
 
 export interface PromoCode {
   code: string;
@@ -38,6 +45,7 @@ export interface FormField {
   maxPeople?: number;
   venue?: string;
   allowCash?: boolean;
+  tableOptions?: TableOption[];
 }
 
 export interface FormResponse {
