@@ -427,7 +427,6 @@ export default function CRMPage() {
   }, [contacts, search]);
 
   const upcomingCount = events.filter((e) => !e.isPast).length;
-  const pastCount = events.filter((e) => e.isPast).length;
   const totalCA = contacts.reduce((s, c) => s + c.totalRevenue, 0);
 
   return (

@@ -230,6 +230,7 @@ function DashboardContent() {
   const [forms, setForms] = useState<Form[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [showArchives, setShowArchives] = useState(false);
+  const [search, setSearch] = useState('');
   const searchParams = useSearchParams();
   const router = useRouter();
   const isCreated = searchParams.get('created') === '1';
@@ -290,8 +291,11 @@ function DashboardContent() {
     setForms((prev) => prev.map((f) => f.id === id ? { ...f, disabled: !current } : f));
   };
 
-  const activeForms = forms.filter((f) => !f.archived);
-  const archivedForms = forms.filter((f) => f.archived);
+  const q = search.trim().toLowerCase();
+  const matchesSearch = (f: Form) =>
+    !q || f.title.toLowerCase().includes(q) || (f.description ?? '').toLowerCase().includes(q);
+  const activeForms = forms.filter((f) => !f.archived && matchesSearch(f));
+  const archivedForms = forms.filter((f) => f.archived && matchesSearch(f));
 
   const totalResponses = activeForms.reduce((sum, f) => sum + (f.responses?.length ?? 0), 0);
   // Fix: compter carte ET espèces
@@ -358,6 +362,20 @@ function DashboardContent() {
             <StatCard label="Formulaires" value={activeForms.length} icon="◈" delay={0.1} />
             <StatCard label="Réponses" value={totalResponses} icon="✦" delay={0.15} />
             <StatCard label="Revenus (€)" value={totalPayments} icon="◆" delay={0.2} />
+          </div>
+        )}
+
+        {/* Recherche */}
+        {loaded && forms.length > 4 && (
+          <div className="relative mb-6">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-brown-300 text-sm">🔍</span>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher un formulaire…"
+              className="w-full pl-9 pr-4 py-3 rounded-2xl bg-beige-50 border border-beige-200 text-sm text-brown-900 placeholder:text-brown-300 focus:outline-none focus:border-gold-400 transition-colors"
+            />
           </div>
         )}
 
