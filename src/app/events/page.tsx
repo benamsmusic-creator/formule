@@ -5,6 +5,17 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Form } from '@/lib/types';
 
+function shareEvent(title: string, formId: string) {
+  if (typeof window === 'undefined') return;
+  const url = `${window.location.origin}/forms/${formId}`;
+  const text = `${title} — HabadLyon`;
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    navigator.share({ title, text, url }).catch(() => {});
+  } else {
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, '_blank');
+  }
+}
+
 function EventCard({ form, index }: { form: Form; index: number }) {
   const eventDateField = form.fields.find((f) => f.type === 'event_date');
   const paymentField = form.fields.find((f) => f.type === 'payment');
@@ -82,15 +93,27 @@ function EventCard({ form, index }: { form: Form; index: number }) {
           )}
         </div>
 
-        <Link href={`/forms/${form.id}`}>
+        <div className="flex items-center gap-2">
+          <Link href={`/forms/${form.id}`} className="flex-1">
+            <motion.button
+              className="btn-liquid w-full py-3 bg-brown-900 text-beige-50 rounded-xl text-sm font-medium overflow-hidden"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              <span className="relative z-10">S&apos;inscrire →</span>
+            </motion.button>
+          </Link>
           <motion.button
-            className="btn-liquid w-full py-3 bg-brown-900 text-beige-50 rounded-xl text-sm font-medium overflow-hidden"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+            onClick={() => shareEvent(form.title, form.id)}
+            className="w-12 h-12 flex-shrink-0 rounded-xl border border-beige-200 bg-beige-50 text-brown-500 flex items-center justify-center hover:border-gold-400/50 hover:text-gold-600 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Partager cet événement"
+            aria-label="Partager cet événement"
           >
-            <span className="relative z-10">S&apos;inscrire →</span>
+            ↗
           </motion.button>
-        </Link>
+        </div>
       </div>
     </motion.div>
   );
