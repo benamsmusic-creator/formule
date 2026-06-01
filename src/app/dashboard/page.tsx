@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getForms } from '@/lib/store';
 import { Form } from '@/lib/types';
-import { formatDate } from '@/lib/utils';
+import { formatDate, exportResponsesToCSV } from '@/lib/utils';
 
 function StatCard({ label, value, icon, delay }: { label: string; value: number; icon: string; delay: number }) {
   const [displayed, setDisplayed] = useState(0);
@@ -161,6 +161,16 @@ function FormCard({
             title="Copier le lien"
           >
             🔗
+          </motion.button>
+
+          <motion.button
+            className="w-10 h-9 rounded-xl bg-beige-100 border border-beige-200 text-brown-500 text-sm flex items-center justify-center hover:bg-green-50 hover:text-green-600 hover:border-green-200 transition-colors flex-shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+            whileTap={{ scale: 0.95 }}
+            onClick={() => exportResponsesToCSV(form)}
+            disabled={(form.responses?.length ?? 0) === 0}
+            title="Exporter les réponses en CSV (Excel)"
+          >
+            📥
           </motion.button>
 
           <motion.button
