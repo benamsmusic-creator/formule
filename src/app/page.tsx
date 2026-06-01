@@ -208,6 +208,9 @@ export default function LandingPage() {
         <p className="text-xs text-brown-400" style={{ fontFamily: 'var(--font-cormorant)' }}>
           © {new Date().getFullYear()} HabadLyon · Tous droits réservés
         </p>
+        <Link href="/infos" className="text-xs text-brown-300 hover:text-brown-600 transition-colors mt-1 inline-block">
+          Mentions légales · Contact
+        </Link>
       </footer>
     </div>
   );

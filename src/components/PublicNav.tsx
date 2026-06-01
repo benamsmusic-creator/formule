@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 // Pages publiques de contenu où afficher la navigation unifiée.
 // (La landing "/" a déjà son propre header ; les pages immersives
 //  /forms/[id] et /billet/[id] restent épurées.)
-const SHOW_ON = ['/events', '/horaires'];
+const SHOW_ON = ['/events', '/horaires', '/infos'];
 
 const LINKS = [
   { href: '/events', label: 'Événements' },

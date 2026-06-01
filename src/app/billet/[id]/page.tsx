@@ -2,6 +2,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 import QRCode from 'qrcode';
 import Link from 'next/link';
 import PrintButton from './PrintButton';
+import { ORG } from '@/lib/org';
 
 export const dynamic = 'force-dynamic';
 
@@ -97,6 +98,21 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
           <Row label="Paiement" value={paid} />
           {dateStr && <Row label="Inscrit le" value={dateStr} />}
         </div>
+
+        {/* Identité légale (reçu de don) */}
+        {isDonation && (
+          <div className="mt-5 rounded-2xl bg-beige-50 border border-beige-200 px-6 py-5 text-xs text-brown-500 leading-relaxed">
+            <p className="font-semibold text-brown-700 mb-1">{ORG.name}</p>
+            <p>{ORG.legalForm}</p>
+            <p>{ORG.address}, {ORG.postalCode} {ORG.city}</p>
+            <p>SIRET {ORG.siret}</p>
+            {ORG.taxDeductible && (
+              <p className="mt-2 text-brown-600">
+                Don ouvrant droit à réduction d’impôt selon la réglementation en vigueur.
+              </p>
+            )}
+          </div>
+        )}
 
         <div className="mt-8 flex flex-col items-center gap-4 print:hidden">
           <PrintButton />
