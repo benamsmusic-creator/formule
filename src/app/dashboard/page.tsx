@@ -61,12 +61,20 @@ function FormCard({
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Fix revenus: compter carte ET espèces
+  // Fix revenus: compter carte ET espèces (la liste d'attente ne paie pas)
   const totalRevenue = (form.responses ?? [])
     .filter((r) => r.paymentStatus === 'paid' || r.paymentStatus === 'cash')
     .reduce((sum, r) => sum + (r.paymentAmount ?? 0), 0);
 
   const hasPayment = form.fields.some((f) => f.type === 'payment');
+
+  // Confirmés vs liste d'attente
+  const allResponses = form.responses ?? [];
+  const waitlistCount = allResponses.filter((r) => (r.data as Record<string, unknown>)?._waitlist === 'true').length;
+  const confirmedCount = allResponses.length - waitlistCount;
+  const confirmedGuests = allResponses
+    .filter((r) => (r.data as Record<string, unknown>)?._waitlist !== 'true')
+    .reduce((s, r) => s + (parseInt(((r.data as Record<string, string>)?._guestCount) || '1', 10) || 1), 0);
 
   return (
     <motion.div
@@ -98,14 +106,19 @@ function FormCard({
             {hasPayment && !form.disabled && (
               <span className="text-xs px-2 py-1 rounded-full bg-gold-400/10 text-gold-600 border border-gold-400/20">◆ Stripe</span>
             )}
+            {waitlistCount > 0 && (
+              <span className="text-xs px-2 py-1 rounded-full bg-red-50 text-red-600 border border-red-200 font-medium whitespace-nowrap">
+                ⏳ {waitlistCount} en attente
+              </span>
+            )}
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-5">
           {[
-            { label: 'Champs', value: form.fields.length, icon: '◈' },
-            { label: 'Réponses', value: form.responses?.length ?? 0, icon: '✦' },
+            { label: 'Confirmés', value: confirmedCount, icon: '✦' },
+            { label: 'Invités', value: confirmedGuests, icon: '👤' },
             { label: 'Revenus', value: totalRevenue > 0 ? `${totalRevenue}€` : '—', icon: '◆' },
           ].map((stat) => (
             <div key={stat.label} className="p-3 rounded-xl bg-beige-100 text-center">
@@ -116,7 +129,16 @@ function FormCard({
           ))}
         </div>
 
-        <p className="text-xs text-brown-300 mb-4">Créé le {formatDate(form.createdAt)}</p>
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <p className="text-xs text-brown-300">Créé le {formatDate(form.createdAt)}</p>
+          {typeof form.maxCapacity === 'number' && form.maxCapacity > 0 && (
+            <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+              confirmedGuests >= form.maxCapacity ? 'bg-red-50 text-red-600 border border-red-200' : 'bg-beige-100 text-brown-500 border border-beige-200'
+            }`}>
+              {confirmedGuests}/{form.maxCapacity} places
+            </span>
+          )}
+        </div>
 
         {/* Row 1 */}
         <div className="grid grid-cols-2 gap-2 mb-2">
