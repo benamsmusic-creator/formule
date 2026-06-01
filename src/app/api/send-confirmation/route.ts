@@ -99,9 +99,15 @@ export async function POST(req: NextRequest) {
 </body>
 </html>`;
 
+    // Adresse admin notifiée à chaque inscription (configurable, défaut = compte d'envoi)
+    const adminEmail = process.env.ADMIN_NOTIFY_EMAIL || 'benamsmusic@gmail.com';
+    const participantEmail = to && to !== adminEmail ? to : adminEmail;
+
     await transporter.sendMail({
       from: `"HabadLyon" <benamsmusic@gmail.com>`,
-      to: to || 'benamsmusic@gmail.com',
+      to: participantEmail,
+      // Copie cachée à l'admin : notifié de chaque inscription/don sans que le participant le voie
+      ...(participantEmail !== adminEmail ? { bcc: adminEmail } : {}),
       subject: `✦ ${name} — ${formTitle}${totalAmount ? ` · ${totalAmount}€` : ''}`,
       html,
     });
