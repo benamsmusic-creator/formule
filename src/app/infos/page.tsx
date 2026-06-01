@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { ORG } from '@/lib/org';
+import ContactForm from './ContactForm';
 
 export const metadata = {
   title: 'Informations & mentions légales',
@@ -30,6 +31,13 @@ export default function InfosPage() {
           <Field label="Adresse" value={`${ORG.address}, ${ORG.postalCode} ${ORG.city}`} />
           {ORG.email && <Field label="Email" value={ORG.email} />}
           {ORG.phone && <Field label="Téléphone" value={ORG.phone} />}
+        </section>
+
+        {/* Contact */}
+        <section className="rounded-2xl bg-beige-50 border border-beige-200 p-6 mb-6">
+          <h2 className="text-xl font-medium text-brown-900 mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>Nous contacter</h2>
+          <p className="text-sm text-brown-500 mb-4">Une question ? Écrivez-nous, nous vous répondrons.</p>
+          <ContactForm />
         </section>
 
         {/* Mentions légales */}
