@@ -3,6 +3,7 @@ import { Cormorant_Garamond, Inter } from 'next/font/google';
 import './globals.css';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Navbar from '@/components/Navbar';
+import PublicNav from '@/components/PublicNav';
 
 const cormorant = Cormorant_Garamond({
   variable: '--font-cormorant',
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body className="min-h-screen antialiased">
         <AnimatedBackground />
         <Navbar />
+        <PublicNav />
         <main>{children}</main>
       </body>
     </html>
