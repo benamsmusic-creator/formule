@@ -144,9 +144,10 @@ function YouTubeAmbiance({ url }: { url: string }) {
 function ProgressBar({ pct }: { pct: number }) {
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
-      <div className="h-0.5 bg-beige-200">
+      <div className="h-1 bg-beige-200/60">
         <motion.div
-          className="h-full bg-gradient-to-r from-gold-400 to-gold-300"
+          className="h-full bg-gradient-to-r from-gold-500 via-gold-400 to-gold-300"
+          style={{ boxShadow: '0 0 12px rgba(201,169,110,0.6)' }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         />
