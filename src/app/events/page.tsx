@@ -4,6 +4,27 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Form } from '@/lib/types';
+import { parseEventDate, downloadICS } from '@/lib/utils';
+
+function Countdown({ target }: { target: Date }) {
+  const [now, setNow] = useState<number>(() => target.getTime() - 1); // valeur initiale stable (SSR)
+  useEffect(() => {
+    const tick = () => setNow(Date.now());
+    tick();
+    const id = setInterval(tick, 60000);
+    return () => clearInterval(id);
+  }, []);
+  const diff = target.getTime() - now;
+  if (diff <= 0) return null;
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  return (
+    <span className="flex items-center gap-1 text-xs text-gold-700 bg-gold-400/10 border border-gold-400/20 px-2.5 py-1 rounded-full">
+      ⏳ {days > 0 ? `J-${days}` : hours > 0 ? `${hours}h${String(mins).padStart(2, '0')}` : `${mins} min`}
+    </span>
+  );
+}
 
 function shareEvent(title: string, formId: string) {
   if (typeof window === 'undefined') return;
@@ -24,6 +45,7 @@ function EventCard({ form, index }: { form: Form; index: number }) {
   const tableFrom = tableField?.tableOptions?.length
     ? Math.min(...tableField.tableOptions.map((o) => o.price))
     : undefined;
+  const eventDate = parseEventDate(eventDateField?.presetValue);
 
   return (
     <motion.div
@@ -91,6 +113,7 @@ function EventCard({ form, index }: { form: Form; index: number }) {
               👥 Jusqu&apos;à {peopleField.maxPeople ?? 8} personnes
             </span>
           )}
+          {eventDate && <Countdown target={eventDate} />}
         </div>
 
         <div className="flex items-center gap-2">
@@ -103,6 +126,18 @@ function EventCard({ form, index }: { form: Form; index: number }) {
               <span className="relative z-10">S&apos;inscrire →</span>
             </motion.button>
           </Link>
+          {eventDate && (
+            <motion.button
+              onClick={() => downloadICS(form.title, eventDate, eventDateField?.venue)}
+              className="w-12 h-12 flex-shrink-0 rounded-xl border border-beige-200 bg-beige-50 text-brown-500 flex items-center justify-center hover:border-gold-400/50 hover:text-gold-600 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              title="Ajouter à mon agenda"
+              aria-label="Ajouter à mon agenda"
+            >
+              📅
+            </motion.button>
+          )}
           <motion.button
             onClick={() => shareEvent(form.title, form.id)}
             className="w-12 h-12 flex-shrink-0 rounded-xl border border-beige-200 bg-beige-50 text-brown-500 flex items-center justify-center hover:border-gold-400/50 hover:text-gold-600 transition-colors"

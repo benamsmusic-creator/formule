@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Inter } from 'next/font/google';
 import './globals.css';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Navbar from '@/components/Navbar';
 import PublicNav from '@/components/PublicNav';
+import ScrollToTop from '@/components/ScrollToTop';
 
 const cormorant = Cormorant_Garamond({
   variable: '--font-cormorant',
@@ -41,6 +42,13 @@ export const metadata: Metadata = {
     title: 'HabadLyon',
     description: 'Événements, dons et horaires de Chabbat pour la communauté de Lyon.',
   },
+  appleWebApp: { capable: true, title: 'HabadLyon', statusBarStyle: 'default' },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#2C1810',
+  width: 'device-width',
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -55,6 +63,7 @@ export default function RootLayout({
         <Navbar />
         <PublicNav />
         <main>{children}</main>
+        <ScrollToTop />
       </body>
     </html>
   );
