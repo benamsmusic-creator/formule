@@ -14,9 +14,10 @@ export default function LandingPage() {
   };
 
   const cards = [
-    { icon: '📅', title: 'Événements', desc: 'Inscrivez-vous aux soirées, dîners et célébrations de HabadLyon.' },
-    { icon: '🍽️', title: 'Galas & tables', desc: 'Réservez une table complète ou des places individuelles pour nos galas.' },
-    { icon: '🤲', title: 'Faire un don', desc: 'Soutenez la communauté avec un don sécurisé, montant libre ou suggéré.' },
+    { icon: '📅', title: 'Événements', desc: 'Inscrivez-vous aux soirées, dîners et célébrations de HabadLyon.', href: '/events' },
+    { icon: '🍽️', title: 'Galas & tables', desc: 'Réservez une table complète ou des places individuelles.', href: '/events' },
+    { icon: '🤲', title: 'Faire un don', desc: 'Soutenez la communauté avec un don sécurisé, libre ou suggéré.', href: '/don' },
+    { icon: '🕯️', title: 'Horaires Chabbat', desc: 'Allumage des bougies et havdalah pour Lyon, chaque semaine.', href: '/horaires' },
   ];
 
   return (
@@ -173,7 +174,7 @@ export default function LandingPage() {
 
         {/* Cards */}
         <motion.div
-          className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl w-full mt-16 sm:mt-20"
+          className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl w-full mt-16 sm:mt-20"
           initial={{ opacity: 0, y: 40 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.4 }}
@@ -181,17 +182,22 @@ export default function LandingPage() {
           {cards.map((card, i) => (
             <motion.div
               key={card.title}
-              className="p-6 rounded-2xl bg-beige-50 border border-beige-200 text-center"
-              whileHover={{ y: -4, boxShadow: '0 20px 50px rgba(44,24,16,0.07)' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 + i * 0.08 }}
             >
-              <div className="text-3xl mb-3" aria-hidden="true">{card.icon}</div>
-              <h2 className="font-medium text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)', fontSize: '1.15rem' }}>
-                {card.title}
-              </h2>
-              <p className="text-sm text-brown-600 leading-relaxed">{card.desc}</p>
+              <Link href={card.href} className="block h-full">
+                <motion.div
+                  className="h-full p-6 rounded-2xl bg-beige-50 border border-beige-200 text-center cursor-pointer"
+                  whileHover={{ y: -4, boxShadow: '0 20px 50px rgba(44,24,16,0.07)' }}
+                >
+                  <div className="text-3xl mb-3" aria-hidden="true">{card.icon}</div>
+                  <h2 className="font-medium text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)', fontSize: '1.1rem' }}>
+                    {card.title}
+                  </h2>
+                  <p className="text-sm text-brown-600 leading-relaxed">{card.desc}</p>
+                </motion.div>
+              </Link>
             </motion.div>
           ))}
         </motion.div>
