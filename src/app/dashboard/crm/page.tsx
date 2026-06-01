@@ -12,6 +12,7 @@ interface EventSummary {
   isPast: boolean;
   venue: string | null;
   totalParticipants: number;
+  waitlistCount: number;
   totalRevenue: number;
   responses: FormResponse[];
 }
@@ -106,7 +107,9 @@ function EventCard({ ev, index }: { ev: EventSummary; index: number }) {
         <div className="grid grid-cols-2 gap-2 mb-3">
           <div className="rounded-xl bg-beige-100 p-3 text-center">
             <p className="text-xl font-semibold text-brown-900">{ev.totalParticipants}</p>
-            <p className="text-[10px] text-brown-400 uppercase tracking-wide">Participants</p>
+            <p className="text-[10px] text-brown-400 uppercase tracking-wide">
+              Participants{ev.waitlistCount > 0 ? ` · ${ev.waitlistCount} en attente` : ''}
+            </p>
           </div>
           <div className="rounded-xl bg-beige-100 p-3 text-center">
             <p className="text-xl font-semibold text-brown-900">
@@ -315,7 +318,10 @@ export default function CRMPage() {
         const parsed = rawDate ? parseEventDate(rawDate) : null;
         const isPast = parsed ? parsed < now : false;
 
-        const totalParticipants = form.responses.reduce((sum, r) => {
+        const confirmedResponses = form.responses.filter((r) => getStr(r.data, '_waitlist') !== 'true');
+        const waitlistCount = form.responses.length - confirmedResponses.length;
+
+        const totalParticipants = confirmedResponses.reduce((sum, r) => {
           const gc = parseInt(getStr(r.data, '_guestCount') || '1', 10);
           return sum + (isNaN(gc) ? 1 : gc);
         }, 0);
@@ -331,6 +337,7 @@ export default function CRMPage() {
           isPast,
           venue: dateField?.venue ?? null,
           totalParticipants,
+          waitlistCount,
           totalRevenue,
           responses: form.responses,
         };
