@@ -11,6 +11,7 @@ export default function OrgPublicPage() {
   const slug = String(params.org ?? '');
   const [orgName, setOrgName] = useState<string | null>(null);
   const [accent, setAccent] = useState<string>('#C9A96E');
+  const [logo, setLogo] = useState<string>('');
   const [forms, setForms] = useState<Form[]>([]);
   const [hasDonation, setHasDonation] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'notfound'>('loading');
@@ -27,6 +28,7 @@ export default function OrgPublicPage() {
       if (!alive) return;
       setOrgName(org.name);
       if (org.accent_color) setAccent(org.accent_color);
+      if (org.logo_url) setLogo(org.logo_url);
       const all: Form[] = Array.isArray(data) ? data : [];
       setForms(all.filter((f) => !f.archived && !f.disabled && !f.id.startsWith('dons-')));
       setHasDonation(all.some((f) => f.id === `dons-${slug}` && !f.archived && !f.disabled));
@@ -65,6 +67,10 @@ export default function OrgPublicPage() {
     <div className="min-h-screen pt-24 pb-20" style={accentVars}>
       <div className="max-w-5xl mx-auto px-5 sm:px-6">
         <motion.div className="mb-12 text-center" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+          {logo && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo} alt={orgName ?? ''} className="h-20 w-auto mx-auto mb-5 object-contain" />
+          )}
           <h1 className="text-5xl sm:text-6xl font-light text-brown-900 mb-3" style={{ fontFamily: 'var(--font-cormorant)' }}>
             {orgName}
           </h1>

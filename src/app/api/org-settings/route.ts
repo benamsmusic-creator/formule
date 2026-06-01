@@ -11,7 +11,7 @@ function currentOrg(req: NextRequest): string | null {
 export async function GET(req: NextRequest) {
   const org = currentOrg(req);
   if (!org) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  const { data } = await supabaseAdmin.from('organizations').select('id, name, accent_color').eq('id', org).single();
+  const { data } = await supabaseAdmin.from('organizations').select('id, name, accent_color, logo_url').eq('id', org).single();
   return NextResponse.json(data ?? {});
 }
 
@@ -19,10 +19,11 @@ export async function POST(req: NextRequest) {
   const org = currentOrg(req);
   if (!org) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
 
-  const { name, accentColor } = await req.json();
-  const updates: Record<string, string> = {};
+  const { name, accentColor, logoUrl } = await req.json();
+  const updates: Record<string, string | null> = {};
   if (typeof name === 'string' && name.trim()) updates.name = name.trim();
   if (typeof accentColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(accentColor)) updates.accent_color = accentColor;
+  if (typeof logoUrl === 'string') updates.logo_url = logoUrl || null;
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: 'Aucune modification valide.' }, { status: 400 });

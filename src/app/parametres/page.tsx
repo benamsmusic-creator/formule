@@ -8,6 +8,8 @@ const PRESETS = ['#C9A96E', '#1E6F5C', '#2563EB', '#7C3AED', '#DC2626', '#0EA5E9
 export default function ParametresPage() {
   const [name, setName] = useState('');
   const [color, setColor] = useState('#C9A96E');
+  const [logoUrl, setLogoUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -16,8 +18,25 @@ export default function ParametresPage() {
     fetch('/api/org-settings').then((r) => r.json()).then((d) => {
       if (d?.name) setName(d.name);
       if (d?.accent_color) setColor(d.accent_color);
+      if (d?.logo_url) setLogoUrl(d.logo_url);
     }).finally(() => setLoaded(true));
   }, []);
+
+  const uploadLogo = async (file: File) => {
+    setUploading(true); setMsg(null);
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const res = await fetch('/api/upload', { method: 'POST', body: fd });
+      const d = await res.json();
+      if (!res.ok || !d.url) throw new Error(d.error ?? 'Upload échoué');
+      setLogoUrl(d.url);
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : 'Upload échoué');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +44,7 @@ export default function ParametresPage() {
     try {
       const res = await fetch('/api/org-settings', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, accentColor: color }),
+        body: JSON.stringify({ name, accentColor: color, logoUrl }),
       });
       if (!res.ok) throw new Error();
       setMsg('Réglages enregistrés ✓');
@@ -55,6 +74,28 @@ export default function ParametresPage() {
               <input
                 className="mt-1 w-full px-3.5 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
                 value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+
+            <div>
+              <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Logo</label>
+              <div className="mt-2 flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-beige-100 border border-beige-200 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {logoUrl
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                    : <span className="text-brown-300 text-xl">🏛️</span>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="cursor-pointer text-xs font-medium text-brown-600 border border-beige-200 px-4 py-2 rounded-xl hover:border-gold-400/40 transition-colors">
+                    {uploading ? 'Envoi…' : 'Choisir une image'}
+                    <input type="file" accept="image/*" className="hidden"
+                      onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadLogo(f); }} disabled={uploading} />
+                  </label>
+                  {logoUrl && (
+                    <button type="button" onClick={() => setLogoUrl('')} className="text-xs text-brown-400 hover:text-red-500 transition-colors">Retirer</button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div>
