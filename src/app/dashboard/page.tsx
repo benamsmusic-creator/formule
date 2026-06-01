@@ -450,6 +450,16 @@ function DashboardContent() {
                 </motion.button>
               </Link>
             )}
+            <Link href="/parametres">
+              <motion.button
+                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                title="Réglages"
+              >
+                ⚙
+              </motion.button>
+            </Link>
             <Link href="/dashboard/crm">
               <motion.button
                 className="px-5 py-2.5 border border-gold-400/40 text-brown-700 rounded-xl text-sm font-medium hover:bg-gold-400/10 transition-colors"

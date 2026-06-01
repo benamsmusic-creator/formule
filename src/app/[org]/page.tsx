@@ -10,6 +10,7 @@ export default function OrgPublicPage() {
   const params = useParams();
   const slug = String(params.org ?? '');
   const [orgName, setOrgName] = useState<string | null>(null);
+  const [accent, setAccent] = useState<string>('#C9A96E');
   const [forms, setForms] = useState<Form[]>([]);
   const [hasDonation, setHasDonation] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'notfound'>('loading');
@@ -25,6 +26,7 @@ export default function OrgPublicPage() {
       const data = await formsRes.json();
       if (!alive) return;
       setOrgName(org.name);
+      if (org.accent_color) setAccent(org.accent_color);
       const all: Form[] = Array.isArray(data) ? data : [];
       setForms(all.filter((f) => !f.archived && !f.disabled && !f.id.startsWith('dons-')));
       setHasDonation(all.some((f) => f.id === `dons-${slug}` && !f.archived && !f.disabled));
@@ -52,8 +54,15 @@ export default function OrgPublicPage() {
     );
   }
 
+  const accentVars = {
+    '--color-gold-300': accent,
+    '--color-gold-400': accent,
+    '--color-gold-500': accent,
+    '--color-gold-600': accent,
+  } as React.CSSProperties;
+
   return (
-    <div className="min-h-screen pt-24 pb-20">
+    <div className="min-h-screen pt-24 pb-20" style={accentVars}>
       <div className="max-w-5xl mx-auto px-5 sm:px-6">
         <motion.div className="mb-12 text-center" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
           <h1 className="text-5xl sm:text-6xl font-light text-brown-900 mb-3" style={{ fontFamily: 'var(--font-cormorant)' }}>

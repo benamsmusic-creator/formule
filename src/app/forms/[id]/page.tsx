@@ -1417,7 +1417,12 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   };
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-beige-50">
+    <div className="fixed inset-0 overflow-hidden bg-beige-50" style={form.accentColor ? ({
+      '--color-gold-300': form.accentColor,
+      '--color-gold-400': form.accentColor,
+      '--color-gold-500': form.accentColor,
+      '--color-gold-600': form.accentColor,
+    } as React.CSSProperties) : undefined}>
       {screen !== 'cover' && screen !== 'success' && (
         <ProgressBar pct={pct} />
       )}

@@ -6,7 +6,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
   const { slug } = await params;
   const { data, error } = await supabaseAdmin
     .from('organizations')
-    .select('id, name')
+    .select('id, name, accent_color')
     .eq('id', slug)
     .single();
 

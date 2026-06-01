@@ -41,5 +41,13 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     .single();
 
   if (error || !data) return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  return NextResponse.json(rowToForm(data as Record<string, unknown>));
+
+  const form = rowToForm(data as Record<string, unknown>);
+  // Couleur d'accent de l'organisation propriétaire (white-label)
+  const orgId = (data as Record<string, unknown>).org_id as string | null;
+  if (orgId) {
+    const { data: org } = await supabaseAdmin.from('organizations').select('accent_color').eq('id', orgId).single();
+    if (org?.accent_color) form.accentColor = org.accent_color as string;
+  }
+  return NextResponse.json(form);
 }

@@ -76,6 +76,7 @@ export interface Form {
   archived?: boolean;
   promoCodes?: PromoCode[];
   maxCapacity?: number;
+  accentColor?: string;
 }
 
 export interface AppUser {
