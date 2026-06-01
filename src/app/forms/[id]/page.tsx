@@ -6,6 +6,7 @@ import { Form, FormField, PromoCode, TableOption } from '@/lib/types';
 import { extractYouTubeId } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
+import Link from 'next/link';
 import QRCode from 'qrcode';
 
 const StripePayment = dynamic(() => import('@/components/StripePayment'), { ssr: false });
@@ -863,6 +864,12 @@ function PaymentChoiceScreen({
 /* ─── Success screen ────────────────────────────────────────── */
 function SuccessScreen({ paymentMethod, ticketId, isWaitlist }: { paymentMethod?: 'card' | 'cash'; ticketId?: string | null; isWaitlist?: boolean }) {
   const [qr, setQr] = useState<string>('');
+  const [loggedIn, setLoggedIn] = useState(true);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoggedIn(!!getCurrentUser());
+  }, []);
 
   useEffect(() => {
     if (!ticketId || isWaitlist) return;
@@ -915,6 +922,18 @@ function SuccessScreen({ paymentMethod, ticketId, isWaitlist }: { paymentMethod?
           <p className="mt-3 text-xs text-brown-500 max-w-[200px]">
             Présentez ce QR code à l&apos;entrée. Conservez cette page ou votre email.
           </p>
+        </motion.div>
+      )}
+
+      {!loggedIn && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
+          className="mt-6 text-center"
+        >
+          <p className="text-xs text-brown-400 mb-2">Créez un compte pour retrouver vos billets et reçus.</p>
+          <Link href="/register" className="text-sm font-medium text-gold-700 hover:text-gold-600 underline underline-offset-2">
+            Créer mon compte →
+          </Link>
         </motion.div>
       )}
     </motion.div>
