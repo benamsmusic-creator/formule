@@ -106,6 +106,51 @@ const TEMPLATES: FormTemplate[] = [
       { type: 'checkbox', label: 'Je confirme ma présence', required: true },
     ],
   },
+  {
+    key: 'aliyot', name: 'Aliyot / Honneurs', icon: '📜',
+    title: 'Réservation d\'honneurs', description: 'Réservez une montée à la Torah ou un honneur.',
+    fields: [
+      { type: 'event_date', label: 'Office concerné', presetValue: '' },
+      { type: 'radio', label: 'Honneur souhaité', required: true, options: [{ label: 'Cohen' }, { label: 'Levi' }, { label: 'Chlichi' }, { label: 'Maftir' }, { label: 'Hagbaha' }, { label: 'Gelila' }] },
+      { type: 'donation', label: 'Don associé (facultatif)', suggestedAmounts: [18, 36, 100], allowCustomAmount: true },
+    ],
+  },
+  {
+    key: 'loulav', name: 'Loulav & Etrog', icon: '🌿',
+    title: 'Commande Loulav & Etrog', description: 'Commandez votre jeu des 4 espèces pour Souccot.',
+    fields: [
+      { type: 'radio', label: 'Formule', required: true, options: [{ label: 'Standard' }, { label: 'Mehoudar' }, { label: 'Hidour (premium)' }] },
+      { type: 'people_count', label: 'Quantité', maxPeople: 5 },
+      { type: 'payment', label: 'Règlement', amount: 60, currency: 'eur', allowCash: true },
+    ],
+  },
+  {
+    key: 'matsot', name: 'Vente de Matsot', icon: '🫓',
+    title: 'Commande de Matsot Chmourot', description: 'Réservez vos matsot pour Pessah.',
+    fields: [
+      { type: 'people_count', label: 'Nombre de paquets', maxPeople: 10, required: true },
+      { type: 'info_block', label: 'Infos', presetValue: 'Retrait à la communauté avant Pessah.' },
+      { type: 'payment', label: 'Règlement', amount: 25, currency: 'eur', allowCash: true },
+    ],
+  },
+  {
+    key: 'manot', name: 'Mishloah Manot', icon: '🎁',
+    title: 'Mishloah Manot — Pourim', description: 'Envoyez des paniers à vos proches via la communauté.',
+    fields: [
+      { type: 'textarea', label: 'Liste des destinataires', placeholder: 'Un nom par ligne…', required: true },
+      { type: 'payment', label: 'Participation', amount: 10, currency: 'eur', allowCash: true },
+    ],
+  },
+  {
+    key: 'ecole', name: 'Inscription école', icon: '🎓',
+    title: 'Inscription Talmud Torah', description: 'Inscrivez votre enfant aux cours.',
+    fields: [
+      { type: 'textarea', label: "Nom et prénom de l'enfant", required: true },
+      { type: 'radio', label: 'Niveau', required: true, options: [{ label: 'Maternelle' }, { label: 'Primaire' }, { label: 'Collège' }, { label: 'Bar/Bat Mitsva' }] },
+      { type: 'info_block', label: 'Infos', presetValue: 'Les cours ont lieu le dimanche matin.' },
+      { type: 'payment', label: 'Frais de scolarité', amount: 200, currency: 'eur', allowCash: true },
+    ],
+  },
 ];
 
 /* ─── Mini Calendar ─────────────────────────────────────────── */
