@@ -116,9 +116,26 @@ export default function HorairesPage() {
           </h1>
           <p className="text-brown-500 text-sm">Lyon · calculés automatiquement</p>
           {data && (
-            <p className="mt-3 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-gold-700 text-xs font-medium">
-              📅 {data.shabbat.hebrewDate}
-            </p>
+            <div className="mt-3 flex flex-col items-center gap-3">
+              <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-gold-700 text-xs font-medium">
+                📅 {data.shabbat.hebrewDate}
+              </p>
+              <button
+                onClick={() => {
+                  const s = data.shabbat;
+                  const text = `🕯️ Horaires de Chabbat — Lyon\nParachah ${s.parasha}\nAllumage des bougies : ${s.candleTime} (${s.candleDate})\nHavdalah : ${s.havdalahTime} (${s.havdalahDate})`;
+                  const url = `${window.location.origin}/horaires`;
+                  if (typeof navigator !== 'undefined' && navigator.share) {
+                    navigator.share({ title: 'Horaires de Chabbat — HabadLyon', text, url }).catch(() => {});
+                  } else {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, '_blank');
+                  }
+                }}
+                className="text-xs font-medium text-brown-600 border border-beige-200 px-4 py-2 rounded-xl hover:bg-beige-100 hover:border-gold-400/40 transition-colors"
+              >
+                ↗ Partager les horaires
+              </button>
+            </div>
           )}
         </motion.div>
 
