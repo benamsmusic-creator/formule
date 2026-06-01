@@ -165,3 +165,58 @@ body {
   outline: none;
   box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.4);
 }
+
+/* ─── Accessibilité ──────────────────────────────────────────── */
+
+/* Focus clavier visible sur tous les éléments interactifs */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid #9A7A3A;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Lien d'évitement (skip link) — visible au focus clavier uniquement */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1.25rem;
+  background: #2C1810;
+  color: #FAF7F2;
+  border-radius: 0 0 0.75rem 0;
+  font-size: 0.875rem;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* Cibles tactiles confortables sur mobile (min 44px recommandé) */
+@media (max-width: 640px) {
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Respect de la préférence "réduire les animations" */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Support des encoches / barres système (iPhone) */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
