@@ -11,6 +11,7 @@ export default function OrgPublicPage() {
   const slug = String(params.org ?? '');
   const [orgName, setOrgName] = useState<string | null>(null);
   const [forms, setForms] = useState<Form[]>([]);
+  const [hasDonation, setHasDonation] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'notfound'>('loading');
 
   useEffect(() => {
@@ -24,7 +25,9 @@ export default function OrgPublicPage() {
       const data = await formsRes.json();
       if (!alive) return;
       setOrgName(org.name);
-      setForms(Array.isArray(data) ? data.filter((f: Form) => !f.archived && !f.disabled && !f.id.startsWith('dons-')) : []);
+      const all: Form[] = Array.isArray(data) ? data : [];
+      setForms(all.filter((f) => !f.archived && !f.disabled && !f.id.startsWith('dons-')));
+      setHasDonation(all.some((f) => f.id === `dons-${slug}` && !f.archived && !f.disabled));
       setState('ready');
     })().catch(() => { if (alive) setState('notfound'); });
     return () => { alive = false; };
@@ -57,6 +60,15 @@ export default function OrgPublicPage() {
             {orgName}
           </h1>
           <p className="text-brown-500 text-base">Nos prochains événements</p>
+          {hasDonation && (
+            <Link href={`/forms/dons-${slug}`} className="inline-block mt-4">
+              <motion.span
+                className="inline-flex items-center px-6 py-3 rounded-2xl border-2 border-gold-400/40 text-brown-800 text-sm font-medium hover:bg-gold-400/10 transition-colors"
+                whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}>
+                🤲 Faire un don
+              </motion.span>
+            </Link>
+          )}
         </motion.div>
 
         {forms.length === 0 ? (

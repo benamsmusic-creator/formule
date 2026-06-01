@@ -59,5 +59,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Cet email admin est déjà utilisé.' }, { status: 400 });
   }
 
+  // Page de don clé en main pour ce client
+  await supabaseAdmin.from('forms').upsert({
+    id: `dons-${slug}`,
+    title: 'Faire un don',
+    description: `Soutenez ${orgName}. Votre don, petit ou grand, fait la différence.`,
+    fields: [{
+      id: 'don_field', type: 'donation', label: 'Votre don', required: true,
+      suggestedAmounts: [18, 36, 180, 360], allowCustomAmount: true, allowCash: false,
+    }],
+    is_disabled: false,
+    is_archived: false,
+    org_id: slug,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+
   return NextResponse.json({ ok: true, org: slug });
 }
