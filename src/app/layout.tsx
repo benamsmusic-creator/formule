@@ -5,6 +5,7 @@ import AnimatedBackground from '@/components/AnimatedBackground';
 import Navbar from '@/components/Navbar';
 import PublicNav from '@/components/PublicNav';
 import ScrollToTop from '@/components/ScrollToTop';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const cormorant = Cormorant_Garamond({
   variable: '--font-cormorant',
@@ -59,11 +60,17 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${cormorant.variable} ${inter.variable}`}>
       <body className="min-h-screen antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`,
+          }}
+        />
         <AnimatedBackground />
         <Navbar />
         <PublicNav />
         <main>{children}</main>
         <ScrollToTop />
+        <ThemeToggle />
       </body>
     </html>
   );

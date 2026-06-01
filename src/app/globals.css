@@ -27,6 +27,46 @@
   cursor: auto;
 }
 
+/* ─── Mode sombre ────────────────────────────────────────────────
+   On inverse la palette : les beiges (surfaces claires) deviennent
+   sombres, les bruns (texte/éléments foncés) deviennent clairs.
+   Comme les utilitaires Tailwind référencent ces variables,
+   tout le site bascule automatiquement. */
+html.dark {
+  color-scheme: dark;
+  --color-beige-50: #17110B;
+  --color-beige-100: #1F1812;
+  --color-beige-200: #2B211A;
+  --color-beige-300: #3A2C22;
+  --color-beige-400: #4C3A2B;
+  --color-gold-300: #E8C97E;
+  --color-gold-400: #D4B062;
+  --color-gold-500: #C9A24A;
+  --color-gold-600: #E0C078;
+  --color-brown-600: #C7B79A;
+  --color-brown-700: #D7C7AC;
+  --color-brown-800: #E9DCC9;
+  --color-brown-900: #F5EFE6;
+}
+
+html.dark body {
+  background-color: #17110B;
+  color: #F5EFE6;
+}
+
+html.dark .glass {
+  background: rgba(23, 17, 11, 0.7);
+  border-color: rgba(201, 169, 110, 0.18);
+}
+
+/* Le remplissage liquide des boutons sombres reste lisible */
+html.dark .btn-liquid:hover {
+  color: #17110B !important;
+}
+html.dark .btn-liquid::before {
+  background: #F5EFE6;
+}
+
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
