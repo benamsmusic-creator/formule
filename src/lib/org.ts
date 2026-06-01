@@ -11,8 +11,7 @@ export const ORG = {
   city: 'Villeurbanne',
   country: 'France',
   createdAt: '22 janvier 2024',
-  // À confirmer / compléter par l'association :
-  email: '',           // email de contact public (laisser vide si non confirmé)
-  phone: '',           // téléphone de contact public
-  taxDeductible: false, // passer à true UNIQUEMENT si l'association a le rescrit fiscal (don déductible)
+  email: 'benamsmusic@gmail.com', // email de contact public (provisoire)
+  phone: '',                       // téléphone de contact public
+  taxDeductible: true,             // association éligible au rescrit fiscal (dons déductibles, art. 200 CGI)
 };

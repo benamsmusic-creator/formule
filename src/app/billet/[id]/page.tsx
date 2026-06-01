@@ -99,17 +99,40 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
           {dateStr && <Row label="Inscrit le" value={dateStr} />}
         </div>
 
-        {/* Identité légale (reçu de don) */}
+        {/* Reçu fiscal (don) */}
         {isDonation && (
-          <div className="mt-5 rounded-2xl bg-beige-50 border border-beige-200 px-6 py-5 text-xs text-brown-500 leading-relaxed">
-            <p className="font-semibold text-brown-700 mb-1">{ORG.name}</p>
-            <p>{ORG.legalForm}</p>
-            <p>{ORG.address}, {ORG.postalCode} {ORG.city}</p>
-            <p>SIRET {ORG.siret}</p>
-            {ORG.taxDeductible && (
-              <p className="mt-2 text-brown-600">
-                Don ouvrant droit à réduction d’impôt selon la réglementation en vigueur.
-              </p>
+          <div className="mt-5 rounded-2xl bg-beige-50 border border-beige-200 px-6 py-5 text-xs text-brown-600 leading-relaxed">
+            {ORG.taxDeductible ? (
+              <>
+                <p className="text-sm font-semibold text-brown-900 mb-1">Reçu fiscal</p>
+                <p className="text-brown-400 mb-3">Don aux organismes d’intérêt général — article 200 du CGI</p>
+                <p className="mb-3"><span className="text-brown-400">Reçu n° </span>{id}</p>
+
+                <p className="font-semibold text-brown-700">Bénéficiaire</p>
+                <p>{ORG.name} — {ORG.legalForm}</p>
+                <p>{ORG.address}, {ORG.postalCode} {ORG.city}</p>
+                <p className="mb-3">SIRET {ORG.siret}</p>
+
+                <p className="font-semibold text-brown-700">Donateur</p>
+                <p>{name}</p>
+                {(d._address as string) && <p>{d._address as string}</p>}
+                <p className="mb-3">
+                  Don de <span className="font-semibold text-brown-900">{amount} €</span>
+                  {dateStr ? ` le ${dateStr}` : ''} — versement {data.payment_method === 'cash' ? 'en espèces' : 'par carte bancaire'} (don en numéraire).
+                </p>
+
+                <p className="text-[11px] text-brown-400">
+                  L’organisme bénéficiaire certifie sur l’honneur que les dons et versements qu’il reçoit
+                  ouvrent droit à la réduction d’impôt prévue à l’article 200 du CGI.
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-brown-700 mb-1">{ORG.name}</p>
+                <p>{ORG.legalForm}</p>
+                <p>{ORG.address}, {ORG.postalCode} {ORG.city}</p>
+                <p>SIRET {ORG.siret}</p>
+              </>
             )}
           </div>
         )}
