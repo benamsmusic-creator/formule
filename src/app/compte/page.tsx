@@ -152,9 +152,17 @@ export default function ComptePage() {
                         {phone && <InfoChip label="Téléphone" value={phone} />}
                       </div>
 
-                      <p className="text-xs text-brown-300">
-                        Inscrit le {formatDate(response.submittedAt)}
-                      </p>
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-xs text-brown-300">
+                          Inscrit le {formatDate(response.submittedAt)}
+                        </p>
+                        <Link
+                          href={`/billet/${response.id}`}
+                          className="text-xs font-medium text-gold-700 hover:text-gold-600 border border-gold-400/30 px-3 py-1.5 rounded-lg hover:bg-gold-400/10 transition-colors whitespace-nowrap"
+                        >
+                          🎟️ Voir mon billet
+                        </Link>
+                      </div>
                     </div>
                   </motion.div>
                 );

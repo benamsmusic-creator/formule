@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import '@hebcal/locales';
-import { HebrewCalendar, Location, HDate } from '@hebcal/core';
+import { HebrewCalendar, Location, HDate, Zmanim } from '@hebcal/core';
 
 const LYON = new Location(45.764043, 4.835659, false, 'Europe/Paris', 'Lyon', 'FR');
 
@@ -16,6 +16,7 @@ type ShabbatInfo = {
   havdalahTime: string;
 };
 type Holiday = { date: string; name: string };
+type Zman = { label: string; time: string };
 
 function fmtDate(d: Date): string {
   return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -24,9 +25,23 @@ function fmtTime(d: Date): string {
   return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
 }
 
-function computeData(): { shabbat: ShabbatInfo; holidays: Holiday[] } {
+function computeData(): { shabbat: ShabbatInfo; holidays: Holiday[]; zmanim: Zman[] } {
   const now = new Date();
   const hd = new HDate(now);
+
+  // Zmanim du jour pour Lyon
+  const z = new Zmanim(LYON, now, false);
+  const zt = (d: Date | undefined | null) => (d ? fmtTime(d) : '—');
+  const zmanim: Zman[] = [
+    { label: 'Aube (Alot haChahar)', time: zt(z.alotHaShachar?.()) },
+    { label: 'Lever du soleil (Néz)', time: zt(z.sunrise?.()) },
+    { label: 'Fin du Chéma', time: zt(z.sofZmanShma?.()) },
+    { label: 'Fin de la Téfila', time: zt(z.sofZmanTfilla?.()) },
+    { label: 'Milieu du jour (Hatsot)', time: zt(z.chatzot?.()) },
+    { label: 'Minha Guedola', time: zt(z.minchaGedola?.()) },
+    { label: 'Coucher du soleil (Chkia)', time: zt(z.sunset?.()) },
+    { label: 'Sortie des étoiles (Tsét)', time: zt(z.tzeit?.()) },
+  ];
 
   // Prochain Chabbat (bougies + havdalah + parachah) sur les 9 prochains jours
   const weekEvents = HebrewCalendar.calendar({
@@ -73,6 +88,7 @@ function computeData(): { shabbat: ShabbatInfo; holidays: Holiday[] } {
       candleDate, candleTime, havdalahDate, havdalahTime,
     },
     holidays,
+    zmanim,
   };
 }
 
@@ -144,6 +160,24 @@ export default function HorairesPage() {
                     <p className="text-xs text-brown-500 capitalize">{data.shabbat.havdalahDate}</p>
                   </div>
                 </div>
+              </div>
+            </motion.div>
+
+            {/* Zmanim du jour */}
+            <motion.div
+              className="mb-8"
+              initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.6 }}
+            >
+              <h2 className="text-2xl font-light text-brown-900 mb-4" style={{ fontFamily: 'var(--font-cormorant)' }}>
+                Horaires de prière (aujourd&apos;hui)
+              </h2>
+              <div className="grid grid-cols-2 gap-2">
+                {data.zmanim.map((z, i) => (
+                  <div key={i} className="flex items-center justify-between gap-2 p-3 rounded-xl bg-beige-50 border border-beige-200">
+                    <span className="text-xs text-brown-500">{z.label}</span>
+                    <span className="text-sm font-semibold text-brown-900 whitespace-nowrap">{z.time}</span>
+                  </div>
+                ))}
               </div>
             </motion.div>
 
