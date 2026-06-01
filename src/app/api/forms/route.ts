@@ -41,9 +41,10 @@ function rowToForm(row: Record<string, unknown>): Form {
 }
 
 export async function GET(req: NextRequest) {
-  // Si un admin d'organisation est connecté → on ne renvoie que SES formulaires.
-  // Super-admin (cookie hl_org vide) ou contexte public → comportement habituel.
-  const org = req.cookies.get('hl_org')?.value;
+  // Contexte public : ?org=slug renvoie les formulaires de cette organisation.
+  // Contexte admin : le cookie hl_org limite aux formulaires de l'admin connecté.
+  // Super-admin (pas de cookie hl_org, pas de ?org) → tout.
+  const org = req.nextUrl.searchParams.get('org') || req.cookies.get('hl_org')?.value;
 
   let query = supabaseAdmin.from('forms').select('*, responses(*)').order('created_at', { ascending: false });
   if (org) query = query.eq('org_id', org);
