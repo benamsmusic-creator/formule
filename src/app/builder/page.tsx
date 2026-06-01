@@ -407,12 +407,20 @@ function FieldEditor({
   field,
   onChange,
   onDelete,
+  onMoveUp,
+  onMoveDown,
+  isFirst,
+  isLast,
   autoOpen = false,
   onToast,
 }: {
   field: FormField;
   onChange: (f: FormField) => void;
   onDelete: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
   autoOpen?: boolean;
   onToast?: (msg: string, type: 'success' | 'error') => void;
 }) {
@@ -468,14 +476,26 @@ function FieldEditor({
           <p className="text-sm font-medium text-brown-900 truncate">{field.label || 'Champ sans titre'}</p>
           <p className="text-xs text-brown-400">{ft?.label ?? field.type}</p>
         </div>
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           {field.required && (
-            <span className="text-xs px-2 py-0.5 rounded-full bg-gold-400/10 text-gold-600 border border-gold-400/20">
+            <span className="hidden sm:inline text-xs px-2 py-0.5 rounded-full bg-gold-400/10 text-gold-600 border border-gold-400/20">
               Requis
             </span>
           )}
           {field.imageUrl && <span className="text-xs text-brown-300">🖼</span>}
-          <motion.span animate={{ rotate: open ? 180 : 0 }} className="text-brown-400 text-xs">▾</motion.span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveUp?.(); }}
+            disabled={isFirst}
+            className="w-7 h-7 rounded-lg text-brown-400 hover:text-brown-800 hover:bg-beige-100 transition-colors disabled:opacity-25 disabled:cursor-not-allowed text-xs"
+            title="Monter" aria-label="Monter le champ"
+          >▲</button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onMoveDown?.(); }}
+            disabled={isLast}
+            className="w-7 h-7 rounded-lg text-brown-400 hover:text-brown-800 hover:bg-beige-100 transition-colors disabled:opacity-25 disabled:cursor-not-allowed text-xs"
+            title="Descendre" aria-label="Descendre le champ"
+          >▼</button>
+          <motion.span animate={{ rotate: open ? 180 : 0 }} className="text-brown-400 text-xs ml-0.5">▾</motion.span>
         </div>
       </div>
 
@@ -1457,11 +1477,21 @@ function BuilderContent() {
                     </motion.div>
                   ) : (
                     <Reorder.Group axis="y" values={fields} onReorder={setFields} className="space-y-3">
-                      {fields.map((field) => (
+                      {fields.map((field, idx) => (
                         <Reorder.Item key={field.id} value={field} className="list-none">
                           <FieldEditor
                             field={field}
                             autoOpen={justAddedId === field.id}
+                            isFirst={idx === 0}
+                            isLast={idx === fields.length - 1}
+                            onMoveUp={() => setFields((prev) => {
+                              if (idx <= 0) return prev;
+                              const n = [...prev]; [n[idx - 1], n[idx]] = [n[idx], n[idx - 1]]; return n;
+                            })}
+                            onMoveDown={() => setFields((prev) => {
+                              if (idx >= prev.length - 1) return prev;
+                              const n = [...prev]; [n[idx + 1], n[idx]] = [n[idx], n[idx + 1]]; return n;
+                            })}
                             onChange={(updated) =>
                               setFields((prev) => prev.map((f) => (f.id === updated.id ? updated : f)))
                             }
