@@ -168,6 +168,16 @@ function ProgressBar({ pct }: { pct: number }) {
 }
 
 /* ─── Cover / Flyer screen ──────────────────────────────────── */
+function shareCurrentPage(title: string) {
+  if (typeof window === 'undefined') return;
+  const url = window.location.href;
+  if (typeof navigator !== 'undefined' && navigator.share) {
+    navigator.share({ title, url }).catch(() => {});
+  } else {
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${title}\n${url}`)}`, '_blank');
+  }
+}
+
 function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
   const eventDateField = form.fields.find((f) => f.type === 'event_date');
 
@@ -204,7 +214,12 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
                 Commencer
                 <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
               </motion.button>
-              <p className="mt-4 text-beige-400/40 text-xs">Entrée ↵</p>
+              <div className="mt-4 flex items-center gap-4">
+                <p className="text-beige-400/40 text-xs">Entrée ↵</p>
+                <button onClick={() => shareCurrentPage(form.title)}
+                  className="text-beige-200/80 hover:text-beige-50 text-xs underline underline-offset-2 transition-colors"
+                  aria-label="Partager cet événement">↗ Partager</button>
+              </div>
             </motion.div>
           </div>
         </div>
@@ -235,7 +250,12 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
                 <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
               </span>
             </motion.button>
-            <p className="mt-5 text-brown-300 text-xs">Entrée ↵</p>
+            <div className="mt-5 flex items-center justify-center gap-4">
+              <p className="text-brown-300 text-xs">Entrée ↵</p>
+              <button onClick={() => shareCurrentPage(form.title)}
+                className="text-brown-400 hover:text-brown-700 text-xs underline underline-offset-2 transition-colors"
+                aria-label="Partager cet événement">↗ Partager</button>
+            </div>
           </motion.div>
         </div>
       )}

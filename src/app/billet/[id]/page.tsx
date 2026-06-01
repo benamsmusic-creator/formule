@@ -1,6 +1,7 @@
 import { supabaseAdmin } from '@/lib/supabase-admin';
 import QRCode from 'qrcode';
 import Link from 'next/link';
+import PrintButton from './PrintButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -93,7 +94,8 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
           {dateStr && <Row label="Inscrit le" value={dateStr} />}
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 flex flex-col items-center gap-4 print:hidden">
+          <PrintButton />
           <Link href="/" className="text-sm text-brown-400 hover:text-brown-700 transition-colors">
             ← Retour à l&apos;accueil
           </Link>
