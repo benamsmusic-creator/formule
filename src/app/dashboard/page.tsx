@@ -377,6 +377,45 @@ function DashboardContent() {
           </div>
         )}
 
+        {/* Aperçu : inscriptions par événement */}
+        {loaded && (() => {
+          const data = activeForms
+            .map((f) => ({
+              title: f.title,
+              count: (f.responses ?? []).filter((r) => (r.data as Record<string, unknown>)?._waitlist !== 'true').length,
+            }))
+            .filter((d) => d.count > 0)
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 6);
+          if (data.length === 0) return null;
+          const max = Math.max(...data.map((d) => d.count));
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+              className="mb-12 p-6 rounded-2xl bg-beige-50 border border-beige-200"
+            >
+              <h2 className="text-lg font-medium text-brown-900 mb-4" style={{ fontFamily: 'var(--font-cormorant)' }}>
+                Inscriptions par événement
+              </h2>
+              <div className="space-y-3">
+                {data.map((d, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <span className="text-xs text-brown-500 w-32 sm:w-40 truncate flex-shrink-0">{d.title}</span>
+                    <div className="flex-1 h-6 rounded-lg bg-beige-100 overflow-hidden">
+                      <motion.div
+                        className="h-full rounded-lg bg-gradient-to-r from-gold-500 to-gold-400"
+                        initial={{ width: 0 }} animate={{ width: `${(d.count / max) * 100}%` }}
+                        transition={{ delay: 0.3 + i * 0.06, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                      />
+                    </div>
+                    <span className="text-sm font-semibold text-brown-900 w-8 text-right flex-shrink-0">{d.count}</span>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          );
+        })()}
+
         {/* Recherche */}
         {loaded && forms.length > 4 && (
           <div className="relative mb-6">
