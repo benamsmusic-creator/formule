@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import Link from 'next/link';
 
 function LoginForm() {
   const router = useRouter();
@@ -145,6 +146,11 @@ function LoginForm() {
             </span>
           </motion.button>
         </motion.form>
+
+        <p className="text-center text-sm text-brown-400 mt-5">
+          Nouvelle communauté ?{' '}
+          <Link href="/signup" className="text-gold-700 hover:text-gold-600 font-medium">Créer un espace gratuit</Link>
+        </p>
       </motion.div>
     </div>
   );
