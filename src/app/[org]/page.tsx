@@ -15,7 +15,20 @@ export default function OrgPublicPage() {
   const [forms, setForms] = useState<Form[]>([]);
   const [hasDonation, setHasDonation] = useState(false);
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
+  const [subEmail, setSubEmail] = useState('');
+  const [subDone, setSubDone] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'notfound'>('loading');
+
+  const subscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ org: slug, email: subEmail }),
+      });
+      if (res.ok) { setSubDone(true); setSubEmail(''); }
+    } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     if (!slug) return;
@@ -132,6 +145,23 @@ export default function OrgPublicPage() {
             })}
           </div>
         )}
+
+        {/* Newsletter */}
+        <div className="mt-16 max-w-md mx-auto text-center rounded-3xl bg-beige-50 border border-beige-200 p-8">
+          <h2 className="text-2xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>Restez informé</h2>
+          {subDone ? (
+            <p className="text-sm text-green-600">✓ Merci ! Vous êtes abonné.</p>
+          ) : (
+            <>
+              <p className="text-sm text-brown-500 mb-4">Recevez nos prochains événements par email.</p>
+              <form onSubmit={subscribe} className="flex gap-2">
+                <input type="email" required value={subEmail} onChange={(e) => setSubEmail(e.target.value)} placeholder="Votre email"
+                  className="flex-1 px-4 py-3 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors" />
+                <button type="submit" className="px-5 py-3 rounded-xl bg-brown-900 text-beige-50 text-sm font-medium">S&apos;abonner</button>
+              </form>
+            </>
+          )}
+        </div>
 
         {photos.length > 0 && (
           <div className="mt-16">
