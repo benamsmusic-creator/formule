@@ -516,6 +516,48 @@ function TableReservationField({
   );
 }
 
+/* ─── Donation ──────────────────────────────────────────────── */
+function DonationField({
+  field, value, onChange,
+}: { field: FormField; value: string; onChange: (v: string) => void }) {
+  const suggested = field.suggestedAmounts ?? [];
+  const isCustom = value !== '' && !suggested.map(String).includes(value);
+  return (
+    <div className="mt-2 space-y-3">
+      <div className="flex flex-wrap gap-3">
+        {suggested.map((amt, i) => (
+          <motion.button
+            key={i} type="button"
+            onClick={() => onChange(String(amt))}
+            className={`px-6 py-4 rounded-2xl border-2 font-medium transition-colors ${
+              value === String(amt) ? 'border-gold-500 bg-gold-400/15 text-brown-900' : 'border-beige-200 bg-beige-50 text-brown-600 hover:border-gold-400/50'
+            }`}
+            initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.1 + i * 0.05 }}
+            whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
+          >
+            {amt} €
+          </motion.button>
+        ))}
+      </div>
+      {field.allowCustomAmount && (
+        <div className={`flex items-center gap-2 rounded-2xl border-2 px-5 py-3 max-w-xs transition-colors ${
+          isCustom ? 'border-gold-500 bg-gold-400/10' : 'border-beige-200 bg-beige-50'
+        }`}>
+          <input
+            type="number" min="1" inputMode="numeric"
+            placeholder="Autre montant"
+            className="flex-1 bg-transparent text-brown-900 text-lg font-light focus:outline-none placeholder:text-beige-300 w-full"
+            value={isCustom ? value : ''}
+            onChange={(e) => onChange(e.target.value === '' ? '' : String(parseFloat(e.target.value) || ''))}
+          />
+          <span className="text-brown-400">€</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─── Info block ────────────────────────────────────────────── */
 function InfoBlock({ field }: { field: FormField }) {
   return (
@@ -633,6 +675,10 @@ function QuestionScreen({
 
           {field.type === 'table_reservation' && (
             <TableReservationField field={field} value={value as string} onChange={onChange} />
+          )}
+
+          {field.type === 'donation' && (
+            <DonationField field={field} value={value as string} onChange={onChange} />
           )}
 
           {(field.type === 'radio' || field.type === 'select') && (
@@ -1056,6 +1102,16 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       }
     }
 
+    // Don : montant choisi par le donateur
+    const donationField = form?.fields.find((f) => f.type === 'donation');
+    if (donationField) {
+      const amt = parseFloat(formData[donationField.id] as string || '0') || 0;
+      if (amt > 0) {
+        hasCharge = true;
+        base += amt;
+      }
+    }
+
     if (!hasCharge) return undefined;
 
     const activePromo = promo !== undefined ? promo : appliedPromo;
@@ -1088,10 +1144,17 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       }
     }
     if (guestCount < 1) guestCount = 1;
+    const donationField = form?.fields.find((f) => f.type === 'donation');
+    let donationSummary = '';
+    if (donationField) {
+      const amt = parseFloat(formData[donationField.id] as string || '0') || 0;
+      if (amt > 0) donationSummary = `${amt.toFixed(2)} €`;
+    }
     const total = computePaymentAmount();
 
     return {
       ...(tableSummary ? { _tableReservation: tableSummary } : {}),
+      ...(donationSummary ? { _donation: donationSummary } : {}),
       // Identité
       _civility:   identity.civility,
       _firstName:  identity.firstName,
@@ -1168,19 +1231,24 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
   const goToPayment = () => {
     setDirection(1);
-    if (hasCharge) {
-      if (allowCashCharge) {
-        setScreen('payment_choice');
-      } else {
-        setPaymentMethod('card');
-        setScreen('payment');
-      }
+    const due = computePaymentAmount();
+    // Rien à payer (ex : don optionnel laissé vide) → on enregistre directement
+    if (due === undefined || due <= 0) {
+      submitForm(identityData!, undefined);
+      return;
+    }
+    if (allowCashCharge) {
+      setScreen('payment_choice');
+    } else {
+      setPaymentMethod('card');
+      setScreen('payment');
     }
   };
 
   const goToPromoOrPayment = () => {
     setDirection(1);
-    if (hasCharge && (form?.promoCodes?.length ?? 0) > 0) {
+    const due = computePaymentAmount();
+    if (due !== undefined && due > 0 && (form?.promoCodes?.length ?? 0) > 0) {
       setScreen('promo');
     } else {
       goToPayment();
@@ -1222,8 +1290,9 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const questionFields = form.fields.filter((f) => f.type !== 'payment');
   const paymentField = form.fields.find((f) => f.type === 'payment');
   const tableField = form.fields.find((f) => f.type === 'table_reservation');
-  const hasCharge = !!paymentField || !!tableField;
-  const allowCashCharge = !!(paymentField?.allowCash || tableField?.allowCash);
+  const donationField = form.fields.find((f) => f.type === 'donation');
+  const hasCharge = !!paymentField || !!tableField || !!donationField;
+  const allowCashCharge = !!(paymentField?.allowCash || tableField?.allowCash || donationField?.allowCash);
   const currentField = questionFields[currentIndex];
   const realTotal = questionFields.filter(f => f.type !== 'event_date' && f.type !== 'info_block').length;
   const pct = screen === 'payment_choice' || screen === 'payment' || screen === 'promo' ? 95

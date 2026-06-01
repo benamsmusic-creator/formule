@@ -43,6 +43,7 @@ const FIELD_TYPES: { type: FieldType; label: string; icon: string; desc: string;
   { type: 'info_block', label: 'Message informatif', icon: '✍', desc: 'Affiche un texte ou une info', hint: 'Ex : règles, tarifs, conditions. Le visiteur lit, ne remplit pas.' },
   { type: 'people_count', label: 'Nombre de personnes', icon: '👥', desc: 'Le visiteur choisit combien de personnes', hint: 'Ex : 1 à 8 personnes. Sélection par bouton.' },
   { type: 'table_reservation', label: 'Réservation de table (Gala)', icon: '🍽️', desc: 'Tables et places avec prix', hint: 'Définissez vos formules : table complète, place individuelle… chacune avec son nombre de places et son prix. Le visiteur choisit et la quantité.' },
+  { type: 'donation', label: 'Don', icon: '🤲', desc: 'Montants suggérés + don libre', hint: 'Proposez des montants (ex : 18, 36, 180 €) et autorisez un montant libre. Idéal pour la tsedaka.' },
   { type: 'textarea', label: 'Texte long', icon: '¶', desc: 'Le visiteur tape un long message', hint: 'Ex : commentaire, demande particulière.' },
   { type: 'select', label: 'Choix avec photos', icon: '▾', desc: 'Le visiteur choisit parmi des options', hint: 'Ex : Menu du soir, type de place. Vous pouvez ajouter une photo par option.' },
   { type: 'radio', label: 'Choix unique', icon: '◉', desc: 'Le visiteur choisit une seule réponse', hint: 'Ex : Adulte / Enfant. Peut aussi avoir des photos.' },
@@ -646,8 +647,79 @@ function FieldEditor({
                 </div>
               )}
 
+              {/* DONATION — montants suggérés + don libre + cash */}
+              {field.type === 'donation' && (
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Montants suggérés (€)</label>
+                      <button
+                        onClick={() => onChange({ ...field, suggestedAmounts: [...(field.suggestedAmounts ?? []), 50] })}
+                        className="text-xs text-gold-600 hover:text-gold-500 font-medium flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-gold-400/10 transition-colors"
+                      >
+                        + Ajouter
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {(field.suggestedAmounts ?? []).map((amt, i) => (
+                        <div key={i} className="flex items-center gap-1 bg-beige-100 border border-beige-200 rounded-lg pl-2 pr-1 py-1">
+                          <input
+                            type="number" min="1"
+                            className="w-16 bg-transparent text-brown-900 text-sm focus:outline-none"
+                            value={amt}
+                            onChange={(e) => {
+                              const next = [...(field.suggestedAmounts ?? [])];
+                              next[i] = parseFloat(e.target.value) || 0;
+                              onChange({ ...field, suggestedAmounts: next });
+                            }}
+                          />
+                          <span className="text-brown-400 text-xs">€</span>
+                          <button
+                            onClick={() => onChange({ ...field, suggestedAmounts: (field.suggestedAmounts ?? []).filter((_, idx) => idx !== i) })}
+                            className="text-brown-400 hover:text-red-500 transition-colors px-1 text-sm"
+                            aria-label="Supprimer le montant"
+                          >×</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-beige-100 border border-beige-200">
+                    <div>
+                      <p className="text-xs font-semibold text-brown-800">Montant libre</p>
+                      <p className="text-[11px] text-brown-400 mt-0.5">Le donateur peut saisir son propre montant</p>
+                    </div>
+                    <div
+                      className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${field.allowCustomAmount ? 'bg-gold-500' : 'bg-beige-300'}`}
+                      onClick={() => onChange({ ...field, allowCustomAmount: !field.allowCustomAmount })}
+                    >
+                      <motion.div
+                        className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm"
+                        animate={{ left: field.allowCustomAmount ? '18px' : '2px' }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-beige-100 border border-beige-200">
+                    <div>
+                      <p className="text-xs font-semibold text-brown-800">Paiement en espèces</p>
+                      <p className="text-[11px] text-brown-400 mt-0.5">Autoriser le don sur place (cash)</p>
+                    </div>
+                    <div
+                      className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer flex-shrink-0 ${field.allowCash ? 'bg-gold-500' : 'bg-beige-300'}`}
+                      onClick={() => onChange({ ...field, allowCash: !field.allowCash })}
+                    >
+                      <motion.div
+                        className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm"
+                        animate={{ left: field.allowCash ? '18px' : '2px' }}
+                        transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Field image */}
-              {field.type !== 'payment' && field.type !== 'table_reservation' && field.type !== 'checkbox' && field.type !== 'event_date' && field.type !== 'people_count' && (
+              {field.type !== 'payment' && field.type !== 'table_reservation' && field.type !== 'donation' && field.type !== 'checkbox' && field.type !== 'event_date' && field.type !== 'people_count' && (
                 <ImagePicker
                   label="Image au-dessus de la question"
                   value={field.imageUrl}
@@ -940,6 +1012,9 @@ function BuilderContent() {
               ],
               allowCash: false,
             }
+          : {}),
+        ...(type === 'donation'
+          ? { suggestedAmounts: [18, 36, 180], allowCustomAmount: true, allowCash: false }
           : {}),
         ...(type === 'info_block'
           ? { presetValue: 'Si vous souhaitez faire un don, vous pouvez verser le montant de votre choix.\n\nMerci 🙏' }

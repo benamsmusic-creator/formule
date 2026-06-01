@@ -11,6 +11,7 @@ export type FieldType =
   | 'info_block'
   | 'number'
   | 'table_reservation'
+  | 'donation'
   | 'payment';
 
 export interface TableOption {
@@ -46,6 +47,8 @@ export interface FormField {
   venue?: string;
   allowCash?: boolean;
   tableOptions?: TableOption[];
+  suggestedAmounts?: number[];
+  allowCustomAmount?: boolean;
 }
 
 export interface FormResponse {
