@@ -51,6 +51,63 @@ const FIELD_TYPES: { type: FieldType; label: string; icon: string; desc: string;
   { type: 'payment', label: 'Paiement', icon: '◆', desc: 'Le visiteur paie par carte bancaire', hint: 'Vous fixez le montant. Sécurisé par Stripe.' },
 ];
 
+/* ─── Modèles de formulaires prêts à l'emploi ─────────────────── */
+type TemplateField = Omit<FormField, 'id'>;
+type FormTemplate = { key: string; name: string; icon: string; title: string; description: string; fields: TemplateField[] };
+
+const TEMPLATES: FormTemplate[] = [
+  {
+    key: 'gala', name: 'Gala / Dîner', icon: '🍽️',
+    title: 'Dîner de Gala', description: 'Réservez votre table pour notre soirée de gala.',
+    fields: [
+      { type: 'event_date', label: "Date de l'événement", presetValue: '' },
+      { type: 'info_block', label: 'Informations', presetValue: 'Soirée de gala annuelle.\nTenue de soirée souhaitée.' },
+      { type: 'table_reservation', label: 'Votre réservation', required: true, allowCash: false,
+        tableOptions: [
+          { label: 'Table complète', seats: 10, price: 1800 },
+          { label: 'Demi-table', seats: 5, price: 950 },
+          { label: 'Place individuelle', seats: 1, price: 200 },
+        ] },
+    ],
+  },
+  {
+    key: 'fete', name: 'Inscription fête', icon: '🕯️',
+    title: 'Inscription — Roch Hachana / Kippour', description: 'Réservez vos places pour les offices.',
+    fields: [
+      { type: 'event_date', label: "Date", presetValue: '' },
+      { type: 'people_count', label: 'Nombre de places', maxPeople: 8, required: true },
+      { type: 'info_block', label: 'Informations', presetValue: "Merci de réserver vos places à l'avance." },
+      { type: 'payment', label: 'Participation', amount: 50, currency: 'eur', allowCash: true },
+    ],
+  },
+  {
+    key: 'chabbat', name: 'Repas de Chabbat', icon: '🍷',
+    title: 'Repas de Chabbat', description: 'Inscrivez-vous à notre repas communautaire.',
+    fields: [
+      { type: 'event_date', label: 'Date', presetValue: '' },
+      { type: 'people_count', label: 'Nombre de convives', maxPeople: 10, required: true },
+      { type: 'radio', label: 'Choix du plat', required: true, options: [{ label: 'Viande' }, { label: 'Poisson' }, { label: 'Végétarien' }] },
+      { type: 'payment', label: 'Participation aux frais', amount: 25, currency: 'eur', allowCash: true },
+    ],
+  },
+  {
+    key: 'don', name: 'Collecte de dons', icon: '🤲',
+    title: 'Faire un don', description: 'Soutenez la communauté. Chaque don compte.',
+    fields: [
+      { type: 'donation', label: 'Votre don', required: true, suggestedAmounts: [18, 36, 180, 360], allowCustomAmount: true, allowCash: false },
+    ],
+  },
+  {
+    key: 'gratuit', name: 'Événement gratuit', icon: '✓',
+    title: 'Inscription', description: 'Inscrivez-vous gratuitement à notre événement.',
+    fields: [
+      { type: 'event_date', label: 'Date', presetValue: '' },
+      { type: 'people_count', label: 'Nombre de personnes', maxPeople: 6 },
+      { type: 'checkbox', label: 'Je confirme ma présence', required: true },
+    ],
+  },
+];
+
 /* ─── Mini Calendar ─────────────────────────────────────────── */
 const MONTHS_FR = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 const DAYS_FR = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -982,6 +1039,7 @@ function BuilderContent() {
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [showAI, setShowAI] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
 
   // Système de notifications toast
   const { toasts, toast: addToast } = useToast();
@@ -1083,6 +1141,14 @@ function BuilderContent() {
     setFields(aiFields);
   };
 
+  const applyTemplate = (t: FormTemplate) => {
+    setTitle(t.title);
+    setDescription(t.description);
+    setFields(t.fields.map((f) => ({ ...f, id: generateId() }) as FormField));
+    setShowTemplates(false);
+    addToast(`Modèle « ${t.name} » appliqué`, 'success');
+  };
+
   const fieldTypePanel = (
     <div className="space-y-1.5">
       {FIELD_TYPES.map((ft, i) => (
@@ -1133,6 +1199,38 @@ function BuilderContent() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {showTemplates && (
+          <motion.div
+            className="fixed inset-0 z-[200] flex items-center justify-center px-4 bg-brown-900/40 backdrop-blur-sm"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setShowTemplates(false)}
+          >
+            <motion.div
+              className="w-full max-w-lg bg-beige-50 rounded-3xl border border-beige-200 p-6 shadow-2xl"
+              initial={{ scale: 0.95, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-1">
+                <h3 className="text-2xl font-light text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>Partir d&apos;un modèle</h3>
+                <button onClick={() => setShowTemplates(false)} className="text-brown-400 hover:text-brown-700 text-xl leading-none">×</button>
+              </div>
+              <p className="text-xs text-brown-400 mb-5">Le modèle remplace le contenu actuel du formulaire.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {TEMPLATES.map((t) => (
+                  <button key={t.key} onClick={() => applyTemplate(t)}
+                    className="text-left p-4 rounded-2xl border border-beige-200 bg-beige-100 hover:border-gold-400/50 hover:bg-gold-400/5 transition-colors">
+                    <div className="text-2xl mb-1">{t.icon}</div>
+                    <p className="font-medium text-brown-900 text-sm">{t.name}</p>
+                    <p className="text-[11px] text-brown-400 mt-0.5 line-clamp-2">{t.description}</p>
+                  </button>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="min-h-screen pt-16 pb-28 lg:pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 lg:py-12">
           {/* Header */}
@@ -1151,14 +1249,24 @@ function BuilderContent() {
               </h1>
               <p className="text-brown-500 text-sm">Une question à la fois. Une expérience inoubliable.</p>
             </div>
-            <motion.button
-              onClick={() => setShowAI(true)}
-              className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-400/10 border border-gold-400/30 text-gold-700 text-sm font-medium hover:bg-gold-400/20 transition-colors flex-shrink-0 mt-1"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
-            >
-              ✦ IA
-            </motion.button>
+            <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+              <motion.button
+                onClick={() => setShowTemplates(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-700 text-sm font-medium hover:border-gold-400/40 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                ◳ Modèles
+              </motion.button>
+              <motion.button
+                onClick={() => setShowAI(true)}
+                className="hidden sm:flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gold-400/10 border border-gold-400/30 text-gold-700 text-sm font-medium hover:bg-gold-400/20 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                ✦ IA
+              </motion.button>
+            </div>
           </motion.div>
 
           <div className="grid lg:grid-cols-[300px_1fr] gap-6 lg:gap-8">
