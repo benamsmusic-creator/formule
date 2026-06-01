@@ -4,6 +4,7 @@ import './globals.css';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Navbar from '@/components/Navbar';
 import PublicNav from '@/components/PublicNav';
+import PublicFooter from '@/components/PublicFooter';
 import ScrollToTop from '@/components/ScrollToTop';
 import ThemeToggle from '@/components/ThemeToggle';
 
@@ -69,6 +70,7 @@ export default function RootLayout({
         <Navbar />
         <PublicNav />
         <main>{children}</main>
+        <PublicFooter />
         <ScrollToTop />
         <ThemeToggle />
       </body>
