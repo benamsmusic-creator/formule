@@ -77,7 +77,7 @@ function EventCard({ form, index }: { form: Form; index: number }) {
           )}
           {peopleField && (
             <span className="flex items-center gap-1 text-xs text-brown-500 bg-beige-100 border border-beige-200 px-2.5 py-1 rounded-full">
-              👥 Jusqu'à {peopleField.maxPeople ?? 8} personnes
+              👥 Jusqu&apos;à {peopleField.maxPeople ?? 8} personnes
             </span>
           )}
         </div>
@@ -88,7 +88,7 @@ function EventCard({ form, index }: { form: Form; index: number }) {
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
           >
-            <span className="relative z-10">S'inscrire →</span>
+            <span className="relative z-10">S&apos;inscrire →</span>
           </motion.button>
         </Link>
       </div>
@@ -105,7 +105,7 @@ export default function EventsPage() {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setForms(data.filter((f: Form) => !f.archived && !f.disabled));
+          setForms(data.filter((f: Form) => !f.archived && !f.disabled && f.id !== 'dons-generaux'));
         }
       })
       .catch(() => {})
@@ -170,7 +170,7 @@ export default function EventsPage() {
           transition={{ delay: 0.5 }}
         >
           <Link href="/" className="text-sm text-brown-400 hover:text-brown-700 transition-colors">
-            ← Retour à l'accueil
+            ← Retour à l&apos;accueil
           </Link>
         </motion.div>
       </div>

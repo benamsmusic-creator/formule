@@ -158,7 +158,7 @@ export default function LandingPage() {
                   <span className="relative z-10">Voir les événements →</span>
                 </motion.span>
               </Link>
-              <Link href="/events" className="w-full sm:w-auto">
+              <Link href="/don" className="w-full sm:w-auto">
                 <motion.span
                   className="tap-target inline-flex items-center justify-center w-full sm:w-auto px-8 sm:px-10 py-4 rounded-2xl font-medium text-base border-2 border-gold-400/40 text-brown-800 hover:bg-gold-400/10 transition-colors"
                   whileHover={{ scale: 1.03, y: -2 }}
