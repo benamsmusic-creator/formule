@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Form, FormResponse } from '@/lib/types';
+import { exportContactsToCSV } from '@/lib/utils';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface EventSummary {
@@ -504,6 +505,18 @@ export default function CRMPage() {
             className="w-full pl-9 pr-4 py-3 rounded-2xl bg-white border border-beige-200 text-sm text-brown-900 placeholder:text-brown-300 focus:outline-none focus:border-gold-400 transition-colors"
           />
         </div>
+
+        {/* Export contacts */}
+        {tab === 'contacts' && filteredContacts.length > 0 && (
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => exportContactsToCSV(filteredContacts)}
+              className="text-xs font-medium text-brown-600 border border-beige-200 px-4 py-2 rounded-xl hover:bg-beige-100 hover:border-gold-400/40 transition-colors"
+            >
+              📥 Exporter les contacts (CSV)
+            </button>
+          </div>
+        )}
 
         {/* Loading */}
         {loading && (

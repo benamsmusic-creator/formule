@@ -70,6 +70,27 @@ export function formatDate(dateString: string): string {
   });
 }
 
+/** Exporte une liste de contacts en CSV (téléchargement navigateur). */
+export function exportContactsToCSV(
+  contacts: { fullName: string; phone: string; email: string; address: string; totalEvents: number; totalRevenue: number }[],
+): void {
+  if (typeof window === 'undefined') return;
+  const headers = ['Nom', 'Téléphone', 'Email', 'Adresse', 'Participations', 'Total payé (€)'];
+  const rows = contacts.map((c) => [
+    c.fullName, c.phone, c.email, c.address, String(c.totalEvents), String(c.totalRevenue),
+  ]);
+  const csv = [headers, ...rows].map((r) => r.map(csvEscape).join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'contacts_habadlyon.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 /** Parse une date d'événement depuis du texte libre (FR ou ISO). */
 export function parseEventDate(raw: string | undefined | null): Date | null {
   if (!raw) return null;

@@ -112,6 +112,7 @@ export default function ComptePage() {
                 const firstName = response.data._firstName as string;
                 const lastName = response.data._lastName as string;
                 const phone = response.data._phone as string;
+                const isWaitlist = response.data._waitlist === 'true';
                 const paymentLabel = response.paymentMethod === 'cash'
                   ? '💵 Espèces (sur place)'
                   : response.paymentMethod === 'card'
@@ -138,7 +139,11 @@ export default function ComptePage() {
                             <p className="text-xs text-brown-400">{form.description}</p>
                           )}
                         </div>
-                        {paymentLabel && (
+                        {isWaitlist ? (
+                          <span className="text-xs px-3 py-1.5 rounded-full bg-red-50 text-red-600 border border-red-200 flex-shrink-0 whitespace-nowrap font-medium">
+                            ⏳ Liste d&apos;attente
+                          </span>
+                        ) : paymentLabel && (
                           <span className="text-xs px-3 py-1.5 rounded-full bg-gold-400/10 text-gold-700 border border-gold-400/20 flex-shrink-0 whitespace-nowrap">
                             {paymentLabel}
                           </span>
@@ -156,12 +161,16 @@ export default function ComptePage() {
                         <p className="text-xs text-brown-300">
                           Inscrit le {formatDate(response.submittedAt)}
                         </p>
-                        <Link
-                          href={`/billet/${response.id}`}
-                          className="text-xs font-medium text-gold-700 hover:text-gold-600 border border-gold-400/30 px-3 py-1.5 rounded-lg hover:bg-gold-400/10 transition-colors whitespace-nowrap"
-                        >
-                          🎟️ Voir mon billet
-                        </Link>
+                        {isWaitlist ? (
+                          <span className="text-xs text-brown-400 whitespace-nowrap">En attente d&apos;une place</span>
+                        ) : (
+                          <Link
+                            href={`/billet/${response.id}`}
+                            className="text-xs font-medium text-gold-700 hover:text-gold-600 border border-gold-400/30 px-3 py-1.5 rounded-lg hover:bg-gold-400/10 transition-colors whitespace-nowrap"
+                          >
+                            🎟️ Voir mon billet
+                          </Link>
+                        )}
                       </div>
                     </div>
                   </motion.div>
