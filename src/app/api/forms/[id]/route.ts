@@ -27,6 +27,7 @@ function rowToForm(row: Record<string, unknown>): Form {
     disabled: row.is_disabled as boolean | undefined,
     archived: row.is_archived as boolean | undefined,
     promoCodes: (row.promo_codes as Form['promoCodes']) ?? [],
+    maxCapacity: (row.max_capacity as number | null) ?? undefined,
     responses,
   };
 }

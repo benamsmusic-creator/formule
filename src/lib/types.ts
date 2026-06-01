@@ -75,6 +75,7 @@ export interface Form {
   disabled?: boolean;
   archived?: boolean;
   promoCodes?: PromoCode[];
+  maxCapacity?: number;
 }
 
 export interface AppUser {

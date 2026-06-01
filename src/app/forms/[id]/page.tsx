@@ -178,8 +178,9 @@ function shareCurrentPage(title: string) {
   }
 }
 
-function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
+function CoverScreen({ form, onStart, isFull }: { form: Form; onStart: () => void; isFull?: boolean }) {
   const eventDateField = form.fields.find((f) => f.type === 'event_date');
+  const ctaLabel = isFull ? "Rejoindre la liste d'attente" : 'Commencer';
 
   return (
     <motion.div
@@ -195,6 +196,11 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
           <div className="absolute inset-0 bg-gradient-to-t from-brown-900/90 via-brown-900/20 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-8 sm:p-14">
             <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, duration: 0.7 }}>
+              {isFull && (
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-500/25 backdrop-blur-sm border border-red-300/40 text-red-50 text-sm font-medium mb-4 mr-2">
+                  ● Complet — liste d&apos;attente
+                </div>
+              )}
               {eventDateField?.presetValue && (
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/20 backdrop-blur-sm border border-gold-400/40 text-gold-200 text-sm font-medium mb-4">
                   📅 {eventDateField.presetValue}
@@ -211,7 +217,7 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
                 className="inline-flex items-center gap-3 px-10 py-4 bg-beige-50 text-brown-900 rounded-2xl font-semibold text-base shadow-2xl"
                 whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
               >
-                Commencer
+                {ctaLabel}
                 <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
               </motion.button>
               <div className="mt-4 flex items-center gap-4">
@@ -230,6 +236,11 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
             animate={{ scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 6 }} />
           <motion.div className="relative z-10 max-w-lg"
             initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.7 }}>
+            {isFull && (
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-red-50 border border-red-200 text-red-600 text-sm mb-6 mr-2">
+                ● Complet — liste d&apos;attente
+              </div>
+            )}
             {eventDateField?.presetValue && (
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-gold-600 text-sm mb-6">
                 📅 {eventDateField.presetValue}
@@ -246,7 +257,7 @@ function CoverScreen({ form, onStart }: { form: Form; onStart: () => void }) {
               className="btn-liquid inline-flex items-center gap-3 px-10 py-4 bg-brown-900 text-beige-50 rounded-2xl font-medium text-base overflow-hidden"
               whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.97 }}>
               <span className="relative z-10 flex items-center gap-3">
-                Commencer
+                {ctaLabel}
                 <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
               </span>
             </motion.button>
@@ -849,16 +860,16 @@ function PaymentChoiceScreen({
 }
 
 /* ─── Success screen ────────────────────────────────────────── */
-function SuccessScreen({ paymentMethod, ticketId }: { paymentMethod?: 'card' | 'cash'; ticketId?: string | null }) {
+function SuccessScreen({ paymentMethod, ticketId, isWaitlist }: { paymentMethod?: 'card' | 'cash'; ticketId?: string | null; isWaitlist?: boolean }) {
   const [qr, setQr] = useState<string>('');
 
   useEffect(() => {
-    if (!ticketId) return;
+    if (!ticketId || isWaitlist) return;
     const url = `${window.location.origin}/billet/${ticketId}`;
     QRCode.toDataURL(url, { margin: 1, width: 320, color: { dark: '#2C1810', light: '#FAF7F2' } })
       .then(setQr)
       .catch(() => {});
-  }, [ticketId]);
+  }, [ticketId, isWaitlist]);
 
   return (
     <motion.div key="success" className="absolute inset-0 overflow-y-auto flex flex-col items-center justify-center px-6 py-16 text-center"
@@ -878,11 +889,13 @@ function SuccessScreen({ paymentMethod, ticketId }: { paymentMethod?: 'card' | '
       <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.6 }}
         className="text-[clamp(2.2rem,6vw,4rem)] font-light text-brown-900 leading-tight mb-3"
         style={{ fontFamily: 'var(--font-cormorant)' }}>
-        Inscription confirmée.
+        {isWaitlist ? 'Vous êtes sur la liste d’attente.' : 'Inscription confirmée.'}
       </motion.h2>
       <motion.p initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
         className="text-brown-500 text-base max-w-sm mb-8">
-        {paymentMethod === 'cash'
+        {isWaitlist
+          ? 'L’événement est complet. Nous vous contacterons dès qu’une place se libère.'
+          : paymentMethod === 'cash'
           ? 'Votre inscription est enregistrée. Le paiement sera effectué sur place.'
           : paymentMethod === 'card'
           ? 'Votre réservation et paiement ont bien été confirmés.'
@@ -1200,6 +1213,11 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       }
     }
     if (guestCount < 1) guestCount = 1;
+    // Liste d'attente : si la capacité confirmée est atteinte
+    const confirmed = (form?.responses ?? [])
+      .filter((r) => (r.data as Record<string, unknown>)?._waitlist !== 'true')
+      .reduce((s, r) => s + (parseInt(((r.data as Record<string, string>)?._guestCount) || '1', 10) || 1), 0);
+    const full = typeof form?.maxCapacity === 'number' && form.maxCapacity > 0 && confirmed >= form.maxCapacity;
     const donationField = form?.fields.find((f) => f.type === 'donation');
     let donationSummary = '';
     if (donationField) {
@@ -1209,6 +1227,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     const total = computePaymentAmount();
 
     return {
+      ...(full ? { _waitlist: 'true' } : {}),
       ...(tableSummary ? { _tableReservation: tableSummary } : {}),
       ...(donationSummary ? { _donation: donationSummary } : {}),
       // Identité
@@ -1316,7 +1335,10 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const handleIdentityNext = (data: IdentityData) => {
     setIdentityData(data);
     setDirection(1);
-    if (questionFields.length > 0) {
+    // Événement complet → liste d'attente : on enregistre l'identité sans questions ni paiement
+    if (isFull) {
+      submitForm(data, undefined);
+    } else if (questionFields.length > 0) {
       setCurrentIndex(0);
       setScreen('questions');
     } else if (hasCharge) {
@@ -1351,6 +1373,11 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const donationField = form.fields.find((f) => f.type === 'donation');
   const hasCharge = !!paymentField || !!tableField || !!donationField;
   const allowCashCharge = !!(paymentField?.allowCash || tableField?.allowCash || donationField?.allowCash);
+  // Capacité : compte les invités confirmés (hors liste d'attente)
+  const confirmedGuests = (form.responses ?? [])
+    .filter((r) => (r.data as Record<string, unknown>)?._waitlist !== 'true')
+    .reduce((s, r) => s + (parseInt(((r.data as Record<string, string>)?._guestCount) || '1', 10) || 1), 0);
+  const isFull = typeof form.maxCapacity === 'number' && form.maxCapacity > 0 && confirmedGuests >= form.maxCapacity;
   const currentField = questionFields[currentIndex];
   const realTotal = questionFields.filter(f => f.type !== 'event_date' && f.type !== 'info_block').length;
   const pct = screen === 'payment_choice' || screen === 'payment' || screen === 'promo' ? 95
@@ -1449,7 +1476,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
       <AnimatePresence mode="wait">
         {screen === 'cover' && (
-          <CoverScreen key="cover" form={form} onStart={handleStart} />
+          <CoverScreen key="cover" form={form} onStart={handleStart} isFull={isFull} />
         )}
 
         {screen === 'identity' && (
@@ -1538,7 +1565,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </motion.div>
         )}
 
-        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} ticketId={ticketId} />}
+        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} ticketId={ticketId} isWaitlist={isFull} />}
       </AnimatePresence>
     </div>
   );

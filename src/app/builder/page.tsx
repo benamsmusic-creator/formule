@@ -973,6 +973,11 @@ function BuilderContent() {
     const id = searchParams.get('id');
     return id ? (getForm(id)?.promoCodes ?? []) : [];
   });
+  const [maxCapacity, setMaxCapacity] = useState<string>(() => {
+    const id = searchParams.get('id');
+    const c = id ? getForm(id)?.maxCapacity : undefined;
+    return c != null ? String(c) : '';
+  });
   const [saving, setSaving] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
@@ -1032,9 +1037,10 @@ function BuilderContent() {
     setSaving(true);
     try {
       const existing = formId ? getForm(formId) : null;
+      const capacity = maxCapacity.trim() === '' ? undefined : (parseInt(maxCapacity, 10) || undefined);
       let form: Form;
       if (existing) {
-        form = { ...existing, title, description, coverImage, youtubeUrl: youtubeUrl || undefined, fields, promoCodes, updatedAt: new Date().toISOString() };
+        form = { ...existing, title, description, coverImage, youtubeUrl: youtubeUrl || undefined, fields, promoCodes, maxCapacity: capacity, updatedAt: new Date().toISOString() };
       } else {
         form = createForm(title);
         form.description = description;
@@ -1042,6 +1048,7 @@ function BuilderContent() {
         form.youtubeUrl = youtubeUrl || undefined;
         form.fields = fields;
         form.promoCodes = promoCodes;
+        form.maxCapacity = capacity;
         setFormId(form.id);
       }
       // 1. Sauvegarde locale immédiate (synchrone)
@@ -1236,6 +1243,23 @@ function BuilderContent() {
                     {youtubeUrl && extractYouTubeId(youtubeUrl) && (
                       <p className="mt-1 text-[11px] text-green-600">✓ Musique configurée</p>
                     )}
+                  </div>
+
+                  {/* Capacité maximale */}
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">
+                      Capacité maximale 👥
+                    </label>
+                    <input
+                      type="number" min="1"
+                      className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                      value={maxCapacity}
+                      onChange={(e) => setMaxCapacity(e.target.value)}
+                      placeholder="Ex : 120 (laisser vide = illimité)"
+                    />
+                    <p className="mt-1 text-[11px] text-brown-400">
+                      Quand le nombre de places est atteint, l&apos;événement passe en liste d&apos;attente (sans paiement).
+                    </p>
                   </div>
 
                   {/* Codes promo */}

@@ -46,6 +46,10 @@ function EventCard({ form, index }: { form: Form; index: number }) {
     ? Math.min(...tableField.tableOptions.map((o) => o.price))
     : undefined;
   const eventDate = parseEventDate(eventDateField?.presetValue);
+  const confirmedGuests = (form.responses ?? [])
+    .filter((r) => (r.data as Record<string, unknown>)?._waitlist !== 'true')
+    .reduce((s, r) => s + (parseInt(((r.data as Record<string, string>)?._guestCount) || '1', 10) || 1), 0);
+  const isFull = typeof form.maxCapacity === 'number' && form.maxCapacity > 0 && confirmedGuests >= form.maxCapacity;
 
   return (
     <motion.div
@@ -113,6 +117,9 @@ function EventCard({ form, index }: { form: Form; index: number }) {
               👥 Jusqu&apos;à {peopleField.maxPeople ?? 8} personnes
             </span>
           )}
+          {isFull && (
+            <span className="flex items-center gap-1 text-xs text-red-600 bg-red-50 border border-red-200 px-2.5 py-1 rounded-full">● Complet</span>
+          )}
           {eventDate && (() => {
             const today = new Date(); today.setHours(0, 0, 0, 0);
             const ev = new Date(eventDate); ev.setHours(0, 0, 0, 0);
@@ -133,7 +140,7 @@ function EventCard({ form, index }: { form: Form; index: number }) {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
             >
-              <span className="relative z-10">S&apos;inscrire →</span>
+              <span className="relative z-10">{isFull ? 'Liste d’attente →' : 'S’inscrire →'}</span>
             </motion.button>
           </Link>
           {eventDate && (
