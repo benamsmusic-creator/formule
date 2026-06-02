@@ -485,6 +485,29 @@ function DashboardContent() {
           );
         })()}
 
+        {/* Actions Rapide — boutons colorés (inspiré UniSOFT) */}
+        {loaded && (
+          <div className="mb-12">
+            <p className="text-xs uppercase tracking-widest text-brown-400 mb-3">Actions rapides</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { href: '/builder', icon: '➕', label: 'Nouveau formulaire', from: '#C9A96E', to: '#9A7A3A' },
+                { href: '/dashboard/promesses', icon: '🤝', label: 'Ajouter une promesse', from: '#0EA5A0', to: '#14B8A6' },
+                { href: '/dashboard/crm', icon: '📇', label: 'Voir les contacts', from: '#8B6E4E', to: '#5C4030' },
+                { href: '/newsletter', icon: '📣', label: 'Envoyer une newsletter', from: '#D97706', to: '#B45309' },
+              ].map((a, i) => (
+                <motion.div key={a.href} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 + i * 0.05 }}>
+                  <Link href={a.href} className="flex flex-col gap-2 rounded-2xl p-4 text-beige-50 shadow-lg hover:brightness-110 transition-all"
+                    style={{ background: `linear-gradient(135deg, ${a.from}, ${a.to})` }}>
+                    <span className="text-2xl">{a.icon}</span>
+                    <span className="text-sm font-medium leading-tight">{a.label}</span>
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Promesses de dons — encart (inspiré UniSOFT) */}
         {loaded && pledgeStats && pledgeStats.count > 0 && (
           <Link href="/dashboard/promesses" className="block mb-12 group">
