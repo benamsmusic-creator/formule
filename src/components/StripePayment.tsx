@@ -2,10 +2,49 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, PaymentElement, ExpressCheckoutElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 const stripePublicKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = stripePublicKey ? loadStripe(stripePublicKey) : null;
+
+/* Boutons Apple Pay / Google Pay / Link en évidence.
+   Ne s'affiche que si un wallet est disponible sur l'appareil. */
+function ExpressWallets({ onSuccess }: { onSuccess: () => void }) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [available, setAvailable] = useState(false);
+
+  const onConfirm = async () => {
+    if (!stripe || !elements) return;
+    const { error: submitError } = await elements.submit();
+    if (submitError) return;
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: { return_url: window.location.href + '?payment=success' },
+      redirect: 'if_required',
+    });
+    if (!error) onSuccess();
+  };
+
+  return (
+    <div className={available ? 'block mb-4' : 'hidden'}>
+      <ExpressCheckoutElement
+        onReady={(e) => {
+          const m = e.availablePaymentMethods;
+          if (m && Object.keys(m).length > 0) setAvailable(true);
+        }}
+        onConfirm={onConfirm}
+      />
+      {available && (
+        <div className="flex items-center gap-3 mt-4">
+          <div className="flex-1 h-px bg-beige-200" />
+          <span className="text-xs text-brown-400">ou payer par carte</span>
+          <div className="flex-1 h-px bg-beige-200" />
+        </div>
+      )}
+    </div>
+  );
+}
 
 function CheckoutForm({ amount, onSuccess }: { amount: number; onSuccess: () => void }) {
   const stripe = useStripe();
@@ -42,6 +81,7 @@ function CheckoutForm({ amount, onSuccess }: { amount: number; onSuccess: () => 
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <ExpressWallets onSuccess={onSuccess} />
       <div className="p-4 rounded-xl bg-beige-100 border border-beige-200">
         <PaymentElement options={{ layout: 'tabs' }} />
       </div>
