@@ -131,6 +131,11 @@ export default function ResponsesPage() {
             {responses.length} inscription{responses.length !== 1 ? 's' : ''} enregistrée{responses.length !== 1 ? 's' : ''}
             {arrived > 0 && <span className="text-green-600"> · {arrived} arrivé{arrived !== 1 ? 's' : ''} ✓</span>}
           </p>
+          {form.fields.some((f) => f.type === 'table_reservation') && (
+            <Link href={`/plan/${form.id}`} className="inline-flex items-center mt-3 text-sm font-medium text-gold-700 border border-gold-400/30 px-4 py-2 rounded-xl hover:bg-gold-400/10 transition-colors">
+              🪑 Plan de salle
+            </Link>
+          )}
         </motion.div>
 
         {/* Empty state */}

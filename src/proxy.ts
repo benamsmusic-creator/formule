@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const PROTECTED = ['/dashboard', '/builder', '/clients', '/parametres', '/newsletter', '/yahrzeit', '/annuaire', '/annonces', '/anniversaires', '/historique', '/membres'];
+const PROTECTED = ['/dashboard', '/builder', '/clients', '/parametres', '/newsletter', '/yahrzeit', '/annuaire', '/annonces', '/anniversaires', '/historique', '/membres', '/plan'];
 // Note: /compte is protected client-side (redirects to /user-login if no session in localStorage)
 const COOKIE_NAME = 'hl_admin';
 
@@ -26,5 +26,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/builder/:path*', '/clients/:path*', '/parametres/:path*', '/newsletter/:path*', '/yahrzeit/:path*', '/annuaire/:path*', '/annonces/:path*', '/anniversaires/:path*', '/historique/:path*', '/membres/:path*'],
+  matcher: ['/dashboard/:path*', '/builder/:path*', '/clients/:path*', '/parametres/:path*', '/newsletter/:path*', '/yahrzeit/:path*', '/annuaire/:path*', '/annonces/:path*', '/anniversaires/:path*', '/historique/:path*', '/membres/:path*', '/plan/:path*'],
 };

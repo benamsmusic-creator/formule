@@ -61,6 +61,7 @@ export interface FormResponse {
   paymentAmount?: number;
   paymentMethod?: 'card' | 'cash';
   checkedIn?: boolean;
+  tableNumber?: number;
 }
 
 export interface Form {

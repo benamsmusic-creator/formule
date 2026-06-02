@@ -14,6 +14,7 @@ function rowToForm(row: Record<string, unknown>): Form {
         paymentAmount: r.payment_amount as number | undefined,
         paymentMethod: r.payment_method as FormResponse['paymentMethod'],
         checkedIn: r.checked_in as boolean | undefined,
+        tableNumber: r.table_number as number | undefined,
       }))
     : [];
   return {
