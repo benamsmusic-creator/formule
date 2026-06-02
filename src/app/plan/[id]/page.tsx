@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Form, FormResponse } from '@/lib/types';
+import { SkeletonRows } from '@/components/Skeleton';
 
 export default function PlanPage() {
   const { id } = useParams<{ id: string }>();
@@ -45,7 +46,7 @@ export default function PlanPage() {
           <Link href="/dashboard" className="text-sm text-brown-500 hover:text-brown-800 transition-colors">← Dashboard</Link>
         </div>
 
-        {!loaded ? <p className="text-brown-400 text-sm">Chargement…</p> : !form ? (
+        {!loaded ? <SkeletonRows count={6} /> : !form ? (
           <p className="text-brown-400 text-sm">Formulaire introuvable.</p>
         ) : (
           <>

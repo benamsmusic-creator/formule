@@ -63,7 +63,7 @@ function EventCard({ form, index }: { form: Form; index: number }) {
       {/* Cover image */}
       {form.coverImage ? (
         <div className="relative h-48 overflow-hidden">
-          <Image src={form.coverImage} alt={form.title} fill className="object-cover object-top group-hover:scale-105 transition-transform duration-500" unoptimized />
+          <Image src={form.coverImage} alt={form.title} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover object-top group-hover:scale-105 transition-transform duration-500" unoptimized />
           <div className="absolute inset-0 bg-gradient-to-t from-brown-900/60 to-transparent" />
           {eventDateField?.presetValue && (
             <div className="absolute bottom-3 left-4">

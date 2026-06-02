@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { SkeletonBox } from '@/components/Skeleton';
 
 export default function SmsPage() {
   const [count, setCount] = useState<number | null>(null);
@@ -43,9 +44,10 @@ export default function SmsPage() {
 
         <div className="rounded-2xl bg-beige-50 border border-beige-200 p-4 mb-6 flex items-center gap-3">
           <span className="text-2xl">📱</span>
-          <p className="text-sm text-brown-700">
-            {count === null ? 'Chargement…' : <><span className="font-semibold">{count}</span> membre(s) avec un numéro valide recevront le SMS.</>}
-          </p>
+          {count === null
+            ? <SkeletonBox className="h-4 w-48 rounded-lg" />
+            : <p className="text-sm text-brown-700"><span className="font-semibold">{count}</span> membre(s) avec un numéro valide recevront le SMS.</p>
+          }
         </div>
 
         <form onSubmit={send} className="rounded-2xl bg-beige-50 border border-beige-200 p-6 space-y-3">
