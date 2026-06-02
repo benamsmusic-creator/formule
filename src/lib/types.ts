@@ -11,6 +11,8 @@ export type FieldType =
   | 'info_block'
   | 'number'
   | 'date_choice'
+  | 'file'
+  | 'signature'
   | 'table_reservation'
   | 'donation'
   | 'payment';
@@ -26,6 +28,7 @@ export interface PromoCode {
   type: 'percent' | 'fixed';
   discount: number;
   expiresAt?: string; // ISO date (YYYY-MM-DD) — au-delà, le code est refusé
+  maxUses?: number;   // nombre max d'utilisations (0/absent = illimité)
 }
 
 export interface FieldOption {
@@ -61,6 +64,7 @@ export interface FormField {
   minPeople?: number;    // nombre de personnes : minimum
   defaultChecked?: boolean; // case à cocher : cochée par défaut
   helpText?: string;     // petite aide affichée sous le champ
+  dropdown?: boolean;    // select/radio : afficher en liste déroulante (longues listes)
 }
 
 export interface FormResponse {
@@ -91,6 +95,7 @@ export interface Form {
   promoCodes?: PromoCode[];
   maxCapacity?: number;
   accentColor?: string;
+  publishAt?: string;  // date ISO — le formulaire n'est public qu'à partir de cette date (#40)
 }
 
 export interface AppUser {

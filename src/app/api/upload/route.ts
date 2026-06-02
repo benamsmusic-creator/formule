@@ -3,8 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 
 export const runtime = 'nodejs';
 
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 Mo
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+const MAX_SIZE_BYTES = 8 * 1024 * 1024; // 8 Mo
 const BUCKET = 'form-images';
 
 export async function POST(req: NextRequest) {
@@ -18,19 +18,19 @@ export async function POST(req: NextRequest) {
     }
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: 'Format non supporté (jpg, png, webp, gif uniquement)' },
+        { error: 'Format non supporté (images ou PDF uniquement)' },
         { status: 400 }
       );
     }
     if (file.size > MAX_SIZE_BYTES) {
       return NextResponse.json(
-        { error: 'Fichier trop lourd (max 5 Mo)' },
+        { error: 'Fichier trop lourd (max 8 Mo)' },
         { status: 400 }
       );
     }
 
     // — Nom de fichier unique —
-    const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
+    const ext = file.type === 'application/pdf' ? 'pdf' : file.type.split('/')[1].replace('jpeg', 'jpg');
     const filename = `${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${ext}`;
 
     // — Upload vers Supabase Storage —

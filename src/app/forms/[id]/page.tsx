@@ -1279,12 +1279,14 @@ function PromoScreen({
   onApply,
   onSkip,
   direction,
+  usageByCode = {},
 }: {
   promoCodes: PromoCode[];
   paymentAmount: number;
   onApply: (promo: PromoCode) => void;
   onSkip: () => void;
   direction: number;
+  usageByCode?: Record<string, number>;
 }) {
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
@@ -1298,6 +1300,9 @@ function PromoScreen({
       const exp = new Date(found.expiresAt);
       exp.setHours(23, 59, 59, 999);
       if (!isNaN(exp.getTime()) && exp.getTime() < Date.now()) { setError('Ce code a expiré.'); return; }
+    }
+    if (found.maxUses && (usageByCode[found.code.toUpperCase()] ?? 0) >= found.maxUses) {
+      setError('Ce code a atteint sa limite d’utilisation.'); return;
     }
     setError('');
     setApplied(found);
@@ -1401,6 +1406,74 @@ function PromoScreen({
         </div>
       </div>
     </motion.div>
+  );
+}
+
+/* ─── Champ fichier (#34) ───────────────────────────────────── */
+function FileUploadField({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+  const handle = async (file: File) => {
+    setUploading(true); setError('');
+    try {
+      const fd = new FormData(); fd.append('file', file);
+      const r = await fetch('/api/upload', { method: 'POST', body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Erreur');
+      onChange(d.url);
+    } catch (e) { setError(e instanceof Error ? e.message : 'Erreur'); }
+    finally { setUploading(false); }
+  };
+  return (
+    <div>
+      {value ? (
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-beige-100 border border-beige-200">
+          <span className="text-xl">📎</span>
+          <a href={value} target="_blank" rel="noopener noreferrer" className="flex-1 text-sm text-gold-700 underline truncate">Fichier envoyé ✓</a>
+          <button type="button" onClick={() => onChange('')} className="text-brown-400 hover:text-red-500 text-sm">Changer</button>
+        </div>
+      ) : (
+        <label className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl border-2 border-dashed cursor-pointer transition-colors ${uploading ? 'opacity-50' : 'border-beige-300 hover:border-gold-400/50 bg-beige-50'}`}>
+          <span className="text-sm text-brown-500">{uploading ? 'Envoi…' : '📎 Choisir un fichier (image ou PDF, max 8 Mo)'}</span>
+          <input type="file" accept="image/*,application/pdf" className="hidden" disabled={uploading}
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handle(f); }} />
+        </label>
+      )}
+      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+    </div>
+  );
+}
+
+/* ─── Champ signature (#36) ─────────────────────────────────── */
+function SignaturePad({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const drawing = useRef(false);
+
+  const pos = (e: React.PointerEvent) => {
+    const c = canvasRef.current!; const r = c.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * (c.width / r.width), y: (e.clientY - r.top) * (c.height / r.height) };
+  };
+  const start = (e: React.PointerEvent) => {
+    drawing.current = true; const c = canvasRef.current!; const ctx = c.getContext('2d')!;
+    const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
+  };
+  const move = (e: React.PointerEvent) => {
+    if (!drawing.current) return; const ctx = canvasRef.current!.getContext('2d')!;
+    const p = pos(e); ctx.lineTo(p.x, p.y); ctx.strokeStyle = '#2C1810'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.stroke();
+  };
+  const end = () => { if (!drawing.current) return; drawing.current = false; const c = canvasRef.current; if (c) onChange(c.toDataURL('image/png')); };
+  const clear = () => { const c = canvasRef.current; if (!c) return; c.getContext('2d')!.clearRect(0, 0, c.width, c.height); onChange(''); };
+
+  return (
+    <div>
+      <canvas ref={canvasRef} width={500} height={160}
+        onPointerDown={start} onPointerMove={move} onPointerUp={end} onPointerLeave={end}
+        className="w-full h-40 rounded-xl bg-beige-50 border-2 border-beige-200 touch-none cursor-crosshair" />
+      <div className="flex items-center justify-between mt-1.5">
+        <span className="text-[11px] text-brown-400">Signez avec le doigt ou la souris</span>
+        <button type="button" onClick={clear} className="text-xs text-brown-500 hover:text-brown-800 underline">Effacer</button>
+      </div>
+    </div>
   );
 }
 
@@ -1589,7 +1662,19 @@ function ScrollForm({
                     min={f.dateMode === 'future' ? new Date().toISOString().slice(0, 10) : undefined}
                     value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
                 )}
-                {(f.type === 'radio' || f.type === 'select') && (
+                {f.type === 'file' && (
+                  <FileUploadField value={(formData[f.id] as string) || ''} onChange={(v) => setField(f.id, v)} />
+                )}
+                {f.type === 'signature' && (
+                  <SignaturePad value={(formData[f.id] as string) || ''} onChange={(v) => setField(f.id, v)} />
+                )}
+                {(f.type === 'radio' || f.type === 'select') && f.dropdown && !field.perGuestCheck(f, guestCount) && (
+                  <select className={inputCls(invalid)} value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)}>
+                    <option value="">— Choisir —</option>
+                    {(f.options ?? []).map((opt) => <option key={opt.label} value={opt.label}>{opt.label}</option>)}
+                  </select>
+                )}
+                {(f.type === 'radio' || f.type === 'select') && (!f.dropdown || field.perGuestCheck(f, guestCount)) && (
                   field.perGuestCheck(f, guestCount)
                     ? <PerGuestChoice field={f} guestCount={guestCount} value={(formData[f.id] as string) || ''} onChange={(v) => setField(f.id, v)} />
                     : <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -1907,10 +1992,11 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       // Réservation
       _guestCount: String(guestCount),
       ...(total !== undefined ? { _totalAmount: String(total) } : {}),
+      ...(appliedPromo ? { _promo: appliedPromo.code } : {}),
       // Réponses aux champs du formulaire
       ...formData,
     };
-  }, [form, formData, computePaymentAmount]);
+  }, [form, formData, computePaymentAmount, appliedPromo]);
 
   /**
    * Point d'entrée unique pour soumettre une inscription.
@@ -2194,6 +2280,11 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
               promoCodes={form.promoCodes ?? []}
               paymentAmount={computePaymentAmount(null) ?? 0}
               direction={direction}
+              usageByCode={(form.responses ?? []).reduce((acc, r) => {
+                const c = (r.data as Record<string, string>)?._promo;
+                if (c) acc[c.toUpperCase()] = (acc[c.toUpperCase()] ?? 0) + 1;
+                return acc;
+              }, {} as Record<string, number>)}
               onApply={(promo) => { setAppliedPromo(promo); goToPayment(); }}
               onSkip={() => { setAppliedPromo(null); goToPayment(); }}
             />

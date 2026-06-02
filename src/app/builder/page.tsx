@@ -52,6 +52,8 @@ const FIELD_GROUPS: { group: string; emoji: string; note: string; types: FieldTy
       { type: 'number', label: 'Nombre / quantité', icon: '🔢', desc: 'Saisie d’un chiffre', hint: 'Ex : âge, quantité de paquets.' },
       { type: 'date_choice', label: 'Date au choix', icon: '🗓️', desc: 'Le visiteur choisit une date', hint: 'Ex : date de naissance, date d’arrivée.' },
       { type: 'people_count', label: 'Nombre de personnes', icon: '👥', desc: 'Compteur 1 à N', hint: 'Sélection par bouton.' },
+      { type: 'file', label: 'Fichier joint', icon: '📎', desc: 'Image ou PDF à téléverser', hint: 'Ex : justificatif, photo, document.' },
+      { type: 'signature', label: 'Signature', icon: '✍️', desc: 'Signature manuscrite', hint: 'Ex : engagement, autorisation parentale.' },
     ],
   },
   {
@@ -1054,6 +1056,15 @@ function FieldEditor({
                       <span className="block text-xs text-brown-400 mt-0.5">À placer après le champ « nombre de places / convives » ou la réservation de table.</span>
                     </span>
                   </label>
+
+                  {/* Liste déroulante (#35) */}
+                  <label className="flex items-start gap-2.5 mt-3 text-sm text-brown-700 select-none cursor-pointer">
+                    <div className={`relative w-9 h-5 rounded-full transition-colors flex-shrink-0 mt-0.5 ${field.dropdown ? 'bg-gold-500' : 'bg-beige-300'}`}
+                      onClick={() => onChange({ ...field, dropdown: !field.dropdown })}>
+                      <motion.div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" animate={{ left: field.dropdown ? '18px' : '2px' }} transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
+                    </div>
+                    <span>Afficher en <strong>liste déroulante</strong><span className="block text-xs text-brown-400 mt-0.5">Pratique pour les longues listes.</span></span>
+                  </label>
                 </div>
               )}
 
@@ -1906,6 +1917,14 @@ function BuilderContent() {
                               className="flex-1 px-3 py-1.5 rounded-lg bg-beige-50 border border-beige-200 text-xs text-brown-700 focus:outline-none focus:border-gold-400"
                               value={pc.expiresAt ?? ''}
                               onChange={(e) => setPromoCodes((prev) => prev.map((p, idx) => idx === i ? { ...p, expiresAt: e.target.value || undefined } : p))}
+                            />
+                            <label className="text-[11px] text-brown-400 whitespace-nowrap">Max util.</label>
+                            <input
+                              type="number" min="1"
+                              className="w-20 px-3 py-1.5 rounded-lg bg-beige-50 border border-beige-200 text-xs text-brown-700 focus:outline-none focus:border-gold-400"
+                              placeholder="∞"
+                              value={pc.maxUses ?? ''}
+                              onChange={(e) => setPromoCodes((prev) => prev.map((p, idx) => idx === i ? { ...p, maxUses: e.target.value === '' ? undefined : Number(e.target.value) } : p))}
                             />
                           </div>
                           {pc.code && (
