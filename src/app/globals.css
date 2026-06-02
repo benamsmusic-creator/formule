@@ -17,6 +17,7 @@
 
   --font-cormorant: var(--font-cormorant);
   --font-inter: var(--font-inter);
+  --font-hebrew: var(--font-hebrew);
 
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
@@ -98,6 +99,13 @@ body {
 ::selection {
   background: #C9A96E44;
   color: #2C1810;
+}
+
+/* Texte en hébreu — police élégante + sens d'écriture */
+.hebrew {
+  font-family: var(--font-hebrew), 'Frank Ruhl Libre', serif;
+  direction: rtl;
+  unicode-bidi: plaintext;
 }
 
 /* Animated gradient text */

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Cormorant_Garamond, Inter } from 'next/font/google';
+import { Cormorant_Garamond, Inter, Frank_Ruhl_Libre } from 'next/font/google';
 import './globals.css';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Navbar from '@/components/Navbar';
@@ -19,6 +19,12 @@ const inter = Inter({
   variable: '--font-inter',
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
+});
+
+const frankRuhl = Frank_Ruhl_Libre({
+  variable: '--font-hebrew',
+  subsets: ['hebrew', 'latin'],
+  weight: ['400', '500', '700'],
 });
 
 export const metadata: Metadata = {
@@ -59,7 +65,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr" className={`${cormorant.variable} ${inter.variable}`}>
+    <html lang="fr" className={`${cormorant.variable} ${inter.variable} ${frankRuhl.variable}`}>
       <body className="min-h-screen antialiased">
         <script
           dangerouslySetInnerHTML={{

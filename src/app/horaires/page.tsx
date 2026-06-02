@@ -9,6 +9,7 @@ const LYON = new Location(45.764043, 4.835659, false, 'Europe/Paris', 'Lyon', 'F
 
 type ShabbatInfo = {
   hebrewDate: string;
+  hebrewDateHe: string;
   parasha: string;
   candleDate: string;
   candleTime: string;
@@ -84,6 +85,7 @@ function computeData(): { shabbat: ShabbatInfo; holidays: Holiday[]; zmanim: Zma
   return {
     shabbat: {
       hebrewDate: hd.render('fr'),
+      hebrewDateHe: hd.render('he'),
       parasha: parasha || '—',
       candleDate, candleTime, havdalahDate, havdalahTime,
     },
@@ -117,9 +119,14 @@ export default function HorairesPage() {
           <p className="text-brown-500 text-sm">Lyon · calculés automatiquement</p>
           {data && (
             <div className="mt-3 flex flex-col items-center gap-3">
-              <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-gold-700 text-xs font-medium">
-                📅 {data.shabbat.hebrewDate}
-              </p>
+              <div className="flex flex-col items-center gap-1.5">
+                <p className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-gold-700 text-xs font-medium">
+                  📅 {data.shabbat.hebrewDate}
+                </p>
+                {data.shabbat.hebrewDateHe && (
+                  <p className="hebrew text-brown-600 text-xl leading-none" dir="rtl">{data.shabbat.hebrewDateHe}</p>
+                )}
+              </div>
               <button
                 onClick={() => {
                   const s = data.shabbat;
