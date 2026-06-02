@@ -51,7 +51,18 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query;
   if (error) return NextResponse.json([], { status: 200 });
-  return NextResponse.json((data ?? []).map((r) => rowToForm(r as Record<string, unknown>)));
+
+  const json = (data ?? []).map((r) => rowToForm(r as Record<string, unknown>));
+  const res = NextResponse.json(json);
+
+  // Cache côté CDN/navigateur (#45) :
+  // - Admins authentifiés → pas de cache (données sensibles, toujours fraîches)
+  // - Pages publiques (gala, events) → cache 2 min, revalide en arrière-plan
+  const isAdmin = req.cookies.get('hl_admin')?.value === 'authenticated';
+  if (!isAdmin) {
+    res.headers.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+  }
+  return res;
 }
 
 async function logAction(org: string, action: string, detail: string) {
