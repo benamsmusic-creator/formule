@@ -34,19 +34,19 @@ export default function PublicNav() {
         <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-lg">
           <span className="text-beige-50 text-xs font-bold">H</span>
         </div>
-        <span className="text-brown-900 font-bold text-base sm:text-lg tracking-tight" style={{ fontFamily: 'var(--font-cormorant)' }}>
+        <span className="hidden sm:inline text-brown-900 font-bold text-base sm:text-lg tracking-tight" style={{ fontFamily: 'var(--font-cormorant)' }}>
           HabadLyon
         </span>
       </Link>
 
       {/* Liens */}
-      <div className="relative flex items-center gap-1 sm:gap-2">
+      <div className="relative flex items-center gap-0.5 sm:gap-2">
         {LINKS.map((link) => {
           const active = pathname === link.href;
           return (
             <Link key={link.href} href={link.href}>
               <motion.span
-                className={`tap-target inline-flex items-center px-2.5 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm transition-colors ${
+                className={`tap-target inline-flex items-center whitespace-nowrap px-2 sm:px-3.5 py-2 rounded-xl text-xs sm:text-sm transition-colors ${
                   active
                     ? 'bg-gold-400/15 text-brown-900 font-medium'
                     : 'text-brown-600 hover:text-brown-900 hover:bg-beige-100'
@@ -59,7 +59,7 @@ export default function PublicNav() {
             </Link>
           );
         })}
-        <ThemeToggleInline className="ml-1" />
+        <ThemeToggleInline className="ml-0.5 sm:ml-1" />
       </div>
     </motion.nav>
   );
