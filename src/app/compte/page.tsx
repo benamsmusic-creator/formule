@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, getUserResponses, logoutUser } from '@/lib/store';
 import { AppUser, Form, FormResponse } from '@/lib/types';
-import { formatDate } from '@/lib/utils';
+import { formatDate, parseEventDate, downloadICS } from '@/lib/utils';
 
 export default function ComptePage() {
   const router = useRouter();
@@ -28,6 +28,20 @@ export default function ComptePage() {
     await logoutUser();
     router.push('/');
   };
+
+  // Prochain rendez-vous : événement à venir le plus proche (#34)
+  const nextEvent = reservations
+    .map(({ form, response }) => ({
+      form, response,
+      date: parseEventDate(form.fields.find((f) => f.type === 'event_date')?.presetValue),
+      venue: form.fields.find((f) => f.type === 'event_date')?.venue,
+    }))
+    .filter((x) => x.date && x.date.getTime() >= Date.now() - 86400000 && x.response.data._waitlist !== 'true')
+    .sort((a, b) => (a.date!.getTime() - b.date!.getTime()))[0];
+
+  const daysUntilNext = nextEvent?.date
+    ? Math.max(0, Math.ceil((nextEvent.date.getTime() - Date.now()) / 86400000))
+    : null;
 
   const year = new Date().getFullYear();
   const donationsThisYear = reservations
@@ -87,6 +101,39 @@ export default function ComptePage() {
           </h1>
           <p className="text-brown-500">Voici vos réservations et inscriptions.</p>
         </motion.div>
+
+        {/* Prochain rendez-vous */}
+        {nextEvent && nextEvent.date && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-8 rounded-2xl border border-gold-400/30 bg-gold-400/5 p-6"
+          >
+            <div className="flex items-start justify-between gap-4 flex-wrap">
+              <div>
+                <p className="text-xs uppercase tracking-widest text-gold-600 mb-1">
+                  Prochain rendez-vous {daysUntilNext === 0 ? '· aujourd’hui' : daysUntilNext ? `· dans ${daysUntilNext} jour${daysUntilNext > 1 ? 's' : ''}` : ''}
+                </p>
+                <h3 className="text-2xl font-light text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>{nextEvent.form.title}</h3>
+                <p className="text-brown-500 text-sm mt-1">
+                  📅 {nextEvent.date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                  {nextEvent.venue ? ` · ${nextEvent.venue}` : ''}
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => downloadICS(nextEvent.form.title, nextEvent.date!, nextEvent.venue)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-brown-900 text-beige-50 text-sm font-medium hover:bg-brown-800 transition-colors"
+                >
+                  📅 Agenda
+                </button>
+                <Link href={`/billet/${nextEvent.response.id}`}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-gold-400/40 text-brown-800 text-sm font-medium hover:bg-gold-400/10 transition-colors">
+                  🎟️ Billet
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Cartes stats membre */}
         {loaded && reservations.length > 0 && (
