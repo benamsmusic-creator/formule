@@ -208,6 +208,29 @@ export default function EventsPage() {
           </p>
         </motion.div>
 
+        {/* Bannière Gala */}
+        {loaded && forms.some((f) => f.fields.some((x) => x.type === 'table_reservation')) && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+            className="mb-10 rounded-3xl overflow-hidden relative"
+            style={{ background: 'linear-gradient(135deg,#2C1810,#4A2E18)' }}
+          >
+            <div className="px-8 py-8 sm:py-10 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left">
+              <div>
+                <p className="text-xs uppercase tracking-[0.25em] text-gold-300 mb-1">Événement d&apos;exception</p>
+                <h2 className="text-2xl sm:text-3xl font-light text-beige-50" style={{ fontFamily: 'var(--font-cormorant)' }}>Notre Soirée de Gala</h2>
+              </div>
+              <Link href="/gala">
+                <motion.span whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}
+                  className="inline-flex items-center px-7 py-3 rounded-full text-brown-900 text-sm font-semibold"
+                  style={{ background: 'linear-gradient(135deg,#e8c97e,#c9a96e)' }}>
+                  Découvrir ✦
+                </motion.span>
+              </Link>
+            </div>
+          </motion.div>
+        )}
+
         {/* Grid */}
         {!loaded ? (
           <div className="flex justify-center py-24">

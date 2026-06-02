@@ -38,28 +38,31 @@ export default function OrgPublicPage() {
     if (!slug) return;
     let alive = true;
     (async () => {
-      const orgRes = await fetch(`/api/orgs/${slug}`);
-      if (!orgRes.ok) { if (alive) setState('notfound'); return; }
-      const org = await orgRes.json();
-      const formsRes = await fetch(`/api/forms?org=${encodeURIComponent(slug)}`);
-      const data = await formsRes.json();
+      const q = encodeURIComponent(slug);
+      const jsonOr = async (url: string, fallback: unknown) => {
+        try { const r = await fetch(url); return r.ok ? await r.json() : fallback; } catch { return fallback; }
+      };
+      // Toutes les requêtes EN PARALLÈLE (au lieu de 6 à la suite) → chargement bien plus rapide
+      const [org, data, g, dir, ann, mem] = await Promise.all([
+        jsonOr(`/api/orgs/${q}`, null),
+        jsonOr(`/api/forms?org=${q}`, []),
+        jsonOr(`/api/gallery?org=${q}`, []),
+        jsonOr(`/api/directory?org=${q}`, []),
+        jsonOr(`/api/announcements?org=${q}`, []),
+        jsonOr(`/api/memorial?org=${q}`, []),
+      ]);
       if (!alive) return;
+      if (!org || !org.name) { setState('notfound'); return; }
       setOrgName(org.name);
       if (org.accent_color) setAccent(org.accent_color);
       if (org.logo_url) setLogo(org.logo_url);
       const all: Form[] = Array.isArray(data) ? data : [];
       setForms(all.filter((f) => !f.archived && !f.disabled && !f.id.startsWith('dons-')));
       setHasDonation(all.some((f) => f.id === `dons-${slug}` && !f.archived && !f.disabled));
-      try {
-        const g = await (await fetch(`/api/gallery?org=${encodeURIComponent(slug)}`)).json();
-        if (Array.isArray(g)) setPhotos(g);
-        const dir = await (await fetch(`/api/directory?org=${encodeURIComponent(slug)}`)).json();
-        if (Array.isArray(dir)) setDirectory(dir);
-        const ann = await (await fetch(`/api/announcements?org=${encodeURIComponent(slug)}`)).json();
-        if (Array.isArray(ann)) setAnnouncements(ann);
-        const mem = await (await fetch(`/api/memorial?org=${encodeURIComponent(slug)}`)).json();
-        if (Array.isArray(mem)) setMemorial(mem);
-      } catch { /* ignore */ }
+      if (Array.isArray(g)) setPhotos(g);
+      if (Array.isArray(dir)) setDirectory(dir);
+      if (Array.isArray(ann)) setAnnouncements(ann);
+      if (Array.isArray(mem)) setMemorial(mem);
       setState('ready');
     })().catch(() => { if (alive) setState('notfound'); });
     return () => { alive = false; };
