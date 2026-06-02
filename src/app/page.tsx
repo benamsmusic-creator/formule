@@ -45,33 +45,45 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero — beaucoup d'air */}
+      {/* Hero — premium, profondeur */}
       <main id="contenu" className="flex-1">
-        <section className="max-w-3xl mx-auto px-6 pt-40 pb-28 sm:pt-48 sm:pb-36 text-center">
-          <motion.p {...fadeUp} transition={{ duration: 0.5 }} className="text-xs uppercase tracking-[0.2em] text-brown-400 mb-8">
+        <section className="relative max-w-3xl mx-auto px-6 pt-32 pb-24 sm:pt-36 sm:pb-28 text-center">
+          {/* Profondeur : halo doré + voile */}
+          <div aria-hidden className="absolute inset-x-0 top-0 h-[600px] pointer-events-none -z-10"
+            style={{ background: 'radial-gradient(600px 400px at 50% 30%, rgba(201,169,110,0.16), transparent 70%)' }} />
+
+          <motion.p {...fadeUp} transition={{ duration: 0.5 }} className="text-xs uppercase tracking-[0.25em] text-gold-600 mb-7">
             {t.hero_badge.replace('✦ ', '')}
           </motion.p>
           <motion.h1 {...fadeUp} transition={{ duration: 0.6, delay: 0.05 }}
-            className="text-[clamp(2.75rem,7vw,5.5rem)] leading-[1.04] tracking-tight text-brown-900 font-light mb-7"
+            className="text-[clamp(3rem,8vw,6rem)] leading-[1.0] tracking-tight text-brown-900 font-light mb-7"
             style={{ fontFamily: 'var(--font-cormorant)' }}>
-            {t.hero_welcome}<br /><span className="text-gold-600">HabadLyon</span>
+            {t.hero_welcome}{' '}
+            <span style={{ background: 'linear-gradient(135deg,#e8c97e,#c9a96e,#9a7a3a)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>HabadLyon</span>
           </motion.h1>
           <motion.p {...fadeUp} transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-brown-500 text-lg leading-relaxed max-w-md mx-auto mb-10">
+            className="text-brown-500 text-lg leading-relaxed max-w-md mx-auto mb-9">
             {t.hero_sub}
           </motion.p>
           <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.15 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10">
             <Link href="/events" className="w-full sm:w-auto">
-              <span className="inline-flex items-center justify-center w-full sm:w-auto px-7 py-3.5 bg-brown-900 text-beige-50 rounded-full text-sm font-medium hover:bg-brown-800 transition-colors">
+              <span className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3.5 bg-brown-900 text-beige-50 rounded-full text-sm font-medium hover:bg-brown-800 transition-colors shadow-lg shadow-brown-900/10">
                 {t.cta_events}
               </span>
             </Link>
             <Link href="/don" className="w-full sm:w-auto">
-              <span className="inline-flex items-center justify-center w-full sm:w-auto px-7 py-3.5 text-brown-700 rounded-full text-sm font-medium hover:bg-beige-100 transition-colors">
+              <span className="inline-flex items-center justify-center w-full sm:w-auto px-8 py-3.5 rounded-full text-sm font-medium border border-gold-400/40 text-brown-800 hover:bg-gold-400/10 transition-colors">
                 {t.cta_donate}
               </span>
             </Link>
+          </motion.div>
+          {/* Puces de catégories — richesse visuelle */}
+          <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.2 }}
+            className="flex flex-wrap items-center justify-center gap-2">
+            {[t.card_events_t, t.card_gala_t, t.card_don_t, t.card_horaires_t].map((c) => (
+              <span key={c} className="px-3.5 py-1.5 rounded-full border border-beige-300/70 text-brown-500 text-xs">{c}</span>
+            ))}
           </motion.div>
         </section>
 
