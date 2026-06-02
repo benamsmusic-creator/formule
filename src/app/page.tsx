@@ -50,7 +50,7 @@ export default function LandingPage() {
       </header>
 
       {/* Hero — premium, profondeur */}
-      <main id="contenu" className="flex-1">
+      <div id="contenu" className="flex-1">
         <section className="relative max-w-3xl mx-auto px-6 pt-32 pb-24 sm:pt-36 sm:pb-28 text-center">
           {/* Profondeur : halo doré + voile */}
           <div aria-hidden className="absolute inset-x-0 top-0 h-[600px] pointer-events-none -z-10"
@@ -154,7 +154,7 @@ export default function LandingPage() {
             </Link>
           </div>
         </section>
-      </main>
+      </div>
 
       {/* Footer — minimal */}
       <footer className="border-t border-beige-200">

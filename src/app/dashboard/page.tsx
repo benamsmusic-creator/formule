@@ -173,6 +173,7 @@ function FormCard({
             whileTap={{ scale: 0.95 }}
             onClick={onToggleDisabled}
             title={form.disabled ? 'Réactiver' : 'Désactiver'}
+            aria-label={form.disabled ? 'Réactiver le formulaire' : 'Désactiver le formulaire'}
           >
             {form.disabled ? '▶ Activer' : '⏸ Off'}
           </motion.button>
@@ -182,6 +183,7 @@ function FormCard({
             whileTap={{ scale: 0.95 }}
             onClick={() => { navigator.clipboard.writeText(`${window.location.origin}/forms/${form.id}`); onCopied(); }}
             title="Copier le lien"
+            aria-label="Copier le lien du formulaire"
           >
             🔗
           </motion.button>
@@ -192,6 +194,7 @@ function FormCard({
             onClick={() => exportResponsesToCSV(form)}
             disabled={(form.responses?.length ?? 0) === 0}
             title="Exporter les réponses en CSV (Excel)"
+            aria-label="Exporter les réponses en CSV"
           >
             📥
           </motion.button>
@@ -201,6 +204,7 @@ function FormCard({
             whileTap={{ scale: 0.95 }}
             onClick={onDuplicate}
             title="Dupliquer"
+            aria-label="Dupliquer le formulaire"
           >
             ⧉
           </motion.button>
@@ -210,6 +214,7 @@ function FormCard({
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowConfirm(true)}
             title="Archiver"
+            aria-label="Archiver le formulaire"
           >
             🗂
           </motion.button>
