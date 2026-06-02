@@ -1,6 +1,6 @@
 export const ADMIN_PREFIXES = [
   '/dashboard', '/builder', '/clients', '/parametres', '/newsletter', '/yahrzeit',
-  '/annuaire', '/annonces', '/anniversaires', '/historique', '/membres', '/encheres', '/sms', '/plan',
+  '/annuaire', '/annonces', '/anniversaires', '/historique', '/membres', '/encheres', '/sms', '/plan', '/calendrier',
 ];
 
 export function isAdminPath(pathname: string): boolean {
@@ -28,6 +28,7 @@ export const NAV_GROUPS = [
     { href: '/anniversaires', icon: '🎂', label: 'Anniversaires' },
   ] },
   { group: 'Événements & dons', items: [
+    { href: '/calendrier', icon: '🗓️', label: 'Calendrier' },
     { href: '/dashboard/gala', icon: '🥂', label: 'Gala' },
     { href: '/encheres', icon: '🔨', label: 'Enchères' },
   ] },
