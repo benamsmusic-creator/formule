@@ -182,7 +182,9 @@ export default function EventsPage() {
       .then((r) => r.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          setForms(data.filter((f: Form) => !f.archived && !f.disabled && f.id !== 'dons-generaux'));
+          const now = Date.now();
+          setForms(data.filter((f: Form) => !f.archived && !f.disabled && f.id !== 'dons-generaux'
+            && (!f.publishAt || new Date(f.publishAt).getTime() <= now)));
         } else {
           setFetchError(true);
         }

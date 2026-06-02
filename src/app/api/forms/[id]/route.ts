@@ -30,6 +30,7 @@ function rowToForm(row: Record<string, unknown>): Form {
     archived: row.is_archived as boolean | undefined,
     promoCodes: (row.promo_codes as Form['promoCodes']) ?? [],
     maxCapacity: (row.max_capacity as number | null) ?? undefined,
+    publishAt: (row.publish_at as string | null) ?? undefined,
     responses,
   };
 }

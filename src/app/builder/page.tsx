@@ -1456,6 +1456,10 @@ function BuilderContent() {
     const c = id ? getForm(id)?.maxCapacity : undefined;
     return c != null ? String(c) : '';
   });
+  const [publishAt, setPublishAt] = useState<string>(() => {
+    const id = searchParams.get('id');
+    return id ? (getForm(id)?.publishAt ?? '') : '';
+  });
   const [saving, setSaving] = useState(false);
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [showMobilePanel, setShowMobilePanel] = useState(false);
@@ -1531,7 +1535,7 @@ function BuilderContent() {
       const capacity = maxCapacity.trim() === '' ? undefined : (parseInt(maxCapacity, 10) || undefined);
       let form: Form;
       if (existing) {
-        form = { ...existing, title, description, coverImage, youtubeUrl: youtubeUrl || undefined, fields, promoCodes, maxCapacity: capacity, updatedAt: new Date().toISOString() };
+        form = { ...existing, title, description, coverImage, youtubeUrl: youtubeUrl || undefined, fields, promoCodes, maxCapacity: capacity, publishAt: publishAt || undefined, updatedAt: new Date().toISOString() };
       } else {
         form = createForm(title);
         form.description = description;
@@ -1540,6 +1544,7 @@ function BuilderContent() {
         form.fields = fields;
         form.promoCodes = promoCodes;
         form.maxCapacity = capacity;
+        form.publishAt = publishAt || undefined;
         setFormId(form.id);
       }
       // 1. Sauvegarde locale immédiate (synchrone)
@@ -1856,6 +1861,22 @@ function BuilderContent() {
                     />
                     <p className="mt-1 text-[11px] text-brown-400">
                       Quand le nombre de places est atteint, l&apos;événement passe en liste d&apos;attente (sans paiement).
+                    </p>
+                  </div>
+
+                  {/* Publication programmée (#40) */}
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">
+                      Publier à partir du 🗓️ <span className="normal-case text-brown-300">(optionnel)</span>
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                      value={publishAt}
+                      onChange={(e) => setPublishAt(e.target.value)}
+                    />
+                    <p className="mt-1 text-[11px] text-brown-400">
+                      Le formulaire reste masqué au public jusqu&apos;à cette date. Vide = visible immédiatement.
                     </p>
                   </div>
 

@@ -2097,6 +2097,21 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
   if (form?.disabled) return <DisabledScreen title={form.title} />;
 
+  // Publication programmée (#40) — pas encore ouvert
+  if (form?.publishAt && new Date(form.publishAt).getTime() > Date.now()) {
+    const opening = new Date(form.publishAt).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    return (
+      <div className="fixed inset-0 flex items-center justify-center text-center px-6 bg-beige-50">
+        <div className="max-w-sm">
+          <div className="text-6xl mb-6">🗓️</div>
+          <h1 className="text-3xl font-light text-brown-900 mb-3" style={{ fontFamily: 'var(--font-cormorant)' }}>{form.title}</h1>
+          <p className="text-brown-500 text-sm">Les inscriptions ouvrent le<br /><span className="font-medium text-brown-800">{opening}</span>.</p>
+          <Link href="/events" className="inline-block mt-6 text-sm text-gold-700 hover:text-gold-600 underline underline-offset-2">← Voir les autres événements</Link>
+        </div>
+      </div>
+    );
+  }
+
   if (!form) {
     if (notFound) return (
       <div className="fixed inset-0 flex items-center justify-center text-center px-6">

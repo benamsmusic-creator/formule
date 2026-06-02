@@ -36,6 +36,7 @@ function rowToForm(row: Record<string, unknown>): Form {
     archived: row.is_archived as boolean | undefined,
     promoCodes: (row.promo_codes as Form['promoCodes']) ?? [],
     maxCapacity: (row.max_capacity as number | null) ?? undefined,
+    publishAt: (row.publish_at as string | null) ?? undefined,
     responses,
   };
 }
@@ -101,6 +102,7 @@ export async function POST(req: NextRequest) {
     youtube_url: form.youtubeUrl ?? null,
     promo_codes: form.promoCodes ?? [],
     max_capacity: form.maxCapacity ?? null,
+    publish_at: form.publishAt ?? null,
     org_id: org,
     created_at: form.createdAt,
     updated_at: new Date().toISOString(),
