@@ -141,8 +141,8 @@ function YouTubeAmbiance({ url }: { url: string }) {
   );
 }
 
-/* ─── Progress bar ──────────────────────────────────────────── */
-function ProgressBar({ pct }: { pct: number }) {
+/* ─── Progress bar + étapes ─────────────────────────────────── */
+function ProgressBar({ pct, steps, active }: { pct: number; steps?: string[]; active?: number }) {
   return (
     <div className="fixed top-0 left-0 right-0 z-50">
       <div className="h-1 bg-beige-200/60">
@@ -153,18 +153,37 @@ function ProgressBar({ pct }: { pct: number }) {
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         />
       </div>
-      <AnimatePresence>
-        {pct > 0 && pct < 100 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute right-3 top-2 text-[10px] font-semibold text-gold-600 bg-beige-50/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border border-gold-400/20"
-          >
-            {Math.round(pct)}%
-          </motion.div>
-        )}
-      </AnimatePresence>
+
+      {/* Étapes numérotées (1·2·3) */}
+      {steps && steps.length > 1 && typeof active === 'number' && (
+        <div className="flex items-center justify-center gap-2 sm:gap-3 mt-3 px-4">
+          {steps.map((label, i) => {
+            const done = i < active;
+            const current = i === active;
+            return (
+              <div key={label} className="flex items-center gap-2 sm:gap-3">
+                <div className="flex items-center gap-1.5">
+                  <motion.div
+                    initial={false}
+                    animate={{
+                      backgroundColor: done || current ? 'var(--color-gold-400)' : 'var(--color-beige-200)',
+                      scale: current ? 1.1 : 1,
+                    }}
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold flex-shrink-0"
+                    style={{ color: done || current ? '#fff' : 'var(--color-brown-400)' }}
+                  >
+                    {done ? '✓' : i + 1}
+                  </motion.div>
+                  <span className={`text-[11px] sm:text-xs whitespace-nowrap transition-colors ${current ? 'text-brown-900 font-medium' : 'text-brown-400'}`}>
+                    {label}
+                  </span>
+                </div>
+                {i < steps.length - 1 && <div className={`w-4 sm:w-8 h-px ${done ? 'bg-gold-400' : 'bg-beige-300'}`} />}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1409,6 +1428,14 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     : screen === 'success' ? 100
     : 0;
 
+  // Étapes macro (1·2·3) pour le bandeau d'étapes
+  const macroSteps = ['Vos infos', ...(realTotal > 0 ? ['Détails'] : []), ...(hasCharge ? ['Paiement'] : [])];
+  const activeStep =
+    screen === 'identity' ? 0
+    : screen === 'questions' ? (realTotal > 0 ? 1 : 0)
+    : (screen === 'promo' || screen === 'payment_choice' || screen === 'payment') ? macroSteps.length - 1
+    : 0;
+
   const handleNext = () => {
     if (currentIndex < questionFields.length - 1) {
       setDirection(1); setCurrentIndex((i) => i + 1);
@@ -1445,7 +1472,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       '--color-gold-600': form.accentColor,
     } as React.CSSProperties) : undefined}>
       {screen !== 'cover' && screen !== 'success' && (
-        <ProgressBar pct={pct} />
+        <ProgressBar pct={pct} steps={macroSteps} active={activeStep} />
       )}
 
       {/* Musique d'ambiance — active dès le chargement du formulaire */}
