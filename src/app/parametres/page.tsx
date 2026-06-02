@@ -75,7 +75,7 @@ export default function ParametresPage() {
       if (!res.ok) throw new Error();
       setMsg('Réglages enregistrés ✓');
     } catch {
-      setMsg('Erreur lors de l’enregistrement.');
+      setMsg("Erreur lors de l’enregistrement.");
     } finally {
       setSaving(false);
     }
@@ -147,7 +147,7 @@ export default function ParametresPage() {
               <span className="px-3 py-1 rounded-full text-xs font-medium" style={{ background: `${color}1a`, color, border: `1px solid ${color}40` }}>Étiquette</span>
             </div>
 
-            {msg && <p className="text-sm text-green-600">{msg}</p>}
+            {msg && <p className={`text-sm ${msg.startsWith('Erreur') ? 'text-red-500' : 'text-green-600'}`}>{msg}</p>}
 
             <motion.button type="submit" disabled={saving}
               className="px-6 py-2.5 rounded-xl bg-brown-900 text-beige-50 text-sm font-medium disabled:opacity-40"

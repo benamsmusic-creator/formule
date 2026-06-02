@@ -1,5 +1,4 @@
 'use client';
-/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
 
 export type Lang = 'fr' | 'en';
@@ -68,7 +67,6 @@ export const DICT = {
 export function useLang(): [Lang, (l: Lang) => void] {
   const [lang, setLang] = useState<Lang>('fr');
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     const stored = (typeof localStorage !== 'undefined' && localStorage.getItem('lang')) as Lang | null;
     if (stored === 'fr' || stored === 'en') setLang(stored);
   }, []);
