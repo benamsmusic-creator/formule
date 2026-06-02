@@ -29,6 +29,14 @@ export default function ComptePage() {
     router.push('/');
   };
 
+  const year = new Date().getFullYear();
+  const donationsThisYear = reservations
+    .filter(({ form, response }) =>
+      (response.data._donation || form.id.startsWith('dons-')) &&
+      response.paymentStatus === 'paid' &&
+      response.submittedAt && new Date(response.submittedAt).getFullYear() === year)
+    .reduce((s, { response }) => s + (response.paymentAmount ?? 0), 0);
+
   if (!loaded) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -79,6 +87,21 @@ export default function ComptePage() {
           </h1>
           <p className="text-brown-500">Voici vos réservations et inscriptions.</p>
         </motion.div>
+
+        {/* Récap annuel des dons */}
+        {donationsThisYear > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+            className="mb-8 rounded-2xl bg-brown-900 text-beige-50 p-6 flex items-center justify-between gap-4"
+          >
+            <div>
+              <p className="text-xs uppercase tracking-widest text-gold-300/80 mb-1">Vos dons {year}</p>
+              <p className="text-3xl font-light" style={{ fontFamily: 'var(--font-cormorant)' }}>{donationsThisYear.toFixed(2)} €</p>
+              <p className="text-beige-300 text-xs mt-1">Total déductible — conservez vos reçus pour votre déclaration.</p>
+            </div>
+            <span className="text-4xl" aria-hidden="true">🧾</span>
+          </motion.div>
+        )}
 
         {/* Reservations */}
         <AnimatePresence mode="popLayout">
