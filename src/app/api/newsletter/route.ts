@@ -39,7 +39,7 @@ export async function PUT(req: NextRequest) {
 
   const rows = clean.map((email) => ({ org_id: org, email }));
   const { error } = await supabaseAdmin.from('subscribers').upsert(rows, { onConflict: 'org_id,email' });
-  if (error) return NextResponse.json({ error: 'Erreur lors de l’import.' }, { status: 500 });
+  if (error) return NextResponse.json({ error: "Erreur lors de l’import." }, { status: 500 });
 
   return NextResponse.json({ ok: true, imported: clean.length });
 }

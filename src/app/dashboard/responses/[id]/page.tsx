@@ -81,7 +81,6 @@ export default function ResponsesPage() {
 
   useEffect(() => {
     if (!form) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setChecked(Object.fromEntries((form.responses ?? []).map((r) => [r.id, !!r.checkedIn])));
   }, [form]);
 

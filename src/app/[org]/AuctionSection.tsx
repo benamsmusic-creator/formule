@@ -1,17 +1,23 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 type Item = { id: string; title: string; current_bid: number; current_bidder: string; closed: boolean };
 
 export default function AuctionSection({ org }: { org: string }) {
   const [items, setItems] = useState<Item[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [bidName, setBidName] = useState('');
   const [bidAmount, setBidAmount] = useState<Record<string, string>>({});
   const [err, setErr] = useState<Record<string, string>>({});
 
-  const load = () => { fetch(`/api/auction?org=${encodeURIComponent(org)}`).then((r) => r.json()).then((d) => { if (Array.isArray(d)) setItems(d); }); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { load(); }, [org]);
+  const load = useCallback(() => {
+    fetch(`/api/auction?org=${encodeURIComponent(org)}`)
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setItems(d); })
+      .finally(() => setLoaded(true));
+  }, [org]);
+
+  useEffect(() => { load(); }, [load]);
 
   const bid = async (id: string) => {
     setErr((e) => ({ ...e, [id]: '' }));
@@ -25,7 +31,7 @@ export default function AuctionSection({ org }: { org: string }) {
     load();
   };
 
-  if (items.length === 0) return null;
+  if (!loaded || items.length === 0) return null;
 
   return (
     <div className="mt-16 max-w-2xl mx-auto">

@@ -340,7 +340,8 @@ function IdentityScreen({
     const h = (e: KeyboardEvent) => { if (e.key === 'Enter' && canProceed) handleSubmit(); };
     window.addEventListener('keydown', h);
     return () => window.removeEventListener('keydown', h);
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canProceed]);
 
   return (
     <motion.div
@@ -764,7 +765,8 @@ function QuestionScreen({
     };
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canProceed, field.type, onNext]);
 
   const perGuestComplete = usePerGuest
     ? Object.keys(decodePerGuest(value as string)).length >= guestCount
@@ -1593,7 +1595,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     } finally {
       setSubmitting(false);
     }
-  }, [submitting, id, computePaymentAmount, buildFinalData]);
+  }, [submitting, id, form, computePaymentAmount, buildFinalData]);
 
   const goToPayment = () => {
     setDirection(1);
@@ -1819,7 +1821,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
               onChange={(v) => setFormData((prev) => ({ ...prev, [currentField.id]: v }))}
               onNext={handleNext}
               onBack={handleBack}
-              isLast={currentIndex === questionFields.length - 1 && !paymentField}
+              isLast={currentIndex === questionFields.length - 1 && !hasCharge}
               direction={direction}
               guestCount={guestCount}
             />
