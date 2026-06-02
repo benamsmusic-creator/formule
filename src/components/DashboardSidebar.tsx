@@ -24,7 +24,7 @@ export default function DashboardSidebar() {
       .catch(() => {});
   }, [isAdmin]);
 
-  const { notifs, unreadCount, markAllRead } = useNotifications(isAdmin ? (me?.orgName ?? 'habadlyon') : null);
+  const { notifs, unreadCount, markAllRead, clearAll } = useNotifications(isAdmin ? (me?.orgName ?? 'habadlyon') : null);
 
   // Ferme le tiroir à chaque navigation
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -106,15 +106,18 @@ export default function DashboardSidebar() {
         <AnimatePresence>
           {showNotifs && (
             <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-              className="absolute bottom-full left-0 right-0 mb-2 rounded-2xl bg-beige-50 border border-beige-200 shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+              className="absolute bottom-full left-0 right-0 mb-2 rounded-2xl bg-beige-50 border border-beige-200 shadow-xl overflow-hidden max-h-64 overflow-y-auto">
               {notifs.length === 0
-                ? <p className="text-xs text-brown-400 text-center py-4">Aucune nouvelle inscription.</p>
-                : notifs.map((n) => (
-                  <div key={n.id} className="px-3 py-2.5 border-b border-beige-100 last:border-0">
-                    <p className="text-xs text-brown-800">{n.message}</p>
-                    <p className="text-[10px] text-brown-400 mt-0.5">{n.at.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                  </div>
-                ))}
+                ? <p className="text-xs text-brown-400 text-center py-4">Aucune inscription récente.</p>
+                : <>
+                    {notifs.map((n) => (
+                      <div key={n.id} className={`px-3 py-2.5 border-b border-beige-100 last:border-0 ${n.read ? '' : 'bg-gold-400/5'}`}>
+                        <p className="text-xs text-brown-800">{n.message}</p>
+                        <p className="text-[10px] text-brown-400 mt-0.5">{new Date(n.at).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                      </div>
+                    ))}
+                    <button onClick={clearAll} className="w-full py-2 text-[11px] text-brown-400 hover:text-red-500 hover:bg-red-50 transition-colors">Tout effacer</button>
+                  </>}
             </motion.div>
           )}
         </AnimatePresence>
