@@ -349,8 +349,16 @@ function DashboardContent() {
   };
 
   const q = search.trim().toLowerCase();
-  const matchesSearch = (f: Form) =>
-    !q || f.title.toLowerCase().includes(q) || (f.description ?? '').toLowerCase().includes(q);
+  const matchesSearch = (f: Form) => {
+    if (!q) return true;
+    if (f.title.toLowerCase().includes(q) || (f.description ?? '').toLowerCase().includes(q)) return true;
+    // Recherche globale (#29) — cherche aussi dans les noms/emails des participants
+    return (f.responses ?? []).some((r) => {
+      const d = r.data as Record<string, string>;
+      const hay = [d._firstName, d._lastName, d._fullName, d._email, d._phone].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    });
+  };
   const activeForms = forms.filter((f) => !f.archived && matchesSearch(f));
   const archivedForms = forms.filter((f) => f.archived && matchesSearch(f));
 
@@ -598,7 +606,8 @@ function DashboardContent() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher un formulaire…"
+              placeholder="Rechercher un formulaire, un participant…"
+              aria-label="Recherche globale — formulaires et participants"
               className="w-full pl-9 pr-4 py-3 rounded-2xl bg-beige-50 border border-beige-200 text-sm text-brown-900 placeholder:text-brown-300 focus:outline-none focus:border-gold-400 transition-colors"
             />
           </div>
