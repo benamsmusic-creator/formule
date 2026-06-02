@@ -1550,13 +1550,6 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     const currentUser = getCurrentUser();
     const payload = buildFinalData(identity);
 
-    console.log(
-      '[submitForm] Soumission — formId:', id,
-      '| method:', method ?? 'none',
-      '| amount:', amount,
-      '| guest:', payload._guestCount,
-    );
-
     try {
       const resp = await addResponse(id, payload, currentUser?.id, method, amount);
       // ✓ Ligne physiquement écrite en DB → on peut afficher le succès
@@ -1589,7 +1582,6 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       const msg = err instanceof Error
         ? err.message
         : "Erreur d'enregistrement. Veuillez réessayer.";
-      console.error('[submitForm] ✗ Échec:', msg);
       setSubmitError(msg);
     } finally {
       setSubmitting(false);

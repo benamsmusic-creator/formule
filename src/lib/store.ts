@@ -37,7 +37,6 @@ export function saveFormLocally(form: Form): void {
  * Doit toujours être appelée après saveFormLocally.
  */
 export async function saveFormToServer(form: Form): Promise<void> {
-  console.log('[saveFormToServer] Début sauvegarde — id:', form.id);
   const res = await fetch('/api/forms', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -46,10 +45,8 @@ export async function saveFormToServer(form: Form): Promise<void> {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`;
-    console.error('[saveFormToServer] ERREUR serveur:', msg);
     throw new Error(msg);
   }
-  console.log('[saveFormToServer] ✓ Sauvegardé sur le serveur — id:', form.id);
 }
 
 /** Compatibilité : sauvegarde locale + envoi serveur en arrière-plan (non bloquant) */
@@ -105,13 +102,6 @@ export async function addResponse(
   const paymentStatus =
     paymentMethod === 'cash' ? 'cash' : paymentMethod === 'card' ? 'paid' : undefined;
 
-  console.log(
-    '[addResponse] Insertion — formId:', formId,
-    '| method:', paymentMethod ?? 'aucun',
-    '| amount:', paymentAmount ?? 'N/A',
-    '| userId:', userId ?? 'anonyme',
-  );
-
   const { error } = await supabase.from('responses').insert({
     id,
     form_id: formId,          // clé étrangère vers forms.id
@@ -124,14 +114,6 @@ export async function addResponse(
   });
 
   if (error) {
-    // Log complet côté client pour debug
-    console.error(
-      '[addResponse] ERREUR Supabase:',
-      '| code:', error.code,
-      '| message:', error.message,
-      '| details:', error.details,
-      '| hint:', error.hint,
-    );
     throw new Error(
       error.message
         ? `Erreur base de données : ${error.message}`
@@ -139,7 +121,6 @@ export async function addResponse(
     );
   }
 
-  console.log('[addResponse] ✓ Réponse enregistrée en base — id:', id);
   return { id, formId, userId, data, submittedAt, paymentMethod, paymentStatus, paymentAmount };
 }
 
