@@ -142,6 +142,43 @@ const TEMPLATES: FormTemplate[] = [
     ],
   },
   {
+    key: 'minyan', name: 'Minyan / Office', icon: '🙏',
+    title: 'Inscription à l’office', description: 'Confirmez votre présence pour compléter le minyan.',
+    fields: [
+      { type: 'event_date', label: 'Office', presetValue: '' },
+      { type: 'radio', label: 'Office', required: true, options: [{ label: "Cha'harit" }, { label: "Min'ha" }, { label: 'Arvit' }] },
+      { type: 'checkbox', label: 'Je serai présent(e)', required: true },
+    ],
+  },
+  {
+    key: 'kaddish', name: 'Demande de Kaddish', icon: '🕯️',
+    title: 'Demande de Kaddish', description: 'Demandez la récitation du Kaddish pour un proche.',
+    fields: [
+      { type: 'textarea', label: 'Nom du défunt (et nom hébraïque si connu)', required: true },
+      { type: 'event_date', label: 'Période souhaitée', presetValue: '' },
+      { type: 'donation', label: 'Don associé (facultatif)', suggestedAmounts: [18, 36, 100], allowCustomAmount: true },
+    ],
+  },
+  {
+    key: 'salle', name: 'Réservation salle / mikvé', icon: '🏛️',
+    title: 'Réservation', description: 'Réservez un créneau pour la salle ou le mikvé.',
+    fields: [
+      { type: 'event_date', label: 'Date souhaitée', presetValue: '' },
+      { type: 'radio', label: 'Espace', required: true, options: [{ label: 'Salle de réception' }, { label: 'Salle de cours' }, { label: 'Mikvé' }] },
+      { type: 'textarea', label: 'Précisions (horaire, nombre de personnes…)' },
+    ],
+  },
+  {
+    key: 'simha', name: 'Brit / Bar-Bat Mitsva', icon: '🎉',
+    title: "Annonce de Sim'ha", description: 'Partagez votre événement familial avec la communauté.',
+    fields: [
+      { type: 'radio', label: 'Type', required: true, options: [{ label: 'Brit Mila' }, { label: 'Bar Mitsva' }, { label: 'Bat Mitsva' }, { label: 'Mariage' }] },
+      { type: 'event_date', label: 'Date', presetValue: '' },
+      { type: 'textarea', label: 'Détails (lieu, horaire…)' },
+      { type: 'people_count', label: 'Nombre d’invités', maxPeople: 20 },
+    ],
+  },
+  {
     key: 'ecole', name: 'Inscription école', icon: '🎓',
     title: 'Inscription Talmud Torah', description: 'Inscrivez votre enfant aux cours.',
     fields: [
