@@ -310,9 +310,18 @@ function IdentityScreen({
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
   const [hp, setHp] = useState(''); // honeypot anti-spam (invisible aux humains)
+  const [emailTouched, setEmailTouched] = useState(false);
+  const [phoneTouched, setPhoneTouched] = useState(false);
   const slide = makeSlide(direction);
 
-  const canProceed = civility !== '' && firstName.trim() !== '' && lastName.trim() !== '' && email.trim() !== '' && phone.trim() !== '';
+  // Validation en temps réel
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const phoneDigits = phone.replace(/\D/g, '');
+  const phoneValid = phoneDigits.length >= 8;
+  const emailError = emailTouched && email.trim() !== '' && !emailValid;
+  const phoneError = phoneTouched && phone.trim() !== '' && !phoneValid;
+
+  const canProceed = civility !== '' && firstName.trim() !== '' && lastName.trim() !== '' && emailValid && phoneValid;
 
   const handleSubmit = () => {
     if (!canProceed) return;
@@ -404,26 +413,40 @@ function IdentityScreen({
         {/* Email */}
         <div className="mb-7">
           <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Email</label>
-          <input
-            className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors placeholder:text-beige-400"
-            placeholder="votre@email.com"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            inputMode="email"
-          />
+          <div className="relative">
+            <input
+              className={`w-full px-4 py-3.5 rounded-xl bg-beige-100 border text-brown-900 text-base focus:outline-none focus:bg-beige-50 transition-colors placeholder:text-beige-400 ${
+                emailError ? 'border-red-300 focus:border-red-400' : emailValid ? 'border-green-300 focus:border-green-400' : 'border-beige-200 focus:border-gold-400'
+              }`}
+              placeholder="votre@email.com"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setEmailTouched(true)}
+              inputMode="email"
+            />
+            {emailValid && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-sm">✓</span>}
+          </div>
+          {emailError && <p className="mt-1.5 text-xs text-red-500">Adresse e-mail invalide.</p>}
         </div>
 
         {/* Téléphone */}
         <div className="mb-7">
           <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Téléphone</label>
-          <input
-            className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors placeholder:text-beige-400"
-            placeholder="06 12 34 56 78"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            inputMode="tel"
-          />
+          <div className="relative">
+            <input
+              className={`w-full px-4 py-3.5 rounded-xl bg-beige-100 border text-brown-900 text-base focus:outline-none focus:bg-beige-50 transition-colors placeholder:text-beige-400 ${
+                phoneError ? 'border-red-300 focus:border-red-400' : phoneValid ? 'border-green-300 focus:border-green-400' : 'border-beige-200 focus:border-gold-400'
+              }`}
+              placeholder="06 12 34 56 78"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              onBlur={() => setPhoneTouched(true)}
+              inputMode="tel"
+            />
+            {phoneValid && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-green-500 text-sm">✓</span>}
+          </div>
+          {phoneError && <p className="mt-1.5 text-xs text-red-500">Numéro de téléphone invalide (8 chiffres min.).</p>}
         </div>
 
         {/* Adresse */}
