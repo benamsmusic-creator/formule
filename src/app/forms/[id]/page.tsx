@@ -682,14 +682,70 @@ function EventDateDisplay({ field }: { field: FormField }) {
   );
 }
 
+/* ─── Choix du menu par convive (#39) ───────────────────────────
+   Stocke une chaîne lisible : "Convive 1 : Viande · Convive 2 : Poisson"
+   (lisible directement par l'admin dans les réponses). */
+export function encodePerGuest(map: Record<number, string>, count: number): string {
+  const parts: string[] = [];
+  for (let g = 1; g <= count; g++) {
+    if (map[g]) parts.push(`Convive ${g} : ${map[g]}`);
+  }
+  return parts.join(' · ');
+}
+function decodePerGuest(value: string): Record<number, string> {
+  const map: Record<number, string> = {};
+  (value || '').split(' · ').forEach((seg) => {
+    const m = seg.match(/^Convive (\d+) : (.+)$/);
+    if (m) map[parseInt(m[1], 10)] = m[2];
+  });
+  return map;
+}
+
+function PerGuestChoice({ field, guestCount, value, onChange }: {
+  field: FormField; guestCount: number; value: string; onChange: (v: string) => void;
+}) {
+  const map = decodePerGuest(value);
+  const select = (guest: number, label: string) => {
+    const next = { ...map, [guest]: label };
+    onChange(encodePerGuest(next, guestCount));
+  };
+  return (
+    <div className="mt-2 space-y-6">
+      {Array.from({ length: guestCount }, (_, gi) => gi + 1).map((g) => (
+        <div key={g}>
+          <p className="text-sm font-medium text-brown-500 mb-2">Convive {g}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {(field.options ?? []).map((opt) => {
+              const active = map[g] === opt.label;
+              return (
+                <motion.button key={opt.label} type="button" onClick={() => select(g, opt.label)}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-colors ${
+                    active ? 'border-gold-500 bg-gold-400/10' : 'border-beige-200 bg-beige-50 hover:border-gold-400/50'
+                  }`}
+                  whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-gold-500' : 'border-beige-300'}`}>
+                    {active && <div className="w-2.5 h-2.5 rounded-full bg-gold-500" />}
+                  </div>
+                  <span className={`text-sm font-medium ${active ? 'text-brown-900' : 'text-brown-600'}`}>{opt.label}</span>
+                </motion.button>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Question screen ───────────────────────────────────────── */
 function QuestionScreen({
-  field, index, total, value, onChange, onNext, onBack, isLast, direction,
+  field, index, total, value, onChange, onNext, onBack, isLast, direction, guestCount = 1,
 }: {
   field: FormField; index: number; total: number;
   value: string | boolean; onChange: (v: string | boolean) => void;
-  onNext: () => void; onBack: () => void; isLast: boolean; direction: number;
+  onNext: () => void; onBack: () => void; isLast: boolean; direction: number; guestCount?: number;
 }) {
+  const usePerGuest = (field.type === 'radio' || field.type === 'select') && !!field.perGuest && guestCount > 1;
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const slide = makeSlide(direction);
   const isAutoAdvance = field.type === 'event_date' || field.type === 'info_block';
@@ -710,8 +766,13 @@ function QuestionScreen({
     return () => window.removeEventListener('keydown', handleKey);
   });
 
-  const canProceed = isAutoAdvance || !field.required ||
-    (field.type === 'checkbox' ? value === true : value !== '' && value !== false);
+  const perGuestComplete = usePerGuest
+    ? Object.keys(decodePerGuest(value as string)).length >= guestCount
+    : true;
+  const canProceed = isAutoAdvance ||
+    (usePerGuest
+      ? (!field.required || perGuestComplete)
+      : (!field.required || (field.type === 'checkbox' ? value === true : value !== '' && value !== false)));
 
   const baseInput = 'w-full px-5 py-4 rounded-2xl bg-beige-100 border border-beige-200 text-brown-900 text-xl sm:text-2xl font-light focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors duration-200 placeholder:text-beige-400 text-center';
 
@@ -768,7 +829,11 @@ function QuestionScreen({
             <DonationField field={field} value={value as string} onChange={onChange} />
           )}
 
-          {(field.type === 'radio' || field.type === 'select') && (
+          {(field.type === 'radio' || field.type === 'select') && usePerGuest && (
+            <PerGuestChoice field={field} guestCount={guestCount} value={value as string} onChange={onChange} />
+          )}
+
+          {(field.type === 'radio' || field.type === 'select') && !usePerGuest && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
               {(field.options ?? []).map((opt, i) => (
                 <motion.button key={opt.label} type="button"
@@ -1569,6 +1634,22 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const isFull = typeof form.maxCapacity === 'number' && form.maxCapacity > 0 && confirmedGuests >= form.maxCapacity;
   const currentField = questionFields[currentIndex];
   const realTotal = questionFields.filter(f => f.type !== 'event_date' && f.type !== 'info_block').length;
+
+  // Nombre de convives (pour le menu par convive) : people_count, sinon places de table, sinon 1
+  const guestCount = (() => {
+    const peopleField = form?.fields.find((f) => f.type === 'people_count');
+    if (peopleField) {
+      const n = parseInt(formData[peopleField.id] as string || '0', 10) || 0;
+      if (n > 0) return n;
+    }
+    const tableF = form?.fields.find((f) => f.type === 'table_reservation');
+    if (tableF) {
+      const sel = parseTableSelection(formData[tableF.id]);
+      const opt = sel.i >= 0 ? tableF.tableOptions?.[sel.i] : undefined;
+      if (opt) return opt.seats * sel.q;
+    }
+    return 1;
+  })();
   const pct = screen === 'payment_choice' || screen === 'payment' || screen === 'promo' ? 95
     : screen === 'questions' ? Math.round(20 + ((currentIndex + 1) / Math.max(questionFields.length, 1)) * 70)
     : screen === 'identity' ? 15
@@ -1705,6 +1786,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
               onBack={handleBack}
               isLast={currentIndex === questionFields.length - 1 && !paymentField}
               direction={direction}
+              guestCount={guestCount}
             />
           </AnimatePresence>
         )}

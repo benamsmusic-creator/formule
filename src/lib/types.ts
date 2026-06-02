@@ -49,6 +49,7 @@ export interface FormField {
   tableOptions?: TableOption[];
   suggestedAmounts?: number[];
   allowCustomAmount?: boolean;
+  perGuest?: boolean; // pour select/radio : poser le choix pour chaque convive
 }
 
 export interface FormResponse {
