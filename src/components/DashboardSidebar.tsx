@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { isAdminPath, NAV_PRIMARY, NAV_GROUPS } from '@/lib/adminRoutes';
 import { useTheme } from '@/lib/theme';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
@@ -12,6 +13,7 @@ export default function DashboardSidebar() {
   const [open, setOpen] = useState(false);
   const [me, setMe] = useState<{ superAdmin: boolean; orgName: string | null } | null>(null);
   const [theme, toggleTheme] = useTheme();
+  const [showNotifs, setShowNotifs] = useState(false);
 
   const isAdmin = isAdminPath(pathname);
 
@@ -21,6 +23,8 @@ export default function DashboardSidebar() {
       .then((d) => setMe({ superAdmin: !!d.superAdmin, orgName: d.orgName ?? null }))
       .catch(() => {});
   }, [isAdmin]);
+
+  const { notifs, unreadCount, markAllRead } = useNotifications(isAdmin ? (me?.orgName ?? 'habadlyon') : null);
 
   // Ferme le tiroir à chaque navigation
   useEffect(() => { setOpen(false); }, [pathname]);
@@ -87,8 +91,37 @@ export default function DashboardSidebar() {
         )}
       </nav>
 
+      {/* Cloche notifications (#30) */}
+      <div className="relative pt-3 mt-3 border-t border-beige-200">
+        <button
+          onClick={() => { setShowNotifs((v) => !v); if (!showNotifs) markAllRead(); }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl border border-beige-200 text-brown-600 hover:bg-beige-100 transition-colors text-sm mb-2"
+          aria-label={`${unreadCount} nouvelle${unreadCount > 1 ? 's' : ''} notification${unreadCount > 1 ? 's' : ''}`}
+        >
+          <span className="flex items-center gap-2">🔔 Notifications</span>
+          {unreadCount > 0 && (
+            <span className="w-5 h-5 rounded-full bg-gold-500 text-beige-50 text-[10px] font-bold flex items-center justify-center">{unreadCount}</span>
+          )}
+        </button>
+        <AnimatePresence>
+          {showNotifs && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+              className="absolute bottom-full left-0 right-0 mb-2 rounded-2xl bg-beige-50 border border-beige-200 shadow-xl overflow-hidden max-h-56 overflow-y-auto">
+              {notifs.length === 0
+                ? <p className="text-xs text-brown-400 text-center py-4">Aucune nouvelle inscription.</p>
+                : notifs.map((n) => (
+                  <div key={n.id} className="px-3 py-2.5 border-b border-beige-100 last:border-0">
+                    <p className="text-xs text-brown-800">{n.message}</p>
+                    <p className="text-[10px] text-brown-400 mt-0.5">{n.at.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                  </div>
+                ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
       {/* Pied : rôle + thème + déconnexion */}
-      <div className="pt-3 mt-3 border-t border-beige-200 space-y-2">
+      <div className="space-y-2">
         {me?.superAdmin && (
           <span className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-brown-900 text-beige-50 font-medium">👑 Super-admin</span>
         )}
