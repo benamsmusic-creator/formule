@@ -511,6 +511,13 @@ function IdentityScreen({
             ← Retour
           </motion.button>
         </div>
+
+        {/* Bandeau de confiance — rassure au moment de donner ses infos */}
+        <div className="mt-6 pt-5 border-t border-beige-200 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-brown-400">
+          <span className="inline-flex items-center gap-1.5">🔒 Paiement 100% sécurisé</span>
+          <span className="inline-flex items-center gap-1.5">🛡️ Vos informations restent privées</span>
+          <span className="inline-flex items-center gap-1.5">✉️ Confirmation immédiate par e-mail</span>
+        </div>
         </div>
       </div>
     </motion.div>
