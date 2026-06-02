@@ -16,6 +16,7 @@ export default function OrgPublicPage() {
   const [hasDonation, setHasDonation] = useState(false);
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [directory, setDirectory] = useState<{ id: string; category: string; name: string; address: string; phone: string; url: string }[]>([]);
+  const [announcements, setAnnouncements] = useState<{ id: string; kind: string; title: string; body: string }[]>([]);
   const [subEmail, setSubEmail] = useState('');
   const [subDone, setSubDone] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'notfound'>('loading');
@@ -52,6 +53,8 @@ export default function OrgPublicPage() {
         if (Array.isArray(g)) setPhotos(g);
         const dir = await (await fetch(`/api/directory?org=${encodeURIComponent(slug)}`)).json();
         if (Array.isArray(dir)) setDirectory(dir);
+        const ann = await (await fetch(`/api/announcements?org=${encodeURIComponent(slug)}`)).json();
+        if (Array.isArray(ann)) setAnnouncements(ann);
       } catch { /* ignore */ }
       setState('ready');
     })().catch(() => { if (alive) setState('notfound'); });
@@ -96,6 +99,11 @@ export default function OrgPublicPage() {
             {orgName}
           </h1>
           <p className="text-brown-500 text-base">Nos prochains événements</p>
+          {announcements.filter((a) => a.kind === 'urgent').map((a) => (
+            <div key={a.id} className="mt-4 mx-auto max-w-md rounded-xl bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm">
+              ⚠️ <span className="font-medium">{a.title}</span>{a.body ? ` — ${a.body}` : ''}
+            </div>
+          ))}
           {hasDonation && (
             <Link href={`/forms/dons-${slug}`} className="inline-block mt-4">
               <motion.span
@@ -146,6 +154,21 @@ export default function OrgPublicPage() {
                 </motion.div>
               );
             })}
+          </div>
+        )}
+
+        {/* Actualités */}
+        {announcements.filter((a) => a.kind !== 'urgent').length > 0 && (
+          <div className="mt-16 max-w-2xl mx-auto">
+            <h2 className="text-2xl font-light text-brown-900 mb-5 text-center" style={{ fontFamily: 'var(--font-cormorant)' }}>Actualités</h2>
+            <div className="space-y-3">
+              {announcements.filter((a) => a.kind !== 'urgent').map((a) => (
+                <div key={a.id} className="p-5 rounded-2xl bg-beige-50 border border-beige-200">
+                  <p className="font-medium text-brown-900">{a.kind === 'mazaltov' ? '🎉 ' : ''}{a.title}</p>
+                  {a.body && <p className="text-sm text-brown-500 mt-1">{a.body}</p>}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
