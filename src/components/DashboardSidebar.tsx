@@ -11,7 +11,7 @@ export default function DashboardSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [me, setMe] = useState<{ superAdmin: boolean; orgName: string | null } | null>(null);
+  const [me, setMe] = useState<{ superAdmin: boolean; orgName: string | null; role: string | null } | null>(null);
   const [theme, toggleTheme] = useTheme();
   const [showNotifs, setShowNotifs] = useState(false);
 
@@ -20,7 +20,7 @@ export default function DashboardSidebar() {
   useEffect(() => {
     if (!isAdmin) return;
     fetch('/api/me').then((r) => r.json())
-      .then((d) => setMe({ superAdmin: !!d.superAdmin, orgName: d.orgName ?? null }))
+      .then((d) => setMe({ superAdmin: !!d.superAdmin, orgName: d.orgName ?? null, role: d.role ?? null }))
       .catch(() => {});
   }, [isAdmin]);
 
@@ -124,6 +124,11 @@ export default function DashboardSidebar() {
       <div className="space-y-2">
         {me?.superAdmin && (
           <span className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-brown-900 text-beige-50 font-medium">👑 Super-admin</span>
+        )}
+        {me?.role && (
+          <span className="inline-flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-full bg-gold-400/15 text-gold-700 border border-gold-400/20 font-medium">
+            {me.role === 'tresorier' ? '💰 Trésorier (lecture)' : me.role === 'secretaire' ? '📇 Secrétaire (lecture)' : '👁 Lecture seule'}
+          </span>
         )}
         <div className="flex items-center gap-2">
           <button onClick={toggleTheme} className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-beige-200 text-brown-600 hover:bg-beige-100 transition-colors text-sm">

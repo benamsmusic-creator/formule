@@ -5,6 +5,7 @@ import { supabaseAdmin } from '@/lib/supabase-admin';
 export async function GET(req: NextRequest) {
   const authenticated = req.cookies.get('hl_admin')?.value === 'authenticated';
   const org = req.cookies.get('hl_org')?.value || null;
+  const role = req.cookies.get('hl_role')?.value || null;
 
   let orgName: string | null = null;
   if (org) {
@@ -14,8 +15,9 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     authenticated,
-    superAdmin: authenticated && !org,
+    superAdmin: authenticated && !org && !role,
     org,
     orgName,
+    role,
   });
 }

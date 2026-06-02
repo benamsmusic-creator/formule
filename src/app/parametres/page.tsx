@@ -5,18 +5,29 @@ import Link from 'next/link';
 
 const PRESETS = ['#C9A96E', '#1E6F5C', '#2563EB', '#7C3AED', '#DC2626', '#0EA5E9', '#D97706', '#BE185D'];
 
-function ReadonlyLink() {
+function RoleLinkRow({ role, label, icon }: { role: string; label: string; icon: string }) {
   const [copied, setCopied] = useState(false);
   if (typeof window === 'undefined') return null;
-  const token = btoa('habadlyon2025::readonly');
-  const url = `${window.location.origin}/login?readonly=${token}`;
+  const url = `${window.location.origin}/login?readonly=${btoa('habadlyon2025::' + role)}`;
   const copy = () => { navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   return (
     <div className="flex items-center gap-2">
-      <input readOnly value={url} className="flex-1 text-xs px-3 py-2 rounded-xl bg-beige-100 border border-beige-200 text-brown-600 truncate focus:outline-none" />
-      <button onClick={copy} className="flex-shrink-0 px-4 py-2 rounded-xl bg-brown-900 text-beige-50 text-xs font-medium hover:bg-brown-800 transition-colors">
-        {copied ? '✓ Copié' : 'Copier'}
+      <span className="text-xs text-brown-600 w-28 flex-shrink-0">{icon} {label}</span>
+      <input readOnly value={url} className="flex-1 text-xs px-3 py-2 rounded-xl bg-beige-100 border border-beige-200 text-brown-500 truncate focus:outline-none" />
+      <button onClick={copy} className="flex-shrink-0 px-3 py-2 rounded-xl bg-brown-900 text-beige-50 text-xs font-medium hover:bg-brown-800 transition-colors">
+        {copied ? '✓' : 'Copier'}
       </button>
+    </div>
+  );
+}
+
+function ReadonlyLink() {
+  return (
+    <div className="space-y-2">
+      <RoleLinkRow role="tresorier" label="Trésorier" icon="💰" />
+      <RoleLinkRow role="secretaire" label="Secrétaire" icon="📇" />
+      <RoleLinkRow role="readonly" label="Lecture seule" icon="👁" />
+      <p className="text-[11px] text-brown-400 mt-1">Chaque lien donne un accès <strong>lecture seule</strong> (consultation, sans modification ni envoi).</p>
     </div>
   );
 }

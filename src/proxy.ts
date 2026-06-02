@@ -4,8 +4,9 @@ const PROTECTED = ['/dashboard', '/builder', '/clients', '/parametres', '/newsle
 // Note: /compte is protected client-side (redirects to /user-login if no session in localStorage)
 const COOKIE_NAME = 'hl_admin';
 
-// Routes interdites en lecture seule (#69) — trésorier/secrétaire ne peut pas modifier
-const READONLY_BLOCKED = ['/builder', '/parametres', '/newsletter', '/sms', '/annonces'];
+// Routes interdites aux rôles restreints (#30/#69) — lecture seule, pas de modification
+const READONLY_BLOCKED = ['/builder', '/parametres', '/newsletter', '/sms', '/annonces', '/clients'];
+const RESTRICTED_ROLES = ['readonly', 'tresorier', 'secretaire'];
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -20,9 +21,9 @@ export function proxy(req: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Rôle en lecture seule (hl_role=readonly) : bloque les routes d'écriture (#69)
+  // Rôles restreints (lecture seule) : bloque les routes d'écriture (#30/#69)
   const role = req.cookies.get('hl_role')?.value;
-  if (role === 'readonly' && READONLY_BLOCKED.some((p) => pathname.startsWith(p))) {
+  if (role && RESTRICTED_ROLES.includes(role) && READONLY_BLOCKED.some((p) => pathname.startsWith(p))) {
     const dashUrl = new URL('/dashboard', req.url);
     dashUrl.searchParams.set('notice', 'readonly');
     return NextResponse.redirect(dashUrl);
