@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Form } from '@/lib/types';
 import { parseEventDate, downloadICS } from '@/lib/utils';
+import { SkeletonCards } from '@/components/Skeleton';
 
 function Countdown({ target }: { target: Date }) {
   const [now, setNow] = useState<number>(() => target.getTime() - 1); // valeur initiale stable (SSR)
@@ -233,24 +234,28 @@ export default function EventsPage() {
 
         {/* Grid */}
         {!loaded ? (
-          <div className="flex justify-center py-24">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1.2, ease: 'linear' }}
-              className="w-8 h-8 border-2 border-gold-400 border-t-transparent rounded-full"
-            />
-          </div>
+          <SkeletonCards count={6} />
         ) : forms.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-24 text-center"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center py-20 text-center"
           >
-            <div className="text-6xl text-beige-300 mb-6">◈</div>
-            <h2 className="text-2xl font-light text-brown-600 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
-              Aucun événement disponible
+            <motion.div
+              className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6 text-3xl"
+              style={{ background: 'linear-gradient(135deg, var(--color-beige-100), var(--color-beige-200))', border: '1px solid var(--color-beige-300)' }}
+              animate={{ y: [0, -6, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              🗓️
+            </motion.div>
+            <h2 className="text-2xl font-light text-brown-700 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
+              Aucun événement pour le moment
             </h2>
-            <p className="text-brown-400 text-sm">Revenez bientôt, de nouveaux événements arrivent.</p>
+            <p className="text-brown-400 text-sm max-w-xs mx-auto">De nouveaux événements arrivent bientôt. Revenez vite !</p>
+            <Link href="/horaires" className="mt-6 inline-flex items-center px-5 py-2.5 rounded-full border border-gold-400/40 text-brown-700 text-sm hover:bg-gold-400/10 transition-colors">
+              Voir les horaires de Chabbat →
+            </Link>
           </motion.div>
         ) : (
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
