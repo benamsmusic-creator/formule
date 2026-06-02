@@ -1300,7 +1300,18 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const [screen, setScreen] = useState<'cover' | 'identity' | 'questions' | 'promo' | 'payment_choice' | 'payment' | 'success'>('cover');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
-  const [formData, setFormData] = useState<Record<string, string | boolean>>({});
+  const [formData, setFormData] = useState<Record<string, string | boolean>>(() => {
+    // Sauvegarde auto (#37) : restaure un brouillon récent (< 24h)
+    if (typeof window === 'undefined') return {};
+    try {
+      const raw = localStorage.getItem(`hl_draft_${id}`);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d?.ts && Date.now() - d.ts < 24 * 3600 * 1000 && d.formData) return d.formData;
+      }
+    } catch { /* ignore */ }
+    return {};
+  });
   const [identityData, setIdentityData] = useState<IdentityData | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash' | undefined>(undefined);
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
@@ -1319,7 +1330,16 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
         else if (field.type === 'info_block') init[field.id] = '';
         else init[field.id] = '';
       });
-      setFormData(init);
+      // Sauvegarde auto (#37) : fusionne un brouillon récent (< 24h)
+      let draft: Record<string, string | boolean> = {};
+      try {
+        const raw = localStorage.getItem(`hl_draft_${id}`);
+        if (raw) {
+          const d = JSON.parse(raw);
+          if (d?.ts && Date.now() - d.ts < 24 * 3600 * 1000 && d.formData) draft = d.formData;
+        }
+      } catch { /* ignore */ }
+      setFormData({ ...init, ...draft });
     };
 
     // Try server first (works on any device), fallback to localStorage
@@ -1340,6 +1360,14 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
         else setNotFound(true);
       });
   }, [id]);
+
+  // Sauvegarde auto du brouillon (#37) — réponses conservées 24h en cas de sortie
+  useEffect(() => {
+    if (typeof window === 'undefined' || screen === 'success') return;
+    const hasAnswers = Object.values(formData).some((v) => v !== '' && v !== false);
+    if (!hasAnswers) return;
+    try { localStorage.setItem(`hl_draft_${id}`, JSON.stringify({ formData, ts: Date.now() })); } catch { /* ignore */ }
+  }, [formData, screen, id]);
 
   const handleStart = useCallback(() => {
     if (!form) return;
@@ -1534,6 +1562,8 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       setTicketId(resp.id);
       setPaymentMethod(method);
       setScreen('success');
+      // Brouillon consommé → on le supprime (#37)
+      try { localStorage.removeItem(`hl_draft_${id}`); } catch { /* ignore */ }
 
       // Email de confirmation — toujours envoyé à l'email saisi dans l'identité
       const eventDateField = form?.fields.find((f) => f.type === 'event_date');
