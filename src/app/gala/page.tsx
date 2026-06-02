@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Form, FormResponse, TableOption } from '@/lib/types';
-import { parseEventDate } from '@/lib/utils';
+import { parseEventDate, downloadICS } from '@/lib/utils';
 
 const GOLD = '#C9A96E';
 
@@ -157,6 +157,15 @@ export default function GalaPage() {
                     Réserver ma table ✦
                   </motion.span>
                 </Link>
+                {eventDate && (
+                  <button
+                    onClick={() => downloadICS(gala.title, eventDate, dateField?.venue)}
+                    className="ml-3 inline-flex items-center gap-2 px-6 py-4 rounded-full text-sm border transition-colors hover:bg-[#c9a96e]/10"
+                    style={{ borderColor: `${GOLD}55`, color: '#f5efe6' }}
+                  >
+                    📅 Ajouter à mon agenda
+                  </button>
+                )}
               </motion.div>
 
               {seatsLeft !== null && (
