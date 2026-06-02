@@ -1119,6 +1119,125 @@ function AIModal({
 }
 
 /* ─── Builder Content ──────────────────────────────────────── */
+/* ─── Assistant guidé (création simplifiée) ─────────────────────
+   3 questions max → le formulaire est généré automatiquement.
+   Le builder avancé reste accessible via « Personnaliser ». */
+function QuickWizard({ onCreate, onAdvanced, saving }: {
+  onCreate: (data: { template: FormTemplate; title: string; date: string; price: string; capacity: string }) => void;
+  onAdvanced: (template: FormTemplate | null, data: { title: string; date: string; price: string; capacity: string }) => void;
+  saving: boolean;
+}) {
+  const [tpl, setTpl] = useState<FormTemplate | null>(null);
+  const [title, setTitle] = useState('');
+  const [date, setDate] = useState('');
+  const [price, setPrice] = useState('');
+  const [capacity, setCapacity] = useState('');
+
+  // On met en avant les 6 cas les plus courants
+  const featured = ['gala', 'fete', 'chabbat', 'don', 'gratuit', 'aliyot'];
+  const cards = featured.map((k) => TEMPLATES.find((t) => t.key === k)).filter(Boolean) as FormTemplate[];
+
+  const choose = (t: FormTemplate) => {
+    setTpl(t); setTitle(t.title);
+    const pay = t.fields.find((f) => f.type === 'payment');
+    setPrice(pay?.amount ? String(pay.amount) : '');
+    setDate(''); setCapacity('');
+  };
+
+  const hasDate = !!tpl?.fields.some((f) => f.type === 'event_date');
+  const hasPrice = !!tpl?.fields.some((f) => f.type === 'payment');
+  const canCreate = !!tpl && title.trim() !== '';
+
+  return (
+    <div className="min-h-screen pt-24 pb-20">
+      <div className="max-w-2xl mx-auto px-5 sm:px-6">
+        <div className="text-center mb-10">
+          <p className="text-xs uppercase tracking-widest text-gold-600 mb-2">Création guidée</p>
+          <h1 className="text-4xl sm:text-5xl font-light text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>
+            {tpl ? 'Quelques infos' : 'Que voulez-vous créer ?'}
+          </h1>
+          <p className="text-brown-500 text-sm mt-2">
+            {tpl ? 'On s’occupe du reste — vous pourrez tout modifier ensuite.' : 'Choisissez un type, le formulaire est prêt en 30 secondes.'}
+          </p>
+        </div>
+
+        {!tpl ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {cards.map((t) => (
+              <motion.button key={t.key} onClick={() => choose(t)}
+                whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
+                className="flex items-center gap-4 p-5 rounded-2xl bg-beige-50 border border-beige-200 text-left hover:border-gold-400/50 transition-colors">
+                <span className="text-3xl flex-shrink-0">{t.icon}</span>
+                <div className="min-w-0">
+                  <p className="font-medium text-brown-900">{t.name}</p>
+                  <p className="text-xs text-brown-400 truncate">{t.description}</p>
+                </div>
+              </motion.button>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-3xl bg-beige-50 border border-beige-200 shadow-[0_20px_60px_rgba(44,24,16,0.06)] p-6 sm:p-8 space-y-6">
+            <button onClick={() => setTpl(null)} className="text-xs text-brown-400 hover:text-brown-700 transition-colors">← Changer de type</button>
+
+            <div>
+              <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Titre du formulaire</label>
+              <input value={title} onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 focus:outline-none focus:border-gold-400"
+                placeholder="Ex : Grand Gala 2026" />
+            </div>
+
+            {hasDate && (
+              <div>
+                <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Date de l’événement</label>
+                <MiniCalendar value={date} onChange={setDate} />
+              </div>
+            )}
+
+            {hasPrice && (
+              <div>
+                <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Prix par personne (€)</label>
+                <input type="number" min="0" value={price} onChange={(e) => setPrice(e.target.value)}
+                  className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 focus:outline-none focus:border-gold-400"
+                  placeholder="Ex : 50" />
+              </div>
+            )}
+
+            <div>
+              <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">
+                Nombre de places max <span className="normal-case text-brown-300">(optionnel)</span>
+              </label>
+              <input type="number" min="1" value={capacity} onChange={(e) => setCapacity(e.target.value)}
+                className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 focus:outline-none focus:border-gold-400"
+                placeholder="Laisser vide = illimité" />
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <motion.button onClick={() => onCreate({ template: tpl, title, date, price, capacity })}
+                disabled={!canCreate || saving} whileTap={{ scale: 0.98 }}
+                className="btn-liquid flex-1 py-4 bg-brown-900 text-beige-50 rounded-2xl font-medium overflow-hidden disabled:opacity-40">
+                <span className="relative z-10">{saving ? 'Création…' : '✓ Créer le formulaire'}</span>
+              </motion.button>
+              <button onClick={() => onAdvanced(tpl, { title, date, price, capacity })}
+                className="px-5 py-4 rounded-2xl border border-beige-300 text-brown-600 text-sm hover:bg-beige-100 transition-colors">
+                Personnaliser en détail
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!tpl && (
+          <div className="text-center mt-8">
+            <button onClick={() => onAdvanced(null, { title: '', date: '', price: '', capacity: '' })}
+              className="text-sm text-brown-400 hover:text-brown-700 underline underline-offset-2 transition-colors">
+              Ou créer un formulaire vierge (mode avancé)
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function BuilderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1162,6 +1281,17 @@ function BuilderContent() {
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  // Mode création : assistant guidé par défaut pour un nouveau formulaire
+  const [mode, setMode] = useState<'wizard' | 'advanced'>(() => (searchParams.get('id') ? 'advanced' : 'wizard'));
+
+  // Construit les champs à partir d'un modèle + des réponses de l'assistant
+  const buildWizardFields = (t: FormTemplate, date: string, price: string): FormField[] =>
+    t.fields.map((f) => {
+      const nf = { ...f, id: generateId() } as FormField;
+      if (f.type === 'event_date' && date) nf.presetValue = date;
+      if (f.type === 'payment' && price.trim() !== '') nf.amount = parseFloat(price) || f.amount;
+      return nf;
+    });
 
   // Système de notifications toast
   const { toasts, toast: addToast } = useToast();
@@ -1271,6 +1401,33 @@ function BuilderContent() {
     addToast(`Modèle « ${t.name} » appliqué`, 'success');
   };
 
+  // Assistant guidé → création directe (sans passer par le builder avancé)
+  const handleWizardCreate = async (data: { template: FormTemplate; title: string; date: string; price: string; capacity: string }) => {
+    setSaving(true);
+    try {
+      const form = createForm(data.title.trim() || data.template.title);
+      form.description = data.template.description;
+      form.fields = buildWizardFields(data.template, data.date, data.price);
+      form.maxCapacity = data.capacity.trim() === '' ? undefined : (parseInt(data.capacity, 10) || undefined);
+      saveFormLocally(form);
+      try { await saveFormToServer(form); } catch { addToast('Sauvegardé localement (erreur serveur).', 'error'); }
+      router.push('/dashboard?created=1');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Assistant guidé → bascule vers le builder avancé (pré-rempli)
+  const handleWizardAdvanced = (t: FormTemplate | null, data: { title: string; date: string; price: string; capacity: string }) => {
+    if (t) {
+      setTitle(data.title.trim() || t.title);
+      setDescription(t.description);
+      setFields(buildWizardFields(t, data.date, data.price));
+      if (data.capacity.trim() !== '') setMaxCapacity(data.capacity);
+    }
+    setMode('advanced');
+  };
+
   const fieldTypePanel = (
     <div className="space-y-1.5">
       {FIELD_TYPES.map((ft, i) => (
@@ -1306,6 +1463,16 @@ function BuilderContent() {
 
   const saveLabel = isEditing ? 'Sauvegarder ✓' : 'Créer le formulaire ✓';
   const saveLabelShort = isEditing ? 'Sauvegarder' : 'Créer ✓';
+
+  // Mode assistant guidé (création simplifiée) — par défaut pour un nouveau formulaire
+  if (mode === 'wizard') {
+    return (
+      <>
+        <Toaster toasts={toasts} />
+        <QuickWizard onCreate={handleWizardCreate} onAdvanced={handleWizardAdvanced} saving={saving} />
+      </>
+    );
+  }
 
   return (
     <>
