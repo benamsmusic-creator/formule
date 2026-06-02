@@ -175,6 +175,7 @@ function EventCard({ form, index }: { form: Form; index: number }) {
 export default function EventsPage() {
   const [forms, setForms] = useState<Form[]>([]);
   const [loaded, setLoaded] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     fetch('/api/forms')
@@ -182,9 +183,11 @@ export default function EventsPage() {
       .then((data) => {
         if (Array.isArray(data)) {
           setForms(data.filter((f: Form) => !f.archived && !f.disabled && f.id !== 'dons-generaux'));
+        } else {
+          setFetchError(true);
         }
       })
-      .catch(() => {})
+      .catch(() => setFetchError(true))
       .finally(() => setLoaded(true));
   }, []);
 
@@ -235,6 +238,21 @@ export default function EventsPage() {
         {/* Grid */}
         {!loaded ? (
           <SkeletonCards count={6} />
+        ) : fetchError ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+            className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="text-5xl mb-4">⚠️</div>
+            <h2 className="text-xl font-light text-brown-700 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
+              Impossible de charger les événements
+            </h2>
+            <p className="text-brown-400 text-sm max-w-xs mx-auto mb-6">
+              Une erreur est survenue. Vérifiez votre connexion et réessayez.
+            </p>
+            <button onClick={() => { setFetchError(false); setLoaded(false); fetch('/api/forms').then(r => r.json()).then(d => { if (Array.isArray(d)) setForms(d.filter((f: Form) => !f.archived && !f.disabled && f.id !== 'dons-generaux')); }).catch(() => setFetchError(true)).finally(() => setLoaded(true)); }}
+              className="px-5 py-2.5 rounded-full bg-brown-900 text-beige-50 text-sm hover:bg-brown-800 transition-colors">
+              Réessayer
+            </button>
+          </motion.div>
         ) : forms.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
