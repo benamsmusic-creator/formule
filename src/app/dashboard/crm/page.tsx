@@ -72,7 +72,7 @@ function EventCard({ ev, index }: { ev: EventSummary; index: number }) {
       className={`rounded-2xl border overflow-hidden ${
         ev.isPast
           ? 'bg-beige-50 border-beige-200 opacity-70'
-          : 'bg-white border-gold-400/30 shadow-sm shadow-gold-400/10'
+          : 'bg-beige-50 border-gold-400/30 shadow-sm shadow-gold-400/10'
       }`}
     >
       {/* Barre supérieure */}
@@ -194,7 +194,7 @@ function ContactCardItem({ contact, index }: { contact: ContactCard; index: numb
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="bg-white rounded-2xl border border-beige-200 overflow-hidden shadow-sm"
+      className="bg-beige-50 rounded-2xl border border-beige-200 overflow-hidden shadow-sm"
     >
       <div className="h-1 bg-gradient-to-r from-gold-400/60 to-transparent" />
       <div className="p-4">
@@ -464,7 +464,7 @@ export default function CRMPage() {
               { label: 'Contacts', value: contacts.length, icon: '👤' },
               { label: 'CA Total', value: totalCA > 0 ? `${totalCA} €` : '—', icon: '◆' },
             ].map((s) => (
-              <div key={s.label} className="bg-white rounded-2xl border border-beige-200 p-3 text-center shadow-sm">
+              <div key={s.label} className="bg-beige-50 rounded-2xl border border-beige-200 p-3 text-center shadow-sm">
                 <p className="text-base mb-0.5">{s.icon}</p>
                 <p className="text-xl font-semibold text-brown-900">{s.value}</p>
                 <p className="text-[10px] text-brown-400 uppercase tracking-wide">{s.label}</p>
@@ -484,7 +484,7 @@ export default function CRMPage() {
               onClick={() => { setTab(t.key); setSearch(''); }}
               className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                 tab === t.key
-                  ? 'bg-white text-brown-900 shadow-sm'
+                  ? 'bg-beige-50 text-brown-900 shadow-sm'
                   : 'text-brown-500 hover:text-brown-700'
               }`}
             >
@@ -501,7 +501,7 @@ export default function CRMPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={tab === 'events' ? 'Rechercher un événement…' : 'Rechercher un contact…'}
-            className="w-full pl-9 pr-4 py-3 rounded-2xl bg-white border border-beige-200 text-sm text-brown-900 placeholder:text-brown-300 focus:outline-none focus:border-gold-400 transition-colors"
+            className="w-full pl-9 pr-4 py-3 rounded-2xl bg-beige-50 border border-beige-200 text-sm text-brown-900 placeholder:text-brown-300 focus:outline-none focus:border-gold-400 transition-colors"
           />
         </div>
 

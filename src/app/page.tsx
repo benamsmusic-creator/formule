@@ -24,7 +24,9 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-beige-50">
+    <div className="min-h-screen flex flex-col" style={{
+      background: `radial-gradient(900px 520px at 50% -8%, rgba(201,169,110,0.16), transparent 62%), radial-gradient(700px 500px at 92% 108%, rgba(201,169,110,0.10), transparent 60%), linear-gradient(180deg, var(--color-beige-50), var(--color-beige-100) 55%, var(--color-beige-50))`,
+    }}>
       <a href="#contenu" className="skip-link">Aller au contenu</a>
 
       {/* Header — minimal */}
