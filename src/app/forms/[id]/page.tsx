@@ -1109,7 +1109,7 @@ function PaymentChoiceScreen({
 }
 
 /* ─── Success screen ────────────────────────────────────────── */
-function SuccessScreen({ paymentMethod, ticketId, isWaitlist, form }: { paymentMethod?: 'card' | 'cash'; ticketId?: string | null; isWaitlist?: boolean; form?: Form }) {
+function SuccessScreen({ paymentMethod, ticketId, isWaitlist, form, email }: { paymentMethod?: 'card' | 'cash'; ticketId?: string | null; isWaitlist?: boolean; form?: Form; email?: string }) {
   const [qr, setQr] = useState<string>('');
   const [loggedIn, setLoggedIn] = useState(true);
 
@@ -1167,6 +1167,13 @@ function SuccessScreen({ paymentMethod, ticketId, isWaitlist, form }: { paymentM
           ? 'Votre réservation et paiement ont bien été confirmés.'
           : 'Votre réponse a bien été enregistrée.'}
       </motion.p>
+
+      {!isWaitlist && email && (
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-beige-100 border border-beige-200 text-brown-500 text-sm mb-8">
+          📧 Un email de confirmation a été envoyé à <span className="font-medium text-brown-700">{email}</span>
+        </motion.p>
+      )}
 
       {/* Billet avec QR code */}
       {qr && (
@@ -2252,7 +2259,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </motion.div>
         )}
 
-        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} ticketId={ticketId} isWaitlist={isFull} form={form} />}
+        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} ticketId={ticketId} isWaitlist={isFull} form={form} email={identityData?.email} />}
       </AnimatePresence>
     </div>
   );
