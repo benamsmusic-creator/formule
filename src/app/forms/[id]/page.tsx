@@ -3,7 +3,7 @@ import { use, useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getForm, addResponse, getCurrentUser } from '@/lib/store'; // getCurrentUser used inside submitForm
 import { Form, FormField, PromoCode, TableOption } from '@/lib/types';
-import { extractYouTubeId } from '@/lib/utils';
+import { extractYouTubeId, parseEventDate, downloadICS } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -883,9 +883,21 @@ function PaymentChoiceScreen({
 }
 
 /* ─── Success screen ────────────────────────────────────────── */
-function SuccessScreen({ paymentMethod, ticketId, isWaitlist }: { paymentMethod?: 'card' | 'cash'; ticketId?: string | null; isWaitlist?: boolean }) {
+function SuccessScreen({ paymentMethod, ticketId, isWaitlist, form }: { paymentMethod?: 'card' | 'cash'; ticketId?: string | null; isWaitlist?: boolean; form?: Form }) {
   const [qr, setQr] = useState<string>('');
   const [loggedIn, setLoggedIn] = useState(true);
+
+  const eventDateField = form?.fields.find((f) => f.type === 'event_date');
+  const eventDate = parseEventDate(eventDateField?.presetValue);
+  const canShare = typeof navigator !== 'undefined' && !!(navigator as Navigator).share;
+
+  const handleShare = () => {
+    if (typeof window === 'undefined' || !form) return;
+    const url = `${window.location.origin}/forms/${form.id}`;
+    const text = `${form.title} — HabadLyon`;
+    if (canShare) (navigator as Navigator).share({ title: form.title, text, url }).catch(() => {});
+    else window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${url}`)}`, '_blank');
+  };
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -946,6 +958,31 @@ function SuccessScreen({ paymentMethod, ticketId, isWaitlist }: { paymentMethod?
         </motion.div>
       )}
 
+      {/* Actions : agenda + partage */}
+      {!isWaitlist && (eventDate || form) && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+          className="mt-7 flex flex-wrap items-center justify-center gap-3"
+        >
+          {eventDate && form && (
+            <button
+              onClick={() => downloadICS(form.title, eventDate, eventDateField?.venue)}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full bg-brown-900 text-beige-50 text-sm font-medium hover:bg-brown-800 transition-colors"
+            >
+              📅 Ajouter à mon agenda
+            </button>
+          )}
+          {form && (
+            <button
+              onClick={handleShare}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-full border border-gold-400/40 text-brown-800 text-sm font-medium hover:bg-gold-400/10 transition-colors"
+            >
+              ↗ Partager
+            </button>
+          )}
+        </motion.div>
+      )}
+
       {!loggedIn && (
         <motion.div
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
@@ -957,6 +994,15 @@ function SuccessScreen({ paymentMethod, ticketId, isWaitlist }: { paymentMethod?
           </Link>
         </motion.div>
       )}
+
+      {/* Navigation de sortie */}
+      <motion.div
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+        className="mt-8 flex items-center justify-center gap-5 text-sm"
+      >
+        <Link href="/events" className="text-brown-600 hover:text-brown-900 transition-colors">← Autres événements</Link>
+        <Link href="/" className="text-brown-400 hover:text-brown-700 transition-colors">Accueil</Link>
+      </motion.div>
     </motion.div>
   );
 }
@@ -1620,7 +1666,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           </motion.div>
         )}
 
-        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} ticketId={ticketId} isWaitlist={isFull} />}
+        {screen === 'success' && <SuccessScreen key="success" paymentMethod={paymentMethod} ticketId={ticketId} isWaitlist={isFull} form={form} />}
       </AnimatePresence>
     </div>
   );
