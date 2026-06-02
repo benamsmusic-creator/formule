@@ -322,11 +322,12 @@ function IdentityScreen({
       exit={slide.exit}
       className="absolute inset-0 flex items-center justify-center overflow-y-auto"
     >
-      <div className="w-full max-w-2xl mx-auto px-6 py-20">
-        <h2 className="text-4xl sm:text-5xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
+      <div className="w-full max-w-lg mx-auto px-5 py-20">
+        <div className="rounded-3xl bg-beige-50 border border-beige-200 shadow-[0_30px_80px_rgba(44,24,16,0.07)] p-7 sm:p-9">
+        <h2 className="text-3xl sm:text-4xl font-light text-brown-900 mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>
           Vos informations
         </h2>
-        <p className="text-brown-400 text-sm mb-10">Toutes les informations sont requises.</p>
+        <p className="text-brown-400 text-sm mb-7">Pour finaliser votre inscription.</p>
 
         {/* Honeypot anti-spam — invisible, ne pas remplir */}
         <input
@@ -362,7 +363,7 @@ function IdentityScreen({
         <div className="mb-7">
           <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Prénom</label>
           <input
-            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors placeholder:text-beige-400"
             placeholder="Votre prénom"
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
@@ -374,7 +375,7 @@ function IdentityScreen({
         <div className="mb-7">
           <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Nom</label>
           <input
-            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors placeholder:text-beige-400"
             placeholder="Votre nom de famille"
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
@@ -385,7 +386,7 @@ function IdentityScreen({
         <div className="mb-7">
           <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Email</label>
           <input
-            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors placeholder:text-beige-400"
             placeholder="votre@email.com"
             type="email"
             value={email}
@@ -398,7 +399,7 @@ function IdentityScreen({
         <div className="mb-7">
           <label className="text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium">Téléphone</label>
           <input
-            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors placeholder:text-beige-400"
             placeholder="06 12 34 56 78"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -412,7 +413,7 @@ function IdentityScreen({
             Adresse <span className="normal-case text-brown-300">(optionnel)</span>
           </label>
           <input
-            className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-xl font-light py-3 focus:outline-none transition-colors placeholder:text-beige-300"
+            className="w-full px-4 py-3.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-base focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors placeholder:text-beige-400"
             placeholder="12 rue des Acacia, Lyon"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -435,6 +436,7 @@ function IdentityScreen({
             whileHover={{ x: -2 }}>
             ← Retour
           </motion.button>
+        </div>
         </div>
       </div>
     </motion.div>
@@ -669,7 +671,7 @@ function QuestionScreen({
   const canProceed = isAutoAdvance || !field.required ||
     (field.type === 'checkbox' ? value === true : value !== '' && value !== false);
 
-  const baseInput = 'w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-2xl sm:text-3xl font-light py-4 focus:outline-none transition-colors duration-200 placeholder:text-beige-300';
+  const baseInput = 'w-full px-5 py-4 rounded-2xl bg-beige-100 border border-beige-200 text-brown-900 text-xl sm:text-2xl font-light focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors duration-200 placeholder:text-beige-400 text-center';
 
   return (
     <motion.div
@@ -707,7 +709,7 @@ function QuestionScreen({
 
           {field.type === 'textarea' && (
             <textarea ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-              className="w-full bg-transparent border-b-2 border-beige-300 focus:border-gold-500 text-brown-900 text-xl font-light py-4 focus:outline-none transition-colors duration-200 placeholder:text-beige-300 resize-none"
+              className="w-full px-5 py-4 rounded-2xl bg-beige-100 border border-beige-200 text-brown-900 text-lg font-light focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors duration-200 placeholder:text-beige-400 resize-none"
               placeholder={field.placeholder ?? 'Votre réponse ici…'} rows={4}
               value={value as string} onChange={(e) => onChange(e.target.value)} />
           )}
