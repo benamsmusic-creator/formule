@@ -31,6 +31,7 @@ export const NAV_GROUPS = [
     { href: '/calendrier', icon: '🗓️', label: 'Calendrier' },
     { href: '/dashboard/gala', icon: '🥂', label: 'Gala' },
     { href: '/dashboard/promesses', icon: '🤝', label: 'Promesses de dons' },
+    { href: '/dashboard/cagnottes', icon: '🎯', label: 'Cagnottes' },
     { href: '/encheres', icon: '🔨', label: 'Enchères' },
   ] },
   { group: 'Gestion', items: [
