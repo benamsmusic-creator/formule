@@ -25,7 +25,7 @@ export function exportResponsesToCSV(form: Form): void {
   const headers = [
     'Date', 'Civilité', 'Prénom', 'Nom', 'Email', 'Téléphone', 'Adresse',
     'Nb invités', 'Don', 'Réservation table', 'Montant total (€)',
-    'Statut paiement', 'Méthode',
+    'Statut paiement', 'Méthode', 'Présent', 'Table', 'Liste attente',
     ...customFields.map((f) => f.label || f.id),
   ];
 
@@ -38,6 +38,9 @@ export function exportResponsesToCSV(form: Form): void {
       d._guestCount ?? '', d._donation ?? '', d._tableReservation ?? '',
       d._totalAmount ?? (r.paymentAmount != null ? String(r.paymentAmount) : ''),
       r.paymentStatus ?? '', r.paymentMethod ?? '',
+      r.checkedIn ? 'Oui' : 'Non',
+      r.tableNumber != null ? String(r.tableNumber) : '',
+      d._waitlist === 'true' ? 'Oui' : 'Non',
       ...customFields.map((f) => {
         const val = d[f.id];
         return typeof val === 'boolean' ? (val ? 'Oui' : 'Non') : (val ?? '');
