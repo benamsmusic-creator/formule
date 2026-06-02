@@ -959,10 +959,11 @@ function QuestionScreen({
 
 /* ─── Payment choice screen ─────────────────────────────────── */
 function PaymentChoiceScreen({
-  amount, onCash, onCard, onBack, direction, allowCash, recap,
+  amount, onCash, onCard, onBack, direction, allowCash, recap, firstName = '',
 }: {
   amount: number; onCash: () => void; onCard: () => void; onBack: () => void; direction: number; allowCash?: boolean;
   recap?: { lines: { label: string; value: string }[]; discount?: { label: string; value: string }; total: number };
+  firstName?: string;
 }) {
   const slide = makeSlide(direction);
   return (
@@ -977,6 +978,10 @@ function PaymentChoiceScreen({
         <button onClick={onBack} className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">
           ← Retour
         </button>
+        <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+          className="text-sm text-gold-600 font-medium mb-1">
+          {firstName ? `Dernière étape, ${firstName} 🎉` : 'Dernière étape 🎉'}
+        </motion.p>
         <h2 className="text-4xl sm:text-5xl font-light text-brown-900 mb-6" style={{ fontFamily: 'var(--font-cormorant)' }}>
           Mode de paiement
         </h2>
@@ -1890,6 +1895,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
               recap={buildRecap()}
               allowCash={allowCashCharge}
               direction={direction}
+              firstName={identityData?.firstName ?? ''}
               onCash={handleCash}
               onCard={handleCard}
               onBack={() => {
