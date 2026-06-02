@@ -93,7 +93,7 @@ export default function MembresPage() {
                   </div>
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button onClick={() => renew(m.id)} className="text-xs font-medium text-gold-700 border border-gold-400/30 px-3 py-1.5 rounded-lg hover:bg-gold-400/10 transition-colors">+1 an</button>
-                    <button onClick={() => remove(m.id)} className="text-xs text-brown-400 hover:text-red-500 transition-colors">×</button>
+                    <button onClick={() => remove(m.id)} aria-label="Supprimer le membre" className="text-xs text-brown-400 hover:text-red-500 transition-colors">×</button>
                   </div>
                       </div>
                     );

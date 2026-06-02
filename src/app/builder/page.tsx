@@ -405,6 +405,7 @@ function ImagePicker({
               <button
                 type="button"
                 onClick={() => onChange(undefined)}
+                aria-label="Retirer l'image"
                 className="w-6 h-6 rounded-lg bg-red-600/80 text-white text-xs flex items-center justify-center hover:bg-red-600 transition-colors"
               >
                 ×
@@ -469,6 +470,7 @@ function OptionEditor({
         />
         <button
           onClick={onDelete}
+          aria-label="Supprimer l'option"
           className="w-8 h-8 flex items-center justify-center rounded-lg text-brown-300 hover:text-red-400 hover:bg-red-50 transition-colors text-lg leading-none flex-shrink-0"
         >
           ×
@@ -1060,7 +1062,7 @@ function AIModal({
                 Décrivez votre événement, l&apos;IA génère le formulaire.
               </p>
             </div>
-            <button onClick={onClose} className="text-brown-300 hover:text-brown-700 text-2xl leading-none p-1">
+            <button onClick={onClose} aria-label="Fermer" className="text-brown-300 hover:text-brown-700 text-2xl leading-none p-1">
               ×
             </button>
           </div>
@@ -1333,7 +1335,7 @@ function BuilderContent() {
             >
               <div className="flex items-center justify-between mb-1">
                 <h3 className="text-2xl font-light text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>Partir d&apos;un modèle</h3>
-                <button onClick={() => setShowTemplates(false)} className="text-brown-400 hover:text-brown-700 text-xl leading-none">×</button>
+                <button onClick={() => setShowTemplates(false)} aria-label="Fermer" className="text-brown-400 hover:text-brown-700 text-xl leading-none">×</button>
               </div>
               <p className="text-xs text-brown-400 mb-5">Le modèle remplace le contenu actuel du formulaire.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1535,6 +1537,7 @@ function BuilderContent() {
                             <button
                               type="button"
                               onClick={() => setPromoCodes((prev) => prev.filter((_, idx) => idx !== i))}
+                              aria-label="Supprimer le code promo"
                               className="w-8 h-8 flex items-center justify-center rounded-lg text-brown-300 hover:text-red-400 hover:bg-red-50 transition-colors text-lg"
                             >
                               ×
@@ -1715,6 +1718,7 @@ function BuilderContent() {
                   </h2>
                   <button
                     onClick={() => setShowMobilePanel(false)}
+                    aria-label="Fermer"
                     className="text-brown-300 text-2xl leading-none w-8 h-8 flex items-center justify-center"
                   >
                     ×
