@@ -272,7 +272,7 @@ function CoverScreen({ form, onStart, isFull, participants = 0, estMinutes = 2, 
                 <motion.span animate={{ x: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>→</motion.span>
               </motion.button>
               <div className="mt-4 flex items-center gap-4">
-                <p className="text-beige-400/40 text-xs">Entrée ↵</p>
+                <p className="hidden sm:block text-beige-400/40 text-xs">Entrée ↵</p>
                 <button onClick={() => shareCurrentPage(form.title)}
                   className="text-beige-200/80 hover:text-beige-50 text-xs underline underline-offset-2 transition-colors"
                   aria-label="Partager cet événement">↗ Partager</button>
@@ -314,7 +314,7 @@ function CoverScreen({ form, onStart, isFull, participants = 0, estMinutes = 2, 
               </span>
             </motion.button>
             <div className="mt-5 flex items-center justify-center gap-4">
-              <p className="text-brown-300 text-xs">Entrée ↵</p>
+              <p className="hidden sm:block text-brown-300 text-xs">Entrée ↵</p>
               <button onClick={() => shareCurrentPage(form.title)}
                 className="text-brown-400 hover:text-brown-700 text-xs underline underline-offset-2 transition-colors"
                 aria-label="Partager cet événement">↗ Partager</button>
@@ -1003,7 +1003,7 @@ function QuestionScreen({
           </motion.button>
 
           {!isAutoAdvance && field.type !== 'radio' && field.type !== 'select' && field.type !== 'checkbox' && field.type !== 'people_count' && (
-            <span className="text-xs text-brown-300 ml-auto">Entrée ↵</span>
+            <span className="hidden sm:inline text-xs text-brown-300 ml-auto">Entrée ↵</span>
           )}
         </div>
       </div>
