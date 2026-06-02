@@ -381,17 +381,22 @@ function DashboardContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1
-            className="text-5xl font-light text-brown-900 mb-2"
-            style={{ fontFamily: 'var(--font-cormorant)' }}
-          >
-            Votre <em className="gradient-text">Dashboard</em>
-          </h1>
-          <p className="text-brown-500">
-            Gérez vos formulaires et suivez vos réponses.
-            {me?.orgName && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-gold-400/10 text-gold-700 border border-gold-400/20">{me.orgName}</span>}
-            {me?.superAdmin && <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-brown-900 text-beige-50">Super-admin · toutes orgs</span>}
+          <p className="text-xs uppercase tracking-widest text-gold-600 mb-2">
+            {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h1
+              className="text-4xl sm:text-5xl font-light text-brown-900"
+              style={{ fontFamily: 'var(--font-cormorant)' }}
+            >
+              Tableau de <em className="gradient-text">bord</em>
+            </h1>
+            <div className="flex items-center gap-2">
+              {me?.orgName && <span className="text-xs px-3 py-1.5 rounded-full bg-gold-400/10 text-gold-700 border border-gold-400/20 font-medium">{me.orgName}</span>}
+              {me?.superAdmin && <span className="text-xs px-3 py-1.5 rounded-full bg-brown-900 text-beige-50 font-medium">👑 Super-admin</span>}
+            </div>
+          </div>
+          <p className="text-brown-500 text-sm mt-2">Vue d’ensemble de votre communauté.</p>
         </motion.div>
 
         {/* Stats */}
