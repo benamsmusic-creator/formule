@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { getForms } from '@/lib/store';
 import { Form } from '@/lib/types';
-import { formatDate, exportResponsesToCSV } from '@/lib/utils';
+import { formatDate, exportResponsesToCSV, generateId } from '@/lib/utils';
 
 function StatCard({ label, value, icon, delay }: { label: string; value: number; icon: string; delay: number }) {
   const [displayed, setDisplayed] = useState(0);
@@ -51,13 +51,14 @@ function StatCard({ label, value, icon, delay }: { label: string; value: number;
 }
 
 function FormCard({
-  form, onArchive, onToggleDisabled, index, onCopied,
+  form, onArchive, onToggleDisabled, index, onCopied, onDuplicate,
 }: {
   form: Form;
   onArchive: () => void;
   onToggleDisabled: () => void;
   index: number;
   onCopied: () => void;
+  onDuplicate: () => void;
 }) {
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -196,6 +197,15 @@ function FormCard({
           </motion.button>
 
           <motion.button
+            className="w-10 h-9 rounded-xl bg-beige-100 border border-beige-200 text-brown-500 text-sm flex items-center justify-center hover:bg-beige-200 transition-colors flex-shrink-0"
+            whileTap={{ scale: 0.95 }}
+            onClick={onDuplicate}
+            title="Dupliquer"
+          >
+            ⧉
+          </motion.button>
+
+          <motion.button
             className="w-10 h-9 rounded-xl bg-beige-100 border border-beige-200 text-brown-400 text-sm flex items-center justify-center hover:text-red-500 hover:bg-red-50 hover:border-red-200 transition-colors flex-shrink-0"
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowConfirm(true)}
@@ -268,6 +278,22 @@ function DashboardContent() {
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Dupliquer un formulaire (pratique pour les événements récurrents)
+  const handleDuplicate = async (form: Form) => {
+    const copy: Form = {
+      ...form,
+      id: generateId(),
+      title: `${form.title} (copie)`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      responses: [],
+      archived: false,
+      disabled: false,
+    };
+    setForms((prev) => [copy, ...prev]);
+    fetch('/api/forms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(copy) }).catch(() => {});
+  };
 
   // Archive — met à jour l'état immédiatement, sans re-fetch
   const handleArchive = (id: string) => {
@@ -549,6 +575,7 @@ function DashboardContent() {
                   onArchive={() => handleArchive(form.id)}
                   onToggleDisabled={() => handleToggleDisabled(form.id, !!form.disabled)}
                   onCopied={handleCopied}
+                  onDuplicate={() => handleDuplicate(form)}
                 />
               ))}
             </div>

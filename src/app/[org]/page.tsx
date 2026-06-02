@@ -17,6 +17,7 @@ export default function OrgPublicPage() {
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
   const [directory, setDirectory] = useState<{ id: string; category: string; name: string; address: string; phone: string; url: string }[]>([]);
   const [announcements, setAnnouncements] = useState<{ id: string; kind: string; title: string; body: string }[]>([]);
+  const [memorial, setMemorial] = useState<{ id: string; name: string; hebLabel: string }[]>([]);
   const [subEmail, setSubEmail] = useState('');
   const [subDone, setSubDone] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'notfound'>('loading');
@@ -55,6 +56,8 @@ export default function OrgPublicPage() {
         if (Array.isArray(dir)) setDirectory(dir);
         const ann = await (await fetch(`/api/announcements?org=${encodeURIComponent(slug)}`)).json();
         if (Array.isArray(ann)) setAnnouncements(ann);
+        const mem = await (await fetch(`/api/memorial?org=${encodeURIComponent(slug)}`)).json();
+        if (Array.isArray(mem)) setMemorial(mem);
       } catch { /* ignore */ }
       setState('ready');
     })().catch(() => { if (alive) setState('notfound'); });
@@ -184,6 +187,22 @@ export default function OrgPublicPage() {
                   {d.address && <p className="text-xs text-brown-500 mt-0.5">📍 {d.address}</p>}
                   {d.phone && <p className="text-xs text-brown-500">📞 {d.phone}</p>}
                   {d.url && <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-xs text-gold-700 hover:underline">Site web ↗</a>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Mur du souvenir */}
+        {memorial.length > 0 && (
+          <div className="mt-16 max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl font-light text-brown-900 mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>Mur du souvenir 🕯️</h2>
+            <p className="text-xs text-brown-400 mb-5">Que leur souvenir soit une bénédiction</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {memorial.map((m) => (
+                <div key={m.id} className="p-3 rounded-xl bg-beige-50 border border-beige-200">
+                  <p className="text-sm font-medium text-brown-800">{m.name}</p>
+                  <p className="text-[11px] text-brown-400">{m.hebLabel}</p>
                 </div>
               ))}
             </div>
