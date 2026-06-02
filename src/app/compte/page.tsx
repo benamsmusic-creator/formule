@@ -88,6 +88,25 @@ export default function ComptePage() {
           <p className="text-brown-500">Voici vos réservations et inscriptions.</p>
         </motion.div>
 
+        {/* Cartes stats membre */}
+        {loaded && reservations.length > 0 && (
+          <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8">
+            {[
+              { label: 'Réservations', value: String(reservations.length), icon: '✦' },
+              { label: 'Billets', value: String(reservations.filter((r) => r.response.data._waitlist !== 'true').length), icon: '🎟️' },
+              { label: `Dons ${year}`, value: donationsThisYear > 0 ? `${donationsThisYear}€` : '—', icon: '🤲' },
+            ].map((s, i) => (
+              <motion.div key={s.label}
+                initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+                className="p-5 rounded-2xl bg-beige-50 border border-beige-200 text-center">
+                <div className="text-xl text-gold-500 mb-1">{s.icon}</div>
+                <p className="text-2xl font-light text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>{s.value}</p>
+                <p className="text-[10px] sm:text-xs text-brown-400 uppercase tracking-wide">{s.label}</p>
+              </motion.div>
+            ))}
+          </div>
+        )}
+
         {/* Récap annuel des dons */}
         {donationsThisYear > 0 && (
           <motion.div

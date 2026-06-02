@@ -442,6 +442,58 @@ function DashboardContent() {
           );
         })()}
 
+        {/* Outils groupés */}
+        {loaded && (
+          <div className="mb-12">
+            <h2 className="text-2xl font-light text-brown-900 mb-4" style={{ fontFamily: 'var(--font-cormorant)' }}>Outils</h2>
+            <div className="space-y-5">
+              {[
+                { group: 'Communauté', items: [
+                  { href: '/dashboard/crm', icon: '📇', label: 'CRM', desc: 'Contacts & participants' },
+                  { href: '/membres', icon: '🪪', label: 'Adhésions', desc: 'Cotisations & familles' },
+                  { href: '/annuaire', icon: '📒', label: 'Annuaire', desc: 'Cacher, mikvé…' },
+                ] },
+                { group: 'Communication', items: [
+                  { href: '/annonces', icon: '📢', label: 'Annonces', desc: 'Actualités & urgences' },
+                  { href: '/newsletter', icon: '📣', label: 'Newsletter', desc: 'Email groupé' },
+                  { href: '/sms', icon: '📱', label: 'SMS', desc: 'Envoi groupé' },
+                ] },
+                { group: 'Cycle de vie', items: [
+                  { href: '/yahrzeit', icon: '🕯️', label: 'Yahrzeit', desc: 'Rappels automatiques' },
+                  { href: '/anniversaires', icon: '🎂', label: 'Anniversaires', desc: 'Rappels automatiques' },
+                ] },
+                { group: 'Événements & dons', items: [
+                  { href: '/builder', icon: '➕', label: 'Nouveau formulaire', desc: 'Événement, gala, don…' },
+                  { href: '/encheres', icon: '🔨', label: 'Enchères', desc: 'Mitzvot aux enchères' },
+                ] },
+                { group: 'Gestion', items: [
+                  { href: '/parametres', icon: '⚙️', label: 'Réglages', desc: 'Nom, couleur, logo, galerie' },
+                  { href: '/historique', icon: '🕘', label: 'Historique', desc: 'Journal des actions' },
+                  ...(me?.superAdmin ? [{ href: '/clients', icon: '👥', label: 'Clients', desc: 'Gérer les communautés' }] : []),
+                ] },
+              ].map((g) => (
+                <div key={g.group}>
+                  <p className="text-xs uppercase tracking-widest text-brown-400 mb-2">{g.group}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {g.items.map((it) => (
+                      <Link key={it.href} href={it.href}>
+                        <motion.div whileHover={{ y: -2, boxShadow: '0 12px 30px rgba(44,24,16,0.06)' }}
+                          className="flex items-center gap-3 p-3.5 rounded-2xl bg-beige-50 border border-beige-200 hover:border-gold-400/40 transition-colors h-full">
+                          <span className="text-2xl flex-shrink-0">{it.icon}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-brown-900 truncate">{it.label}</p>
+                            <p className="text-[11px] text-brown-400 truncate">{it.desc}</p>
+                          </div>
+                        </motion.div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Recherche */}
         {loaded && forms.length > 4 && (
           <div className="relative mb-6">
@@ -476,88 +528,6 @@ function DashboardContent() {
                 </motion.button>
               </Link>
             )}
-            <Link href="/encheres">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Enchères"
-              >
-                🔨
-              </motion.button>
-            </Link>
-            <Link href="/membres">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Adhésions"
-              >
-                🪪
-              </motion.button>
-            </Link>
-            <Link href="/annonces">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Annonces"
-              >
-                📢
-              </motion.button>
-            </Link>
-            <Link href="/anniversaires">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Anniversaires"
-              >
-                🎂
-              </motion.button>
-            </Link>
-            <Link href="/annuaire">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Annuaire"
-              >
-                📒
-              </motion.button>
-            </Link>
-            <Link href="/yahrzeit">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Yahrzeit"
-              >
-                🕯️
-              </motion.button>
-            </Link>
-            <Link href="/newsletter">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Newsletter"
-              >
-                📣
-              </motion.button>
-            </Link>
-            <Link href="/sms">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="SMS"
-              >
-                📱
-              </motion.button>
-            </Link>
-            <Link href="/historique">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Historique"
-              >
-                🕘
-              </motion.button>
-            </Link>
-            <Link href="/parametres">
-              <motion.button
-                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                title="Réglages"
-              >
-                ⚙
-              </motion.button>
-            </Link>
             <Link href="/dashboard/crm">
               <motion.button
                 className="px-5 py-2.5 border border-gold-400/40 text-brown-700 rounded-xl text-sm font-medium hover:bg-gold-400/10 transition-colors"
