@@ -50,6 +50,15 @@ export default function ResponsesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [checked, setChecked] = useState<Record<string, boolean>>({});
+
+  const toggleCheck = async (rid: string) => {
+    const next = !checked[rid];
+    setChecked((c) => ({ ...c, [rid]: next }));
+    try {
+      await fetch('/api/checkin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ responseId: rid, value: next }) });
+    } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     fetch(`/api/forms/${id}`)
@@ -70,6 +79,12 @@ export default function ResponsesPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
+  useEffect(() => {
+    if (!form) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setChecked(Object.fromEntries((form.responses ?? []).map((r) => [r.id, !!r.checkedIn])));
+  }, [form]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -88,6 +103,7 @@ export default function ResponsesPage() {
   }
 
   const responses = form.responses ?? [];
+  const arrived = Object.values(checked).filter(Boolean).length;
 
   return (
     <div className="min-h-screen pt-24 pb-20">
@@ -113,6 +129,7 @@ export default function ResponsesPage() {
           </h1>
           <p className="text-brown-500 text-sm">
             {responses.length} inscription{responses.length !== 1 ? 's' : ''} enregistrée{responses.length !== 1 ? 's' : ''}
+            {arrived > 0 && <span className="text-green-600"> · {arrived} arrivé{arrived !== 1 ? 's' : ''} ✓</span>}
           </p>
         </motion.div>
 
@@ -187,6 +204,9 @@ export default function ResponsesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                      {checked[resp.id] && (
+                        <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-green-100 text-green-700 border border-green-200">✓ Arrivé</span>
+                      )}
                       {badge && (
                         <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${badge.color}`}>
                           {badge.label}
@@ -217,6 +237,14 @@ export default function ResponsesPage() {
                               </div>
                             ))}
                           </div>
+                          <button
+                            onClick={() => toggleCheck(resp.id)}
+                            className={`mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                              checked[resp.id] ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-brown-900 text-beige-50 hover:opacity-90'
+                            }`}
+                          >
+                            {checked[resp.id] ? '✓ Présent — annuler' : 'Pointer comme arrivé'}
+                          </button>
                         </div>
                       </motion.div>
                     )}

@@ -60,6 +60,7 @@ export interface FormResponse {
   paymentStatus?: 'paid' | 'unpaid' | 'pending' | 'cash';
   paymentAmount?: number;
   paymentMethod?: 'card' | 'cash';
+  checkedIn?: boolean;
 }
 
 export interface Form {
