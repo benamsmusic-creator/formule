@@ -284,6 +284,24 @@ function DashboardContent() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Raccourcis clavier (#31)
+  useEffect(() => {
+    const h = (e: KeyboardEvent) => {
+      // Ignore si l'utilisateur est dans un champ de saisie
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      switch (e.key) {
+        case 'n': case 'N': e.preventDefault(); router.push('/builder'); break;
+        case '/': e.preventDefault(); document.querySelector<HTMLInputElement>('input[placeholder*="Rechercher"]')?.focus(); break;
+        case 'g': case 'G': e.preventDefault(); router.push('/dashboard/gala'); break;
+        case 'c': case 'C': e.preventDefault(); router.push('/dashboard/crm'); break;
+      }
+    };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
+  }, [router]);
+
   // Dupliquer un formulaire (pratique pour les événements récurrents)
   const handleDuplicate = async (form: Form) => {
     const copy: Form = {
