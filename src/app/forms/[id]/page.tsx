@@ -756,6 +756,14 @@ function QuestionScreen({
     if (el) setTimeout(() => el.focus(), 380);
   }, [field.id]);
 
+  const perGuestComplete = usePerGuest
+    ? Object.keys(decodePerGuest(value as string)).length >= guestCount
+    : true;
+  const canProceed = isAutoAdvance ||
+    (usePerGuest
+      ? (!field.required || perGuestComplete)
+      : (!field.required || (field.type === 'checkbox' ? value === true : value !== '' && value !== false)));
+
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
       if (e.key === 'Enter' && field.type !== 'textarea' && canProceed) {
@@ -767,14 +775,6 @@ function QuestionScreen({
     return () => window.removeEventListener('keydown', handleKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canProceed, field.type, onNext]);
-
-  const perGuestComplete = usePerGuest
-    ? Object.keys(decodePerGuest(value as string)).length >= guestCount
-    : true;
-  const canProceed = isAutoAdvance ||
-    (usePerGuest
-      ? (!field.required || perGuestComplete)
-      : (!field.required || (field.type === 'checkbox' ? value === true : value !== '' && value !== false)));
 
   const baseInput = 'w-full px-5 py-4 rounded-2xl bg-beige-100 border border-beige-200 text-brown-900 text-xl sm:text-2xl font-light focus:outline-none focus:border-gold-400 focus:bg-beige-50 transition-colors duration-200 placeholder:text-beige-400 text-center';
 
