@@ -52,6 +52,15 @@ export interface FormField {
   suggestedAmounts?: number[];
   allowCustomAmount?: boolean;
   perGuest?: boolean; // pour select/radio : poser le choix pour chaque convive
+  // Options avancées par champ
+  min?: number;          // nombre : valeur minimale
+  max?: number;          // nombre : valeur maximale
+  unit?: string;         // nombre : suffixe (ex : "ans", "kg")
+  maxLength?: number;    // texte court/long : limite de caractères
+  dateMode?: 'past' | 'future'; // date au choix : restreindre au passé / futur
+  minPeople?: number;    // nombre de personnes : minimum
+  defaultChecked?: boolean; // case à cocher : cochée par défaut
+  helpText?: string;     // petite aide affichée sous le champ
 }
 
 export interface FormResponse {

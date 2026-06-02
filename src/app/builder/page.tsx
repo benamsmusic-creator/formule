@@ -933,14 +933,77 @@ function FieldEditor({
 
               {/* Case à cocher : texte affiché à côté de la case */}
               {field.type === 'checkbox' && (
+                <>
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Texte de la case</label>
+                    <input
+                      className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                      value={field.placeholder ?? ''}
+                      onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
+                      placeholder="Ex: J'accepte les conditions"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-brown-700 cursor-pointer">
+                    <div className={`relative w-9 h-5 rounded-full transition-colors ${field.defaultChecked ? 'bg-gold-500' : 'bg-beige-300'}`}
+                      onClick={() => onChange({ ...field, defaultChecked: !field.defaultChecked })}>
+                      <motion.div className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow-sm" animate={{ left: field.defaultChecked ? '18px' : '2px' }} transition={{ type: 'spring', stiffness: 500, damping: 30 }} />
+                    </div>
+                    Cochée par défaut
+                  </label>
+                </>
+              )}
+
+              {/* Options avancées — Nombre : min / max / unité */}
+              {field.type === 'number' && (
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Min</label>
+                    <input type="number" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400"
+                      value={field.min ?? ''} onChange={(e) => onChange({ ...field, min: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="0" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Max</label>
+                    <input type="number" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400"
+                      value={field.max ?? ''} onChange={(e) => onChange({ ...field, max: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="—" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Unité</label>
+                    <input className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400"
+                      value={field.unit ?? ''} onChange={(e) => onChange({ ...field, unit: e.target.value || undefined })} placeholder="ans, kg…" />
+                  </div>
+                </div>
+              )}
+
+              {/* Options avancées — Texte : limite de caractères */}
+              {(field.type === 'text' || field.type === 'textarea') && (
                 <div>
-                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Texte de la case</label>
-                  <input
-                    className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
-                    value={field.placeholder ?? ''}
-                    onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
-                    placeholder="Ex: J'accepte les conditions"
-                  />
+                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Limite de caractères <span className="normal-case text-brown-300">(optionnel)</span></label>
+                  <input type="number" min="1" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400"
+                    value={field.maxLength ?? ''} onChange={(e) => onChange({ ...field, maxLength: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="Ex: 200" />
+                </div>
+              )}
+
+              {/* Options avancées — Date au choix : restriction */}
+              {field.type === 'date_choice' && (
+                <div>
+                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium mb-1.5 block">Dates autorisées</label>
+                  <div className="flex gap-2">
+                    {([['', 'Toutes'], ['past', 'Passé only'], ['future', 'Futur only']] as const).map(([v, lbl]) => (
+                      <button key={lbl} type="button" onClick={() => onChange({ ...field, dateMode: (v || undefined) as 'past' | 'future' | undefined })}
+                        className={`flex-1 py-2 rounded-lg text-xs font-medium border transition-colors ${(field.dateMode ?? '') === v ? 'bg-brown-900 text-beige-50 border-brown-900' : 'bg-beige-50 text-brown-600 border-beige-200 hover:border-gold-400/50'}`}>
+                        {lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Options avancées — Nombre de personnes : minimum */}
+              {field.type === 'people_count' && (
+                <div>
+                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Minimum de personnes</label>
+                  <input type="number" min="1" className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400"
+                    value={field.minPeople ?? ''} onChange={(e) => onChange({ ...field, minPeople: e.target.value === '' ? undefined : Number(e.target.value) })} placeholder="1" />
                 </div>
               )}
 

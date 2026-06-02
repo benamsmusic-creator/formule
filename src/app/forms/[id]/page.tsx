@@ -1562,12 +1562,24 @@ function ScrollForm({
                   <textarea rows={4} className="w-full px-4 py-3 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 focus:outline-none focus:border-gold-400 resize-none placeholder:text-beige-400"
                     placeholder={f.placeholder ?? 'Votre réponse…'} value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
                 )}
-                {(f.type === 'text' || f.type === 'email' || f.type === 'phone' || f.type === 'number') && (
-                  <input type={f.type === 'number' ? 'number' : 'text'} className={inputCls(invalid)}
-                    placeholder={f.placeholder ?? 'Votre réponse'} value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
+                {(f.type === 'text' || f.type === 'email' || f.type === 'phone') && (
+                  <>
+                    <input type="text" className={inputCls(invalid)} maxLength={f.maxLength}
+                      placeholder={f.placeholder ?? 'Votre réponse'} value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
+                    {f.maxLength && <p className="mt-1 text-[11px] text-brown-400 text-right">{((formData[f.id] as string) || '').length}/{f.maxLength}</p>}
+                  </>
+                )}
+                {f.type === 'number' && (
+                  <div className="flex items-center gap-2">
+                    <input type="number" className={inputCls(invalid)} min={f.min} max={f.max}
+                      placeholder={f.placeholder ?? '0'} value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
+                    {f.unit && <span className="text-brown-500 text-sm flex-shrink-0">{f.unit}</span>}
+                  </div>
                 )}
                 {f.type === 'date_choice' && (
                   <input type="date" className={inputCls(invalid)}
+                    max={f.dateMode === 'past' ? new Date().toISOString().slice(0, 10) : undefined}
+                    min={f.dateMode === 'future' ? new Date().toISOString().slice(0, 10) : undefined}
                     value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
                 )}
                 {(f.type === 'radio' || f.type === 'select') && (
@@ -1673,7 +1685,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       setForm(f);
       const init: Record<string, string | boolean> = {};
       f.fields.forEach((field) => {
-        if (field.type === 'checkbox') init[field.id] = false;
+        if (field.type === 'checkbox') init[field.id] = !!field.defaultChecked;
         else if (field.type === 'event_date') init[field.id] = field.presetValue ?? '';
         else if (field.type === 'info_block') init[field.id] = '';
         else init[field.id] = '';
