@@ -164,6 +164,9 @@ export default function ComptePage() {
               <p className="text-xs uppercase tracking-widest text-gold-300/80 mb-1">Vos dons {year}</p>
               <p className="text-3xl font-light" style={{ fontFamily: 'var(--font-cormorant)' }}>{donationsThisYear.toFixed(2)} €</p>
               <p className="text-beige-300 text-xs mt-1">Total déductible — conservez vos reçus pour votre déclaration.</p>
+              <Link href="/compte/recu" className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-lg bg-beige-50 text-brown-900 text-xs font-medium hover:bg-beige-100 transition-colors">
+                🧾 Télécharger mon reçu {year}
+              </Link>
             </div>
             <span className="text-4xl" aria-hidden="true">🧾</span>
           </motion.div>

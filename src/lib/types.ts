@@ -24,6 +24,7 @@ export interface PromoCode {
   code: string;
   type: 'percent' | 'fixed';
   discount: number;
+  expiresAt?: string; // ISO date (YYYY-MM-DD) — au-delà, le code est refusé
 }
 
 export interface FieldOption {

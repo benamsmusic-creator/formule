@@ -1182,6 +1182,11 @@ function PromoScreen({
   const handleApply = () => {
     const found = promoCodes.find((p) => p.code.toUpperCase() === code.trim().toUpperCase());
     if (!found) { setError('Code invalide.'); return; }
+    if (found.expiresAt) {
+      const exp = new Date(found.expiresAt);
+      exp.setHours(23, 59, 59, 999);
+      if (!isNaN(exp.getTime()) && exp.getTime() < Date.now()) { setError('Ce code a expiré.'); return; }
+    }
     setError('');
     setApplied(found);
   };

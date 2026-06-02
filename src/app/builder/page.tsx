@@ -1540,9 +1540,19 @@ function BuilderContent() {
                               ×
                             </button>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <label className="text-[11px] text-brown-400 whitespace-nowrap">Expire le</label>
+                            <input
+                              type="date"
+                              className="flex-1 px-3 py-1.5 rounded-lg bg-beige-50 border border-beige-200 text-xs text-brown-700 focus:outline-none focus:border-gold-400"
+                              value={pc.expiresAt ?? ''}
+                              onChange={(e) => setPromoCodes((prev) => prev.map((p, idx) => idx === i ? { ...p, expiresAt: e.target.value || undefined } : p))}
+                            />
+                          </div>
                           {pc.code && (
                             <p className="text-[11px] text-brown-400">
                               Code <span className="font-mono font-bold text-brown-700">{pc.code}</span> → {pc.type === 'percent' ? `${pc.discount}% de réduction` : `${pc.discount}€ de réduction`}
+                              {pc.expiresAt ? ` · jusqu'au ${pc.expiresAt}` : ''}
                             </p>
                           )}
                         </div>
