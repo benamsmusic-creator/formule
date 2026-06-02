@@ -49,6 +49,7 @@ const FIELD_GROUPS: { group: string; emoji: string; note: string; types: FieldTy
       { type: 'checkbox', label: 'Case à cocher', icon: '☑', desc: 'Oui / non', hint: "Ex : J'accepte, je serai présent(e)." },
       { type: 'text', label: 'Texte court', icon: '✏️', desc: 'Une ligne', hint: "Ex : nom de l'enfant, allergie." },
       { type: 'textarea', label: 'Texte long', icon: '¶', desc: 'Paragraphe', hint: 'Ex : commentaire, demande.' },
+      { type: 'number', label: 'Nombre / quantité', icon: '🔢', desc: 'Saisie d’un chiffre', hint: 'Ex : âge, quantité de paquets.' },
       { type: 'people_count', label: 'Nombre de personnes', icon: '👥', desc: 'Compteur 1 à N', hint: 'Sélection par bouton.' },
     ],
   },
@@ -909,15 +910,28 @@ function FieldEditor({
                 />
               )}
 
-              {/* Placeholder */}
-              {field.type === 'textarea' && (
+              {/* Placeholder (texte court, long, nombre) */}
+              {(field.type === 'textarea' || field.type === 'text' || field.type === 'number') && (
                 <div>
-                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Placeholder</label>
+                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Exemple affiché (placeholder)</label>
                   <input
                     className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
                     value={field.placeholder ?? ''}
                     onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
-                    placeholder="Ex: Votre réponse ici…"
+                    placeholder={field.type === 'number' ? 'Ex: 3' : 'Ex: Votre réponse ici…'}
+                  />
+                </div>
+              )}
+
+              {/* Case à cocher : texte affiché à côté de la case */}
+              {field.type === 'checkbox' && (
+                <div>
+                  <label className="text-xs text-brown-500 uppercase tracking-wide font-medium">Texte de la case</label>
+                  <input
+                    className="mt-1 w-full px-3 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 text-sm focus:outline-none focus:border-gold-400 transition-colors"
+                    value={field.placeholder ?? ''}
+                    onChange={(e) => onChange({ ...field, placeholder: e.target.value })}
+                    placeholder="Ex: J'accepte les conditions"
                   />
                 </div>
               )}
