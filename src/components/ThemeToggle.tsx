@@ -1,10 +1,16 @@
 'use client';
 import { motion } from 'framer-motion';
+import { usePathname } from 'next/navigation';
 import { useTheme } from '@/lib/theme';
+import { isAdminPath } from '@/lib/adminRoutes';
 
 export default function ThemeToggle() {
   const [theme, toggle] = useTheme();
+  const pathname = usePathname();
   const dark = theme === 'dark';
+
+  // Sur les pages admin, la sidebar a déjà son propre bouton de thème.
+  if (isAdminPath(pathname)) return null;
 
   return (
     <motion.button

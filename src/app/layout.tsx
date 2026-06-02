@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Inter, Frank_Ruhl_Libre } from 'next/font/google';
 import './globals.css';
 import AnimatedBackground from '@/components/AnimatedBackground';
-import Navbar from '@/components/Navbar';
+import DashboardSidebar from '@/components/DashboardSidebar';
+import AppFrame from '@/components/AppFrame';
 import PublicNav from '@/components/PublicNav';
 import PublicFooter from '@/components/PublicFooter';
 import ScrollToTop from '@/components/ScrollToTop';
@@ -73,9 +74,9 @@ export default function RootLayout({
           }}
         />
         <AnimatedBackground />
-        <Navbar />
+        <DashboardSidebar />
         <PublicNav />
-        <main>{children}</main>
+        <AppFrame>{children}</AppFrame>
         <PublicFooter />
         <ScrollToTop />
         <ThemeToggle />
