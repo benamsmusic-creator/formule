@@ -514,6 +514,7 @@ function FieldEditor({
   onDelete,
   onMoveUp,
   onMoveDown,
+  onDuplicate,
   isFirst,
   isLast,
   autoOpen = false,
@@ -524,6 +525,7 @@ function FieldEditor({
   onDelete: () => void;
   onMoveUp?: () => void;
   onMoveDown?: () => void;
+  onDuplicate?: () => void;
   isFirst?: boolean;
   isLast?: boolean;
   autoOpen?: boolean;
@@ -600,6 +602,11 @@ function FieldEditor({
             className="w-7 h-7 rounded-lg text-brown-400 hover:text-brown-800 hover:bg-beige-100 transition-colors disabled:opacity-25 disabled:cursor-not-allowed text-xs"
             title="Descendre" aria-label="Descendre le champ"
           >▼</button>
+          <button
+            onClick={(e) => { e.stopPropagation(); onDuplicate?.(); }}
+            className="w-7 h-7 rounded-lg text-brown-400 hover:text-gold-600 hover:bg-beige-100 transition-colors text-xs"
+            title="Dupliquer" aria-label="Dupliquer le champ"
+          >⧉</button>
           <motion.span animate={{ rotate: open ? 180 : 0 }} className="text-brown-400 text-xs ml-0.5">▾</motion.span>
         </div>
       </div>
@@ -1899,6 +1906,10 @@ function BuilderContent() {
                               setFields((prev) => prev.map((f) => (f.id === updated.id ? updated : f)))
                             }
                             onDelete={() => setFields((prev) => prev.filter((f) => f.id !== field.id))}
+                            onDuplicate={() => setFields((prev) => {
+                              const copy = { ...field, id: generateId(), label: `${field.label} (copie)` } as FormField;
+                              const n = [...prev]; n.splice(idx + 1, 0, copy); return n;
+                            })}
                             onToast={addToast}
                           />
                         </Reorder.Item>
