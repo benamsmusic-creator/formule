@@ -429,12 +429,50 @@ function DashboardContent() {
 
         {/* Stats */}
         {loaded && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-12">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
             <StatCard label="Formulaires" value={activeForms.length} icon="◈" delay={0.1} />
             <StatCard label="Réponses" value={totalResponses} icon="✦" delay={0.15} />
             <StatCard label="Revenus (€)" value={totalPayments} icon="◆" delay={0.2} />
           </div>
         )}
+
+        {/* Finances par période — cartes colorées (inspiré UniSOFT) */}
+        {loaded && (() => {
+          const now = new Date();
+          const startToday = new Date(now); startToday.setHours(0, 0, 0, 0);
+          const startMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+          const startYear = new Date(now.getFullYear(), 0, 1);
+          const startPrevYear = new Date(now.getFullYear() - 1, 0, 1);
+          const paid = activeForms.flatMap((f) => (f.responses ?? []).filter((r) => r.paymentStatus === 'paid' || r.paymentStatus === 'cash'));
+          const sumSince = (from: Date, to?: Date) => paid.reduce((s, r) => {
+            const t = r.submittedAt ? new Date(r.submittedAt).getTime() : 0;
+            if (t >= from.getTime() && (!to || t < to.getTime())) return s + (r.paymentAmount ?? 0);
+            return s;
+          }, 0);
+          const moyenne = paid.length ? Math.round((paid.reduce((s, r) => s + (r.paymentAmount ?? 0), 0) / paid.length) * 100) / 100 : 0;
+          const cards = [
+            { label: 'Aujourd’hui', value: sumSince(startToday), icon: '🕒', from: '#1E6F5C', to: '#2C8A72' },
+            { label: 'Ce mois-ci', value: sumSince(startMonth), icon: '📅', from: '#0EA5A0', to: '#14B8A6' },
+            { label: 'Cette année', value: sumSince(startYear), icon: '✦', from: '#C9A96E', to: '#9A7A3A' },
+            { label: 'Année dernière', value: sumSince(startPrevYear, startYear), icon: '↩', from: '#8B6E4E', to: '#5C4030' },
+            { label: 'Montant moyen', value: moyenne, icon: '⌀', from: '#D97706', to: '#B45309' },
+          ];
+          return (
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-12">
+              {cards.map((c, i) => (
+                <motion.div key={c.label}
+                  initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }}
+                  className="rounded-2xl p-4 text-beige-50 shadow-lg" style={{ background: `linear-gradient(135deg, ${c.from}, ${c.to})` }}>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-lg opacity-90">{c.icon}</span>
+                  </div>
+                  <p className="text-2xl font-semibold leading-none" style={{ fontFamily: 'var(--font-cormorant)' }}>{c.value.toLocaleString('fr-FR')} €</p>
+                  <p className="text-[11px] opacity-80 mt-1.5">{c.label}</p>
+                </motion.div>
+              ))}
+            </div>
+          );
+        })()}
 
         {/* Revenus sur 14 jours */}
         {loaded && (() => {
