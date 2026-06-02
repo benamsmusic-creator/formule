@@ -30,6 +30,7 @@ export default function GalaPage() {
   const [gala, setGala] = useState<Form | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [sparks, setSparks] = useState<{ x: number; y: number; d: number; s: number }[]>([]);
+  const [photos, setPhotos] = useState<{ id: string; url: string; caption?: string }[]>([]);
 
   useEffect(() => {
     fetch('/api/forms?org=habadlyon')
@@ -41,6 +42,11 @@ export default function GalaPage() {
         }
       })
       .finally(() => setLoaded(true));
+    // Galerie « éditions précédentes » (#20)
+    fetch('/api/gallery?org=habadlyon')
+      .then((r) => r.json())
+      .then((d) => { if (Array.isArray(d)) setPhotos(d.slice(0, 8)); })
+      .catch(() => {});
     // étincelles dorées (après montage → pas de mismatch SSR)
     setSparks(Array.from({ length: 28 }, () => ({
       x: Math.random() * 100, y: Math.random() * 100, d: Math.random() * 6, s: 1 + Math.random() * 2,
@@ -225,6 +231,29 @@ export default function GalaPage() {
                           Choisir
                         </span>
                       </Link>
+                    </motion.div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Galerie — éditions précédentes (#20) */}
+            {photos.length > 0 && (
+              <section className="max-w-5xl mx-auto px-6 pb-28">
+                <motion.h2 initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                  className="text-center text-3xl sm:text-4xl font-light mb-3" style={{ fontFamily: 'var(--font-cormorant)', color: '#fff' }}>
+                  Éditions précédentes
+                </motion.h2>
+                <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+                  className="text-center text-[#d8c7ac]/60 text-sm mb-10">Quelques souvenirs de nos soirées passées.</motion.p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {photos.map((p, i) => (
+                    <motion.div key={p.id}
+                      initial={{ opacity: 0, scale: 0.92 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }}
+                      transition={{ delay: (i % 4) * 0.08, duration: 0.5 }}
+                      whileHover={{ scale: 1.03 }}
+                      className="relative aspect-square rounded-2xl overflow-hidden border" style={{ borderColor: `${GOLD}22` }}>
+                      <Image src={p.url} alt={p.caption || 'Édition précédente du gala'} fill sizes="(max-width: 640px) 50vw, 25vw" className="object-cover" unoptimized />
                     </motion.div>
                   ))}
                 </div>
