@@ -600,9 +600,13 @@ function TableReservationField({
 }: { field: FormField; value: string; onChange: (v: string) => void }) {
   const options: TableOption[] = field.tableOptions ?? [];
   const sel = parseTableSelection(value);
+  const [burst, setBurst] = useState<number | null>(null);
   const setSel = (i: number, q: number) => onChange(JSON.stringify({ i, q: Math.max(1, q) }));
+  const pick = (i: number) => { setSel(i, sel.i === i ? sel.q : 1); setBurst(i); setTimeout(() => setBurst(null), 600); };
   const chosen = sel.i >= 0 ? options[sel.i] : undefined;
   const subtotal = chosen ? chosen.price * sel.q : 0;
+  // L'option la plus "généreuse" (prix le plus élevé) = mise en avant comme populaire
+  const popularIdx = options.length > 1 ? options.reduce((best, o, idx) => o.price > options[best].price ? idx : best, 0) : -1;
 
   return (
     <div className="mt-2 space-y-3">
@@ -610,14 +614,18 @@ function TableReservationField({
         {options.map((opt, i) => (
           <motion.button
             key={i} type="button"
-            onClick={() => setSel(i, sel.i === i ? sel.q : 1)}
-            className={`text-left rounded-2xl border-2 px-5 py-4 transition-colors ${
+            onClick={() => pick(i)}
+            className={`relative text-left rounded-2xl border-2 px-5 py-4 transition-colors ${
               sel.i === i ? 'border-gold-500 bg-gold-400/10' : 'border-beige-200 bg-beige-50 hover:border-gold-400/50'
             }`}
             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 + i * 0.07 }}
             whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
           >
+            {burst === i && <Burst />}
+            {i === popularIdx && (
+              <span className="absolute -top-2 right-4 px-2 py-0.5 rounded-full bg-gold-500 text-beige-50 text-[10px] font-semibold shadow">★ Premium</span>
+            )}
             <div className="flex items-center gap-3">
               <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                 sel.i === i ? 'border-gold-500' : 'border-beige-300'
