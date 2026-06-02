@@ -1495,6 +1495,10 @@ function ScrollForm({
 
         <div className="rounded-3xl bg-beige-50 border border-beige-200 shadow-[0_20px_60px_rgba(44,24,16,0.06)] p-6 sm:p-8 space-y-7">
           {/* ── Identité ── */}
+          <p className="flex items-center gap-2 text-sm font-semibold text-brown-800">
+            <span className="w-7 h-7 rounded-full bg-gold-400/15 flex items-center justify-center text-sm">👤</span>
+            Vos coordonnées
+          </p>
           <div>
             <label className={sectionLabel}>Civilité</label>
             <div className="flex gap-3" data-invalid={touched && !civility ? 'true' : undefined}>
@@ -1536,6 +1540,12 @@ function ScrollForm({
           </div>
 
           {/* ── Questions ── */}
+          {questionFields.some((f) => f.type !== 'event_date' && f.type !== 'info_block') && (
+            <p className="flex items-center gap-2 text-sm font-semibold text-brown-800 pt-2 border-t border-beige-200">
+              <span className="w-7 h-7 rounded-full bg-gold-400/15 flex items-center justify-center text-sm">📋</span>
+              Détails de l’inscription
+            </p>
+          )}
           {questionFields.map((f) => {
             if (f.type === 'event_date') return <div key={f.id}><EventDateDisplay field={f} /></div>;
             if (f.type === 'info_block') return <div key={f.id}><InfoBlock field={f} /></div>;
