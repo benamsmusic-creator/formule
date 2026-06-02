@@ -30,6 +30,7 @@ export const NAV_GROUPS = [
   { group: 'Événements & dons', items: [
     { href: '/calendrier', icon: '🗓️', label: 'Calendrier' },
     { href: '/dashboard/gala', icon: '🥂', label: 'Gala' },
+    { href: '/dashboard/promesses', icon: '🤝', label: 'Promesses de dons' },
     { href: '/encheres', icon: '🔨', label: 'Enchères' },
   ] },
   { group: 'Gestion', items: [

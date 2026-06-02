@@ -247,6 +247,7 @@ function DashboardContent() {
   const [showArchives, setShowArchives] = useState(false);
   const [search, setSearch] = useState('');
   const [me, setMe] = useState<{ superAdmin: boolean; orgName: string | null } | null>(null);
+  const [pledgeStats, setPledgeStats] = useState<{ due: number; collected: number; total: number; count: number } | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const isCreated = searchParams.get('created') === '1';
@@ -269,6 +270,16 @@ function DashboardContent() {
       if (me) setMe({ superAdmin: !!me.superAdmin, orgName: me.orgName ?? null });
       setLoaded(true);
     });
+    // Promesses de dons (encart finance, inspiré UniSOFT)
+    fetch('/api/pledges').then((r) => r.json()).then((d) => {
+      if (!Array.isArray(d)) return;
+      const s = { due: 0, collected: 0, total: 0, count: d.length };
+      for (const p of d) {
+        const amount = Number(p.amount) || 0, paid = Number(p.paid_amount) || 0;
+        s.total += amount; s.collected += paid; s.due += Math.max(0, amount - paid);
+      }
+      setPledgeStats(s);
+    }).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -473,6 +484,30 @@ function DashboardContent() {
             </div>
           );
         })()}
+
+        {/* Promesses de dons — encart (inspiré UniSOFT) */}
+        {loaded && pledgeStats && pledgeStats.count > 0 && (
+          <Link href="/dashboard/promesses" className="block mb-12 group">
+            <div className="rounded-2xl bg-beige-50 border border-beige-200 p-5 hover:border-gold-400/40 transition-colors">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-sm font-medium text-brown-800 flex items-center gap-2">🤝 Promesses de dons <span className="text-xs text-brown-400">({pledgeStats.count})</span></h3>
+                <span className="text-xs text-gold-700 group-hover:underline">Gérer →</span>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { label: 'À régler', value: pledgeStats.due, color: 'text-amber-700' },
+                  { label: 'Réglés', value: pledgeStats.collected, color: 'text-emerald-700' },
+                  { label: 'Total promesses', value: pledgeStats.total, color: 'text-brown-900' },
+                ].map((s) => (
+                  <div key={s.label}>
+                    <p className={`text-xl sm:text-2xl font-semibold ${s.color}`} style={{ fontFamily: 'var(--font-cormorant)' }}>{s.value.toLocaleString('fr-FR')} €</p>
+                    <p className="text-[11px] text-brown-400 mt-0.5">{s.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Link>
+        )}
 
         {/* Revenus sur 14 jours */}
         {loaded && (() => {
