@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { SkeletonRows } from '@/components/Skeleton';
 
-type M = { id: string; name: string; email: string; phone: string; paid_until: string | null; family: string };
+type M ={ id: string; name: string; email: string; phone: string; paid_until: string | null; family: string };
 
 function isUpToDate(paidUntil: string | null): boolean {
   if (!paidUntil) return false;
@@ -68,7 +69,7 @@ export default function MembresPage() {
           </motion.button>
         </form>
 
-        {!loaded ? <p className="text-brown-400 text-sm">Chargement…</p> : list.length === 0 ? (
+        {!loaded ? <SkeletonRows count={5} /> : list.length === 0 ? (
           <p className="text-brown-400 text-sm text-center py-8">Aucun membre.</p>
         ) : (
           <div className="space-y-6">

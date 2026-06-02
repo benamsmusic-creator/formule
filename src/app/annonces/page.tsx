@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { SkeletonRows } from '@/components/Skeleton';
 
-type A = { id: string; kind: string; title: string; body: string };
+type A ={ id: string; kind: string; title: string; body: string };
 const KINDS = [
   { v: 'info', label: 'Information' },
   { v: 'mazaltov', label: 'Mazal Tov 🎉' },
@@ -53,7 +54,7 @@ export default function AnnoncesPage() {
           </motion.button>
         </form>
 
-        {!loaded ? <p className="text-brown-400 text-sm">Chargement…</p> : list.length === 0 ? (
+        {!loaded ? <SkeletonRows count={5} /> : list.length === 0 ? (
           <p className="text-brown-400 text-sm text-center py-8">Aucune annonce.</p>
         ) : (
           <div className="space-y-2">

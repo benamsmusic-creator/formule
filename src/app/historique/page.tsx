@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
+import { SkeletonRows } from '@/components/Skeleton';
 
 type Log = { id: string; action: string; detail: string; created_at: string };
 
@@ -21,7 +22,7 @@ export default function HistoriquePage() {
           <Link href="/dashboard" className="text-sm text-brown-500 hover:text-brown-800 transition-colors">← Dashboard</Link>
         </div>
 
-        {!loaded ? <p className="text-brown-400 text-sm">Chargement…</p> : logs.length === 0 ? (
+        {!loaded ? <SkeletonRows count={5} /> : logs.length === 0 ? (
           <p className="text-brown-400 text-sm text-center py-8">Aucune action enregistrée pour le moment.</p>
         ) : (
           <div className="space-y-2">

@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { SkeletonRows } from '@/components/Skeleton';
 
-type B = { id: string; name: string; hebLabel: string; contact_email: string | null };
+type B ={ id: string; name: string; hebLabel: string; contact_email: string | null };
 
 export default function AnniversairesPage() {
   const [list, setList] = useState<B[]>([]);
@@ -50,7 +51,7 @@ export default function AnniversairesPage() {
           </motion.button>
         </form>
 
-        {!loaded ? <p className="text-brown-400 text-sm">Chargement…</p> : list.length === 0 ? (
+        {!loaded ? <SkeletonRows count={5} /> : list.length === 0 ? (
           <p className="text-brown-400 text-sm text-center py-8">Aucun anniversaire enregistré.</p>
         ) : (
           <div className="space-y-2">

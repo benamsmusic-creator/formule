@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { SkeletonRows } from '@/components/Skeleton';
 
-type Entry = { id: string; category: string; name: string; address: string; phone: string; url: string };
+type Entry ={ id: string; category: string; name: string; address: string; phone: string; url: string };
 const CATEGORIES = ['Restaurant cacher', 'Boucherie', 'Boulangerie', 'Mikvé', 'École', 'Synagogue', 'Épicerie', 'Autre'];
 
 export default function AnnuaireAdminPage() {
@@ -54,7 +55,7 @@ export default function AnnuaireAdminPage() {
           </motion.button>
         </form>
 
-        {!loaded ? <p className="text-brown-400 text-sm">Chargement…</p> : list.length === 0 ? (
+        {!loaded ? <SkeletonRows count={5} /> : list.length === 0 ? (
           <p className="text-brown-400 text-sm text-center py-8">Aucune entrée.</p>
         ) : (
           <div className="space-y-2">

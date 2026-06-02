@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { SkeletonRows } from '@/components/Skeleton';
 
-type Item = { id: string; title: string; current_bid: number; current_bidder: string; closed: boolean };
+type Item ={ id: string; title: string; current_bid: number; current_bidder: string; closed: boolean };
 
 export default function EncheresPage() {
   const [list, setList] = useState<Item[]>([]);
@@ -45,7 +46,7 @@ export default function EncheresPage() {
           </motion.button>
         </form>
 
-        {!loaded ? <p className="text-brown-400 text-sm">Chargement…</p> : list.length === 0 ? (
+        {!loaded ? <SkeletonRows count={5} /> : list.length === 0 ? (
           <p className="text-brown-400 text-sm text-center py-8">Aucune enchère.</p>
         ) : (
           <div className="space-y-2">

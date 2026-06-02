@@ -2,8 +2,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { SkeletonRows } from '@/components/Skeleton';
 
-type Client = { id: string; name: string; created_at: string; admins: { email: string; name: string }[] };
+type Client ={ id: string; name: string; created_at: string; admins: { email: string; name: string }[] };
 
 export default function ClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -73,7 +74,7 @@ export default function ClientsPage() {
 
         {/* Liste */}
         {!loaded ? (
-          <p className="text-brown-400 text-sm text-center py-8">Chargement…</p>
+          <SkeletonRows count={5} />
         ) : (
           <div className="space-y-3">
             {clients.map((c) => (
