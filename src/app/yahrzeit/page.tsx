@@ -54,7 +54,11 @@ export default function YahrzeitPage() {
         </form>
 
         {!loaded ? <SkeletonRows count={5} /> : list.length === 0 ? (
-          <p className="text-brown-400 text-sm text-center py-8">Aucune Yahrzeit enregistrée.</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <motion.div className="text-5xl mb-4" animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>🕯️</motion.div>
+            <h2 className="text-2xl font-light text-brown-700 mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>Aucune Yahrzeit enregistrée</h2>
+            <p className="text-brown-400 text-sm max-w-xs mx-auto">Ajoutez un défunt à l’aide du formulaire ci-dessus pour recevoir les rappels.</p>
+          </div>
         ) : (
           <div className="space-y-2">
             {list.map((y) => (

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { formatDate } from '@/lib/utils';
 import { SkeletonRows } from '@/components/Skeleton';
@@ -23,7 +24,11 @@ export default function HistoriquePage() {
         </div>
 
         {!loaded ? <SkeletonRows count={5} /> : logs.length === 0 ? (
-          <p className="text-brown-400 text-sm text-center py-8">Aucune action enregistrée pour le moment.</p>
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <motion.div className="text-5xl mb-4" animate={{ y: [0, -6, 0] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>📜</motion.div>
+            <h2 className="text-2xl font-light text-brown-700 mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>Aucune action pour le moment</h2>
+            <p className="text-brown-400 text-sm max-w-xs mx-auto">Les actions effectuées dans l’administration apparaîtront ici.</p>
+          </div>
         ) : (
           <div className="space-y-2">
             {logs.map((l) => (
