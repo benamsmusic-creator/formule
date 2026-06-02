@@ -268,3 +268,26 @@ select:focus-visible,
 .safe-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
+
+/* ─── Impression ─────────────────────────────────────────────── */
+@media print {
+  /* Masque la navigation, sidebar, fonds animés et éléments flottants */
+  aside, nav, header, .no-print, .print\:hidden {
+    display: none !important;
+  }
+  /* Supprime le décalage de la sidebar et les marges hautes */
+  main, .lg\:pl-60 {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .pt-24 { padding-top: 0 !important; }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  /* Évite de couper une carte au milieu d'une page */
+  .print-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+}
