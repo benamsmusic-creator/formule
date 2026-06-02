@@ -199,9 +199,38 @@ function shareCurrentPage(title: string) {
   }
 }
 
-function CoverScreen({ form, onStart, isFull }: { form: Form; onStart: () => void; isFull?: boolean }) {
+function CoverScreen({ form, onStart, isFull, participants = 0, estMinutes = 2, seatsLeft }: {
+  form: Form; onStart: () => void; isFull?: boolean; participants?: number; estMinutes?: number; seatsLeft?: number | null;
+}) {
   const eventDateField = form.fields.find((f) => f.type === 'event_date');
   const ctaLabel = isFull ? "Rejoindre la liste d'attente" : 'Commencer';
+
+  // Métadonnées de réassurance — donnent envie de remplir (preuve sociale, temps, sécurité)
+  const metaPills = (dark: boolean) => {
+    const base = dark
+      ? 'bg-white/10 border-white/15 text-beige-100'
+      : 'bg-beige-100 border-beige-200 text-brown-600';
+    return (
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        {participants > 0 && (
+          <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${base}`}>
+            ✦ {participants} {participants > 1 ? 'déjà inscrits' : 'déjà inscrit'}
+          </span>
+        )}
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${base}`}>
+          ⏱ ~{estMinutes} min
+        </span>
+        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-medium ${base}`}>
+          🔒 Sécurisé
+        </span>
+        {typeof seatsLeft === 'number' && seatsLeft > 0 && seatsLeft <= 20 && (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-gold-400/40 bg-gold-400/15 text-gold-700 text-xs font-semibold">
+            🔥 Plus que {seatsLeft} place{seatsLeft > 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+    );
+  };
 
   return (
     <motion.div
@@ -232,8 +261,9 @@ function CoverScreen({ form, onStart, isFull }: { form: Form; onStart: () => voi
                 {form.title}
               </h1>
               {form.description && (
-                <p className="text-beige-300 text-base max-w-lg mb-8 leading-relaxed">{form.description}</p>
+                <p className="text-beige-300 text-base max-w-lg mb-6 leading-relaxed">{form.description}</p>
               )}
+              {metaPills(true)}
               <motion.button onClick={onStart}
                 className="inline-flex items-center gap-3 px-10 py-4 bg-beige-50 text-brown-900 rounded-2xl font-semibold text-base shadow-2xl"
                 whileHover={{ scale: 1.04, y: -2 }} whileTap={{ scale: 0.97 }}
@@ -272,8 +302,9 @@ function CoverScreen({ form, onStart, isFull }: { form: Form; onStart: () => voi
               {form.title}
             </h1>
             {form.description && (
-              <p className="text-brown-500 text-lg mb-10 leading-relaxed">{form.description}</p>
+              <p className="text-brown-500 text-lg mb-8 leading-relaxed">{form.description}</p>
             )}
+            <div className="flex justify-center">{metaPills(false)}</div>
             <motion.button onClick={onStart}
               className="btn-liquid inline-flex items-center gap-3 px-10 py-4 bg-brown-900 text-beige-50 rounded-2xl font-medium text-base overflow-hidden"
               whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: 0.97 }}>
@@ -740,11 +771,11 @@ function PerGuestChoice({ field, guestCount, value, onChange }: {
 
 /* ─── Question screen ───────────────────────────────────────── */
 function QuestionScreen({
-  field, index, total, value, onChange, onNext, onBack, isLast, direction, guestCount = 1,
+  field, index, total, value, onChange, onNext, onBack, isLast, direction, guestCount = 1, firstName = '',
 }: {
   field: FormField; index: number; total: number;
   value: string | boolean; onChange: (v: string | boolean) => void;
-  onNext: () => void; onBack: () => void; isLast: boolean; direction: number; guestCount?: number;
+  onNext: () => void; onBack: () => void; isLast: boolean; direction: number; guestCount?: number; firstName?: string;
 }) {
   const usePerGuest = (field.type === 'radio' || field.type === 'select') && !!field.perGuest && guestCount > 1;
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
@@ -788,10 +819,17 @@ function QuestionScreen({
     >
       <div className="w-full max-w-2xl mx-auto px-6 py-20">
         {!isAutoAdvance && (
-          <div className="flex items-center gap-2 mb-8">
-            <span className="text-gold-500 font-medium text-sm tabular-nums">{index + 1}</span>
-            <span className="text-beige-300 text-sm">→</span>
-            <span className="text-brown-400 text-sm">{index + 1} / {total}</span>
+          <div className="flex items-center justify-between gap-3 mb-8">
+            <span className="inline-flex items-center gap-2 text-sm">
+              <span className="text-gold-500 font-medium tabular-nums">Question {Math.min(index + 1, total)}</span>
+              <span className="text-brown-300">/ {total}</span>
+            </span>
+            <motion.span
+              key={isLast ? 'last' : 'cont'}
+              initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
+              className="text-xs text-gold-600 font-medium">
+              {isLast ? '✦ Dernière étape !' : firstName ? `Continuez, ${firstName} ✦` : 'Vous y êtes presque ✦'}
+            </motion.span>
           </div>
         )}
 
@@ -1787,7 +1825,11 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
 
       <AnimatePresence mode="wait">
         {screen === 'cover' && (
-          <CoverScreen key="cover" form={form} onStart={handleStart} isFull={isFull} />
+          <CoverScreen key="cover" form={form} onStart={handleStart} isFull={isFull}
+            participants={(form.responses ?? []).filter((r) => (r.data as Record<string, unknown>)?._waitlist !== 'true').length}
+            estMinutes={Math.max(1, Math.ceil((realTotal + 1) * 0.4))}
+            seatsLeft={typeof form.maxCapacity === 'number' && form.maxCapacity > 0 ? Math.max(0, form.maxCapacity - confirmedGuests) : null}
+          />
         )}
 
         {screen === 'identity' && (
@@ -1815,6 +1857,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
               isLast={currentIndex === questionFields.length - 1 && !hasCharge}
               direction={direction}
               guestCount={guestCount}
+              firstName={identityData?.firstName ?? ''}
             />
           </AnimatePresence>
         )}
