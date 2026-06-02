@@ -524,20 +524,42 @@ function IdentityScreen({
   );
 }
 
+/* ─── Micro-célébration : éclat de particules dorées à la sélection ─── */
+function Burst() {
+  const particles = Array.from({ length: 8 }, (_, i) => (i / 8) * Math.PI * 2);
+  return (
+    <div className="absolute inset-0 pointer-events-none flex items-center justify-center overflow-visible">
+      {particles.map((angle, i) => (
+        <motion.span
+          key={i}
+          className="absolute w-1.5 h-1.5 rounded-full"
+          style={{ background: i % 2 ? '#E8C97E' : '#C9A96E' }}
+          initial={{ x: 0, y: 0, opacity: 1, scale: 1 }}
+          animate={{ x: Math.cos(angle) * 34, y: Math.sin(angle) * 34, opacity: 0, scale: 0.3 }}
+          transition={{ duration: 0.55, ease: 'easeOut' }}
+        />
+      ))}
+    </div>
+  );
+}
+
 /* ─── People count field ────────────────────────────────────── */
 function PeopleCountField({ value, onChange, max = 8 }: { value: string; onChange: (v: string) => void; max?: number }) {
   const count = parseInt(value || '0', 10);
+  const [burst, setBurst] = useState<number | null>(null);
+  const pick = (n: number) => { onChange(String(n)); setBurst(n); setTimeout(() => setBurst(null), 600); };
   return (
     <div className="mt-2">
       <div className="flex flex-wrap gap-3">
         {Array.from({ length: max }, (_, i) => i + 1).map((n) => (
-          <motion.button key={n} type="button" onClick={() => onChange(String(n))}
+          <motion.button key={n} type="button" onClick={() => pick(n)}
             className={`relative flex flex-col items-center justify-center w-16 h-16 rounded-2xl border-2 font-medium transition-all ${
               count === n ? 'border-gold-500 bg-gold-400/15 text-brown-900' : 'border-beige-200 bg-beige-50 text-brown-500 hover:border-gold-400/50'
             }`}
             whileHover={{ scale: 1.1, y: -2 }} whileTap={{ scale: 0.92 }}
             initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: n * 0.04, type: 'spring', stiffness: 400, damping: 18 }}>
+            {burst === n && <Burst />}
             <span className="text-xl mb-0.5">{n <= 2 ? '🧑' : n <= 4 ? '👥' : '🎉'}</span>
             <span className="text-sm font-semibold">{n}</span>
             {count === n && (
@@ -648,20 +670,23 @@ function DonationField({
 }: { field: FormField; value: string; onChange: (v: string) => void }) {
   const suggested = field.suggestedAmounts ?? [];
   const isCustom = value !== '' && !suggested.map(String).includes(value);
+  const [burst, setBurst] = useState<number | null>(null);
+  const pick = (amt: number) => { onChange(String(amt)); setBurst(amt); setTimeout(() => setBurst(null), 600); };
   return (
     <div className="mt-2 space-y-3">
       <div className="flex flex-wrap gap-3">
         {suggested.map((amt, i) => (
           <motion.button
             key={i} type="button"
-            onClick={() => onChange(String(amt))}
-            className={`px-6 py-4 rounded-2xl border-2 font-medium transition-colors ${
+            onClick={() => pick(amt)}
+            className={`relative px-6 py-4 rounded-2xl border-2 font-medium transition-colors ${
               value === String(amt) ? 'border-gold-500 bg-gold-400/15 text-brown-900' : 'border-beige-200 bg-beige-50 text-brown-600 hover:border-gold-400/50'
             }`}
             initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.1 + i * 0.05 }}
             whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
           >
+            {burst === amt && <Burst />}
             {amt} €
           </motion.button>
         ))}
