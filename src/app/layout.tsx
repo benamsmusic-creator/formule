@@ -73,6 +73,28 @@ export default function RootLayout({
             __html: `try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}`,
           }}
         />
+        {/* Données structurées — Organisation (SEO) */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'Organization',
+              name: 'Habad Loubavitch — Lyon ARA',
+              alternateName: 'HabadLyon',
+              url: 'https://www.habadlyon.info',
+              logo: 'https://www.habadlyon.info/icon',
+              address: {
+                '@type': 'PostalAddress',
+                streetAddress: '295 rue Francis de Pressensé',
+                postalCode: '69100',
+                addressLocality: 'Villeurbanne',
+                addressCountry: 'FR',
+              },
+              areaServed: 'Lyon',
+            }),
+          }}
+        />
         <AnimatedBackground />
         <DashboardSidebar />
         <PublicNav />
