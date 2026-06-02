@@ -9,6 +9,29 @@ export default function NewsletterPage() {
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
   const [msg, setMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null);
+  const [importing, setImporting] = useState(false);
+
+  const handleImport = async (file: File) => {
+    setImporting(true); setMsg(null);
+    try {
+      const text = await file.text();
+      // Extrait toutes les adresses e-mail du fichier (CSV, une par ligne, ou colonnes)
+      const emails = Array.from(text.matchAll(/[^\s,;"']+@[^\s,;"']+\.[^\s,;"']+/g)).map((m) => m[0]);
+      if (emails.length === 0) throw new Error('Aucune adresse e-mail trouvée dans le fichier.');
+      const res = await fetch('/api/newsletter', {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? 'Erreur');
+      setMsg({ type: 'ok', text: `${d.imported} contact(s) importé(s) ✓` });
+      fetch('/api/newsletter').then((r) => r.json()).then((x) => setCount(x.count ?? 0)).catch(() => {});
+    } catch (err) {
+      setMsg({ type: 'err', text: err instanceof Error ? err.message : 'Erreur' });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   useEffect(() => {
     fetch('/api/newsletter').then((r) => r.json()).then((d) => setCount(d.count ?? 0)).catch(() => setCount(0));
@@ -43,11 +66,18 @@ export default function NewsletterPage() {
           <Link href="/dashboard" className="text-sm text-brown-500 hover:text-brown-800 transition-colors">← Dashboard</Link>
         </div>
 
-        <div className="rounded-2xl bg-beige-50 border border-beige-200 p-4 mb-6 flex items-center gap-3">
-          <span className="text-2xl">📣</span>
-          <p className="text-sm text-brown-700">
-            {count === null ? 'Chargement…' : <><span className="font-semibold">{count}</span> abonné{count > 1 ? 's' : ''} recevront votre message.</>}
-          </p>
+        <div className="rounded-2xl bg-beige-50 border border-beige-200 p-4 mb-6 flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl">📣</span>
+            <p className="text-sm text-brown-700">
+              {count === null ? 'Chargement…' : <><span className="font-semibold">{count}</span> abonné{count > 1 ? 's' : ''} recevront votre message.</>}
+            </p>
+          </div>
+          <label className={`text-xs font-medium px-3 py-2 rounded-xl border border-beige-300 cursor-pointer hover:bg-beige-100 transition-colors ${importing ? 'opacity-50 pointer-events-none' : ''}`}>
+            {importing ? 'Import…' : '📥 Importer un CSV'}
+            <input type="file" accept=".csv,.txt,text/csv,text/plain" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImport(f); e.target.value = ''; }} />
+          </label>
         </div>
 
         <form onSubmit={send} className="rounded-2xl bg-beige-50 border border-beige-200 p-6 space-y-3">

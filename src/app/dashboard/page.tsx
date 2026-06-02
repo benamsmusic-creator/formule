@@ -355,6 +355,7 @@ function DashboardContent() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -80, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            role="status" aria-live="polite"
             className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-green-500 text-white shadow-xl shadow-green-500/20"
           >
             <span className="text-lg">✓</span>
@@ -371,6 +372,7 @@ function DashboardContent() {
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -80, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+            role="status" aria-live="polite"
             className="fixed top-20 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-6 py-3.5 rounded-2xl bg-brown-900 text-beige-50 shadow-xl shadow-brown-900/20 whitespace-nowrap"
           >
             <span className="text-lg">🔗</span>

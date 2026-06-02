@@ -23,6 +23,27 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ count: count ?? 0 });
 }
 
+// Admin : import en masse d'emails (CSV) — #75
+export async function PUT(req: NextRequest) {
+  const org = currentOrg(req);
+  if (!org) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+
+  const { emails } = await req.json();
+  if (!Array.isArray(emails)) return NextResponse.json({ error: 'Format invalide.' }, { status: 400 });
+
+  const re = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  const clean = [...new Set(
+    emails.map((e) => String(e || '').toLowerCase().trim()).filter((e) => re.test(e))
+  )];
+  if (clean.length === 0) return NextResponse.json({ error: 'Aucune adresse e-mail valide trouvée.' }, { status: 400 });
+
+  const rows = clean.map((email) => ({ org_id: org, email }));
+  const { error } = await supabaseAdmin.from('subscribers').upsert(rows, { onConflict: 'org_id,email' });
+  if (error) return NextResponse.json({ error: 'Erreur lors de l’import.' }, { status: 500 });
+
+  return NextResponse.json({ ok: true, imported: clean.length });
+}
+
 // Admin : envoie une newsletter à tous les abonnés de son organisation (en BCC)
 export async function POST(req: NextRequest) {
   const org = currentOrg(req);
