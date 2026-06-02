@@ -51,6 +51,22 @@ export default function ResponsesPage() {
   const [error, setError] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const cancelResponse = async (rid: string) => {
+    if (!confirm('Supprimer cette inscription ? Cette action est irréversible.')) return;
+    setDeleting(rid);
+    try {
+      await fetch('/api/responses', {
+        method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ responseId: rid }),
+      });
+      // Retirer de la liste locale immédiatement
+      setForm((prev) => prev ? { ...prev, responses: prev.responses.filter((r) => r.id !== rid) } : prev);
+      setExpanded(null);
+    } catch { /* ignore */ }
+    finally { setDeleting(null); }
+  };
 
   const toggleCheck = async (rid: string) => {
     const next = !checked[rid];
@@ -248,14 +264,24 @@ export default function ResponsesPage() {
                               </div>
                             ))}
                           </div>
-                          <button
-                            onClick={() => toggleCheck(resp.id)}
-                            className={`mt-4 w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                              checked[resp.id] ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-brown-900 text-beige-50 hover:opacity-90'
-                            }`}
-                          >
-                            {checked[resp.id] ? '✓ Présent — annuler' : 'Pointer comme arrivé'}
-                          </button>
+                          <div className="mt-4 flex gap-2">
+                            <button
+                              onClick={() => toggleCheck(resp.id)}
+                              className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                                checked[resp.id] ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-brown-900 text-beige-50 hover:opacity-90'
+                              }`}
+                            >
+                              {checked[resp.id] ? '✓ Présent — annuler' : 'Pointer comme arrivé'}
+                            </button>
+                            <button
+                              onClick={() => cancelResponse(resp.id)}
+                              disabled={deleting === resp.id}
+                              aria-label="Annuler et supprimer cette inscription"
+                              className="px-4 py-2.5 rounded-xl border border-red-200 text-red-500 text-sm hover:bg-red-50 transition-colors disabled:opacity-40"
+                            >
+                              {deleting === resp.id ? '…' : '🗑 Annuler'}
+                            </button>
+                          </div>
                         </div>
                       </motion.div>
                     )}
