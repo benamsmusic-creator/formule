@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { Form, FormResponse } from '@/lib/types';
 import { exportContactsToCSV } from '@/lib/utils';
+import { SkeletonRows } from '@/components/Skeleton';
 
 /* ─── Types ─────────────────────────────────────────────────── */
 interface EventSummary {
@@ -519,12 +520,8 @@ export default function CRMPage() {
 
         {/* Loading */}
         {loading && (
-          <div className="flex justify-center py-16">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}
-              className="w-8 h-8 border-2 border-gold-400 border-t-transparent rounded-full"
-            />
+          <div className="py-4">
+            <SkeletonRows count={6} />
           </div>
         )}
 
