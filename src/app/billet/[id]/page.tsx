@@ -16,7 +16,7 @@ type ResponseRow = {
   payment_method: string | null;
   submitted_at: string | null;
   checked_in: boolean | null;
-  forms: { title: string } | null;
+  forms: { title: string; fields?: { type: string; presetValue?: string; venue?: string }[] } | null;
 };
 
 function Row({ label, value }: { label: string; value: string }) {
@@ -33,7 +33,7 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
 
   const { data, error } = await supabaseAdmin
     .from('responses')
-    .select('id, form_id, data, payment_status, payment_method, submitted_at, checked_in, forms(title)')
+    .select('id, form_id, data, payment_status, payment_method, submitted_at, checked_in, forms(title, fields)')
     .eq('id', id)
     .single<ResponseRow>();
 
@@ -72,6 +72,11 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
   const isDonation = !!donation || data.form_id === 'dons-generaux';
   const headerLabel = isDonation ? 'Reçu de don' : 'Billet';
   const qrCaption = isDonation ? 'Merci pour votre soutien 🙏' : 'À présenter à l’entrée';
+  const checkedIn = !!data.checked_in;
+  // Date & lieu de l'événement (depuis le formulaire)
+  const evField = data.forms?.fields?.find((f) => f.type === 'event_date');
+  const eventDate = evField?.presetValue;
+  const eventVenue = evField?.venue;
 
   const qr = await QRCode.toDataURL(`https://www.habadlyon.info/billet/${id}`, {
     margin: 1, width: 360, color: { dark: '#2C1810', light: '#FAF7F2' },
@@ -88,15 +93,22 @@ export default async function BilletPage({ params }: { params: Promise<{ id: str
 
         {/* QR */}
         <div className="bg-beige-50 border-x border-beige-200 px-6 py-6 flex flex-col items-center">
+          {checkedIn && !isDonation && (
+            <div className="mb-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-100 border border-green-300 text-green-700 text-sm font-semibold">
+              ✓ Déjà validé — entré(e)
+            </div>
+          )}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qr} alt="QR code du billet" className="w-48 h-48 rounded-xl" />
+          <img src={qr} alt="QR code du billet" className={`w-48 h-48 rounded-xl ${checkedIn && !isDonation ? 'opacity-40' : ''}`} />
           <p className="mt-3 text-xs text-brown-400">{qrCaption}</p>
         </div>
 
         {/* Détails */}
         <div className="rounded-b-3xl bg-beige-50 border border-t-0 border-beige-200 px-6 pb-6">
           <Row label="Nom" value={name} />
-          <Row label="Invités" value={guests} />
+          {eventDate && <Row label="Date" value={eventDate} />}
+          {eventVenue && <Row label="Lieu" value={eventVenue} />}
+          {!isDonation && <Row label="Invités" value={guests} />}
           {table && <Row label="Réservation" value={table} />}
           {donation && <Row label="Don" value={donation} />}
           {amount && <Row label="Montant" value={`${amount} €`} />}
