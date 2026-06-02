@@ -1566,6 +1566,10 @@ function ScrollForm({
                   <input type={f.type === 'number' ? 'number' : 'text'} className={inputCls(invalid)}
                     placeholder={f.placeholder ?? 'Votre réponse'} value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
                 )}
+                {f.type === 'date_choice' && (
+                  <input type="date" className={inputCls(invalid)}
+                    value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
+                )}
                 {(f.type === 'radio' || f.type === 'select') && (
                   field.perGuestCheck(f, guestCount)
                     ? <PerGuestChoice field={f} guestCount={guestCount} value={(formData[f.id] as string) || ''} onChange={(v) => setField(f.id, v)} />

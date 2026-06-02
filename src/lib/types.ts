@@ -10,6 +10,7 @@ export type FieldType =
   | 'people_count'
   | 'info_block'
   | 'number'
+  | 'date_choice'
   | 'table_reservation'
   | 'donation'
   | 'payment';

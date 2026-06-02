@@ -50,6 +50,7 @@ const FIELD_GROUPS: { group: string; emoji: string; note: string; types: FieldTy
       { type: 'text', label: 'Texte court', icon: '✏️', desc: 'Une ligne', hint: "Ex : nom de l'enfant, allergie." },
       { type: 'textarea', label: 'Texte long', icon: '¶', desc: 'Paragraphe', hint: 'Ex : commentaire, demande.' },
       { type: 'number', label: 'Nombre / quantité', icon: '🔢', desc: 'Saisie d’un chiffre', hint: 'Ex : âge, quantité de paquets.' },
+      { type: 'date_choice', label: 'Date au choix', icon: '🗓️', desc: 'Le visiteur choisit une date', hint: 'Ex : date de naissance, date d’arrivée.' },
       { type: 'people_count', label: 'Nombre de personnes', icon: '👥', desc: 'Compteur 1 à N', hint: 'Sélection par bouton.' },
     ],
   },
@@ -1328,6 +1329,7 @@ function FormPreview({ title, description, fields, onClose }: {
                   {(f.type === 'radio' || f.type === 'select') && <div className="grid grid-cols-2 gap-2">{(f.options ?? []).map((o) => <span key={o.label} className="px-4 py-2.5 rounded-xl border-2 border-beige-200 bg-beige-50 text-brown-600 text-sm">{o.label}</span>)}</div>}
                   {f.type === 'checkbox' && <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-md border-2 border-beige-300" /><span className="text-brown-600 text-sm">{f.placeholder || 'Je confirme'}</span></div>}
                   {(f.type === 'text' || f.type === 'number') && <div className={pill}>{f.placeholder || 'Réponse courte…'}</div>}
+                  {f.type === 'date_choice' && <div className={pill}>📅 jj / mm / aaaa</div>}
                   {f.type === 'textarea' && <div className={`${pill} h-20`}>{f.placeholder || 'Réponse longue…'}</div>}
                   {f.type === 'payment' && <div className="px-4 py-3 rounded-xl bg-gold-400/10 border border-gold-400/20 text-gold-700 text-sm">◆ {f.amount ?? 0} € · paiement carte</div>}
                 </div>
