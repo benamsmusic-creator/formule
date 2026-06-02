@@ -1,11 +1,29 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { getCurrentUser } from '@/lib/store';
 import { AppUser } from '@/lib/types';
 import { useLang, DICT } from '@/lib/i18n';
 import ThemeToggleInline from '@/components/ThemeToggleInline';
+
+function CountUp({ to, suffix = '' }: { to: number; suffix?: string }) {
+  const [val, setVal] = useState(0);
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (startedRef.current || to === 0) return;
+    startedRef.current = true;
+    const steps = 40;
+    const inc = to / steps;
+    let cur = 0;
+    const id = setInterval(() => {
+      cur += inc;
+      if (cur >= to) { setVal(to); clearInterval(id); } else { setVal(Math.floor(cur)); }
+    }, 1000 / steps);
+    return () => clearInterval(id);
+  }, [to]);
+  return <>{val}{suffix}</>;
+}
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
@@ -16,6 +34,19 @@ export default function LandingPage() {
   const [user] = useState<AppUser | null>(() => getCurrentUser());
   const [lang, setLang] = useLang();
   const t = DICT[lang];
+  const [stats, setStats] = useState<{ events: number; responses: number } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/forms')
+      .then((r) => r.json())
+      .then((forms) => {
+        if (!Array.isArray(forms)) return;
+        const active = forms.filter((f: { archived?: boolean; disabled?: boolean }) => !f.archived && !f.disabled);
+        const totalResp = active.reduce((s: number, f: { responses?: unknown[] }) => s + (f.responses?.length ?? 0), 0);
+        setStats({ events: active.length, responses: totalResp });
+      })
+      .catch(() => {});
+  }, []);
 
   const features = [
     { k: '01', title: t.card_events_t, desc: t.card_events_d, href: '/events' },
@@ -108,6 +139,29 @@ export default function LandingPage() {
             ))}
           </motion.div>
         </section>
+
+        {/* Bande de chiffres clés (#5) */}
+        {stats && (stats.events > 0 || stats.responses > 0) && (
+          <motion.section
+            initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="max-w-3xl mx-auto px-6 pb-16"
+          >
+            <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-16">
+              {[
+                { value: stats.events, suffix: '', label: lang === 'fr' ? 'événements actifs' : 'active events' },
+                { value: stats.responses, suffix: '+', label: lang === 'fr' ? 'inscriptions traitées' : 'registrations' },
+                { value: 100, suffix: '%', label: lang === 'fr' ? 'sécurisé (Stripe)' : 'secure (Stripe)' },
+              ].map((s) => (
+                <div key={s.label} className="text-center">
+                  <p className="text-3xl font-light text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>
+                    <CountUp to={s.value} suffix={s.suffix} />
+                  </p>
+                  <p className="text-xs text-brown-400 mt-0.5">{s.label}</p>
+                </div>
+              ))}
+            </div>
+          </motion.section>
+        )}
 
         {/* Fonctions — liste épurée à filets fins */}
         <section className="max-w-5xl mx-auto px-6 pb-28">
