@@ -450,6 +450,14 @@ function DashboardContent() {
                 </motion.button>
               </Link>
             )}
+            <Link href="/annuaire">
+              <motion.button
+                className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }} title="Annuaire"
+              >
+                📒
+              </motion.button>
+            </Link>
             <Link href="/yahrzeit">
               <motion.button
                 className="px-4 py-2.5 border border-beige-200 text-brown-600 rounded-xl text-sm font-medium hover:border-gold-400/40 transition-colors"

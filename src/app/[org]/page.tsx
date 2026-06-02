@@ -15,6 +15,7 @@ export default function OrgPublicPage() {
   const [forms, setForms] = useState<Form[]>([]);
   const [hasDonation, setHasDonation] = useState(false);
   const [photos, setPhotos] = useState<{ id: string; url: string }[]>([]);
+  const [directory, setDirectory] = useState<{ id: string; category: string; name: string; address: string; phone: string; url: string }[]>([]);
   const [subEmail, setSubEmail] = useState('');
   const [subDone, setSubDone] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'notfound'>('loading');
@@ -49,6 +50,8 @@ export default function OrgPublicPage() {
       try {
         const g = await (await fetch(`/api/gallery?org=${encodeURIComponent(slug)}`)).json();
         if (Array.isArray(g)) setPhotos(g);
+        const dir = await (await fetch(`/api/directory?org=${encodeURIComponent(slug)}`)).json();
+        if (Array.isArray(dir)) setDirectory(dir);
       } catch { /* ignore */ }
       setState('ready');
     })().catch(() => { if (alive) setState('notfound'); });
@@ -143,6 +146,24 @@ export default function OrgPublicPage() {
                 </motion.div>
               );
             })}
+          </div>
+        )}
+
+        {/* Annuaire */}
+        {directory.length > 0 && (
+          <div className="mt-16">
+            <h2 className="text-2xl font-light text-brown-900 mb-5 text-center" style={{ fontFamily: 'var(--font-cormorant)' }}>Annuaire de la communauté</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {directory.map((d) => (
+                <div key={d.id} className="p-4 rounded-2xl bg-beige-50 border border-beige-200">
+                  <p className="text-[11px] uppercase tracking-wide text-gold-600">{d.category}</p>
+                  <p className="font-medium text-brown-900">{d.name}</p>
+                  {d.address && <p className="text-xs text-brown-500 mt-0.5">📍 {d.address}</p>}
+                  {d.phone && <p className="text-xs text-brown-500">📞 {d.phone}</p>}
+                  {d.url && <a href={d.url} target="_blank" rel="noopener noreferrer" className="text-xs text-gold-700 hover:underline">Site web ↗</a>}
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
