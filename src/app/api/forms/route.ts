@@ -54,14 +54,23 @@ export async function GET(req: NextRequest) {
   return NextResponse.json((data ?? []).map((r) => rowToForm(r as Record<string, unknown>)));
 }
 
+async function logAction(org: string, action: string, detail: string) {
+  try { await supabaseAdmin.from('audit_log').insert({ org_id: org, action, detail }); } catch { /* non bloquant */ }
+}
+
 export async function PATCH(req: NextRequest) {
   if (!isAdmin(req)) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const { id, ...updates } = await req.json();
+  const org = req.cookies.get('hl_org')?.value || 'habadlyon';
   const dbUpdates: Record<string, unknown> = {};
   if ('is_disabled' in updates) dbUpdates.is_disabled = updates.is_disabled;
   if ('is_archived' in updates) dbUpdates.is_archived = updates.is_archived;
   const { error } = await supabaseAdmin.from('forms').update(dbUpdates).eq('id', id);
   if (error) return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  let label = 'Formulaire modifié';
+  if ('is_archived' in updates) label = updates.is_archived ? 'Formulaire archivé' : 'Formulaire restauré';
+  else if ('is_disabled' in updates) label = updates.is_disabled ? 'Formulaire désactivé' : 'Formulaire réactivé';
+  await logAction(org, label, id);
   return NextResponse.json({ ok: true });
 }
 
@@ -86,6 +95,7 @@ export async function POST(req: NextRequest) {
     updated_at: new Date().toISOString(),
   });
   if (error) return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  await logAction(org, 'Formulaire enregistré', form.title);
   return NextResponse.json(form);
 }
 
@@ -94,7 +104,9 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   }
   const { id } = await req.json();
+  const org = req.cookies.get('hl_org')?.value || 'habadlyon';
   const { error } = await supabaseAdmin.from('forms').delete().eq('id', id);
   if (error) return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  await logAction(org, 'Formulaire supprimé', id);
   return NextResponse.json({ ok: true });
 }
