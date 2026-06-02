@@ -59,6 +59,18 @@ export default function GalaPage() {
   const capacity = gala?.maxCapacity;
   const seatsLeft = capacity ? Math.max(0, capacity - confirmedSeats) : null;
 
+  // Thermomètre de collecte (#23)
+  const raised = (gala?.responses ?? [])
+    .filter((r: FormResponse) => r.paymentStatus === 'paid' || r.paymentStatus === 'cash')
+    .reduce((s, r) => s + (r.paymentAmount ?? 0), 0);
+  // Objectif = recette potentielle à pleine capacité (prix/place le plus avantageux × capacité)
+  const perSeatPrices = (tableField?.tableOptions ?? [])
+    .filter((o) => o.seats > 0)
+    .map((o) => o.price / o.seats);
+  const bestPerSeat = perSeatPrices.length ? Math.min(...perSeatPrices) : 0;
+  const goal = capacity && bestPerSeat ? Math.round(capacity * bestPerSeat) : 0;
+  const raisedPct = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0;
+
   return (
     <div className="min-h-screen text-[#f5efe6] overflow-hidden" style={{ background: 'radial-gradient(1200px 600px at 50% -10%, #3a2a17 0%, #1a120b 45%, #0d0805 100%)' }}>
       {/* Étincelles dorées */}
@@ -152,6 +164,24 @@ export default function GalaPage() {
                   className="mt-5 text-sm text-[#d8c7ac]/60">
                   {seatsLeft > 0 ? <>Plus que <span style={{ color: GOLD }} className="font-semibold">{seatsLeft}</span> places disponibles</> : 'Complet — inscription sur liste d’attente'}
                 </motion.p>
+              )}
+
+              {/* Thermomètre de collecte */}
+              {goal > 0 && raised > 0 && (
+                <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1 }}
+                  className="mt-10 max-w-md mx-auto">
+                  <div className="flex items-end justify-between mb-2">
+                    <span className="text-2xl font-light" style={{ fontFamily: 'var(--font-cormorant)', color: '#fff' }}>{raised.toLocaleString('fr-FR')} €</span>
+                    <span className="text-xs text-[#d8c7ac]/60">objectif {goal.toLocaleString('fr-FR')} €</span>
+                  </div>
+                  <div className="h-3 rounded-full overflow-hidden" style={{ background: '#ffffff14' }}>
+                    <motion.div className="h-full rounded-full"
+                      style={{ background: `linear-gradient(90deg,#9a7a3a,#e8c97e)`, boxShadow: `0 0 16px ${GOLD}88` }}
+                      initial={{ width: 0 }} animate={{ width: `${raisedPct}%` }}
+                      transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1], delay: 1.1 }} />
+                  </div>
+                  <p className="mt-2 text-xs text-[#d8c7ac]/50">{raisedPct}% de l’objectif atteint · merci pour votre soutien 🙏</p>
+                </motion.div>
               )}
             </section>
 
