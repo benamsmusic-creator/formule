@@ -258,22 +258,17 @@ function DashboardContent() {
     setTimeout(() => setShowCopyToast(false), 3000);
   };
 
+  // Chargement parallèle des deux APIs (#44) — réduit le temps d'attente perçu
   useEffect(() => {
-    fetch('/api/forms')
-      .then((r) => r.json())
-      .then((serverForms) => {
-        if (Array.isArray(serverForms)) setForms(serverForms);
-        else setForms(getForms());
-      })
-      .catch(() => setForms(getForms()))
-      .finally(() => setLoaded(true));
-  }, []);
-
-  useEffect(() => {
-    fetch('/api/me')
-      .then((r) => r.json())
-      .then((d) => setMe({ superAdmin: !!d.superAdmin, orgName: d.orgName ?? null }))
-      .catch(() => {});
+    Promise.all([
+      fetch('/api/forms').then((r) => r.json()).catch(() => null),
+      fetch('/api/me').then((r) => r.json()).catch(() => null),
+    ]).then(([serverForms, me]) => {
+      if (Array.isArray(serverForms)) setForms(serverForms);
+      else setForms(getForms());
+      if (me) setMe({ superAdmin: !!me.superAdmin, orgName: me.orgName ?? null });
+      setLoaded(true);
+    });
   }, []);
 
   useEffect(() => {
