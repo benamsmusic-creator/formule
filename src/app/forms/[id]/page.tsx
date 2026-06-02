@@ -159,7 +159,7 @@ function ProgressBar({ pct }: { pct: number }) {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute right-3 top-2 text-[10px] font-semibold text-gold-600 bg-white/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border border-gold-400/20"
+            className="absolute right-3 top-2 text-[10px] font-semibold text-gold-600 bg-beige-50/90 backdrop-blur-sm px-2 py-0.5 rounded-full shadow-sm border border-gold-400/20"
           >
             {Math.round(pct)}%
           </motion.div>

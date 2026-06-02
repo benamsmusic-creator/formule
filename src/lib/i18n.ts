@@ -29,6 +29,10 @@ export const DICT = {
     saas_sub: 'Événements, réservations de gala, dons avec reçus fiscaux, billets QR, horaires de Chabbat — votre propre site, prêt en quelques minutes.',
     saas_cta: 'Créer mon espace gratuit →',
     footer_legal: 'Mentions légales · Contact',
+    trust_1: 'Inscription en 2 minutes',
+    trust_2: 'Paiement 100% sécurisé',
+    trust_3: 'Reçu fiscal automatique',
+    trust_4: 'Billet QR par e-mail',
   },
   en: {
     nav_events: 'Events',
@@ -54,6 +58,10 @@ export const DICT = {
     saas_sub: 'Events, gala bookings, donations with tax receipts, QR tickets, Shabbat times — your own site, ready in minutes.',
     saas_cta: 'Create my free space →',
     footer_legal: 'Legal notice · Contact',
+    trust_1: 'Register in 2 minutes',
+    trust_2: '100% secure payment',
+    trust_3: 'Automatic tax receipt',
+    trust_4: 'QR ticket by e-mail',
   },
 } as const;
 

@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import ThemeToggleInline from '@/components/ThemeToggleInline';
 
 // Pages publiques de contenu où afficher la navigation unifiée.
 // (La landing "/" a déjà son propre header ; les pages immersives
@@ -58,6 +59,7 @@ export default function PublicNav() {
             </Link>
           );
         })}
+        <ThemeToggleInline className="ml-1" />
       </div>
     </motion.nav>
   );

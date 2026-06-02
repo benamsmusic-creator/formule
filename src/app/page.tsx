@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { getCurrentUser } from '@/lib/store';
 import { AppUser } from '@/lib/types';
 import { useLang, DICT } from '@/lib/i18n';
+import ThemeToggleInline from '@/components/ThemeToggleInline';
 
 const fadeUp = {
   initial: { opacity: 0, y: 16 },
@@ -38,6 +39,7 @@ export default function LandingPage() {
             <Link href="/events" className="hidden sm:inline text-brown-500 hover:text-brown-900 transition-colors">{t.nav_events}</Link>
             <Link href="/horaires" className="hidden sm:inline text-brown-500 hover:text-brown-900 transition-colors">{t.card_horaires_t}</Link>
             <button onClick={() => setLang(lang === 'fr' ? 'en' : 'fr')} className="text-brown-400 hover:text-brown-900 transition-colors text-xs font-semibold">{lang === 'fr' ? 'EN' : 'FR'}</button>
+            <ThemeToggleInline />
             {user ? (
               <Link href="/compte" className="text-brown-900 font-medium hover:opacity-70 transition-opacity">{t.nav_account}</Link>
             ) : (
@@ -53,6 +55,14 @@ export default function LandingPage() {
           {/* Profondeur : halo doré + voile */}
           <div aria-hidden className="absolute inset-x-0 top-0 h-[600px] pointer-events-none -z-10"
             style={{ background: 'radial-gradient(600px 400px at 50% 30%, rgba(201,169,110,0.16), transparent 70%)' }} />
+          {/* Motif géométrique discret (étoiles à 6 branches) */}
+          <div aria-hidden className="absolute inset-x-0 top-0 h-[600px] pointer-events-none -z-10 opacity-[0.05]"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='104' viewBox='0 0 60 104' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23C9A96E' stroke-width='1'%3E%3Cpath d='M30 8l18 31-18 31-18-31z'/%3E%3Cpath d='M30 8l-18 31 18 31 18-31z'/%3E%3C/g%3E%3C/svg%3E")`,
+              backgroundSize: '60px 104px',
+              maskImage: 'radial-gradient(500px 350px at 50% 25%, black, transparent 75%)',
+              WebkitMaskImage: 'radial-gradient(500px 350px at 50% 25%, black, transparent 75%)',
+            }} />
 
           <motion.p {...fadeUp} transition={{ duration: 0.5 }} className="text-xs uppercase tracking-[0.25em] text-gold-600 mb-7">
             {t.hero_badge.replace('✦ ', '')}
@@ -85,6 +95,16 @@ export default function LandingPage() {
             className="flex flex-wrap items-center justify-center gap-2">
             {[t.card_events_t, t.card_gala_t, t.card_don_t, t.card_horaires_t].map((c) => (
               <span key={c} className="px-3.5 py-1.5 rounded-full border border-beige-300/70 text-brown-500 text-xs">{c}</span>
+            ))}
+          </motion.div>
+
+          {/* Bande de réassurance */}
+          <motion.div {...fadeUp} transition={{ duration: 0.6, delay: 0.28 }}
+            className="mt-12 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-brown-400">
+            {[t.trust_1, t.trust_2, t.trust_3, t.trust_4].map((c) => (
+              <span key={c} className="inline-flex items-center gap-1.5">
+                <span className="text-gold-500">✓</span> {c}
+              </span>
             ))}
           </motion.div>
         </section>
