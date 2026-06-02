@@ -1458,6 +1458,27 @@ function ScrollForm({
     }`;
   const sectionLabel = 'text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium';
 
+  // Total live (suit les sélections) pour la barre collée en bas
+  const liveTotal = (() => {
+    let t = 0;
+    const pf = form.fields.find((f) => f.type === 'payment');
+    const peopleF = form.fields.find((f) => f.type === 'people_count');
+    if (pf?.amount) {
+      const c = peopleF ? (parseInt((formData[peopleF.id] as string) || '1', 10) || 1) : 1;
+      t += pf.amount * c;
+    }
+    const tableF = form.fields.find((f) => f.type === 'table_reservation');
+    if (tableF) {
+      const sel = parseTableSelection(formData[tableF.id]);
+      const opt = sel.i >= 0 ? tableF.tableOptions?.[sel.i] : undefined;
+      if (opt) t += opt.price * sel.q;
+    }
+    const donF = form.fields.find((f) => f.type === 'donation');
+    if (donF) { const a = parseFloat((formData[donF.id] as string) || '0') || 0; if (a > 0) t += a; }
+    return t;
+  })();
+  const hasCharge = form.fields.some((f) => ['payment', 'table_reservation', 'donation'].includes(f.type));
+
   return (
     <motion.div key="scrollform" initial={slide.enter} animate={slide.center} exit={slide.exit}
       className="absolute inset-0 overflow-y-auto">
@@ -1571,12 +1592,29 @@ function ScrollForm({
           <p className="mt-4 text-sm text-red-500 text-center">Merci de compléter les champs obligatoires (★).</p>
         )}
 
-        <motion.button type="button" onClick={handleSubmit}
-          className="btn-liquid w-full mt-6 py-4 bg-brown-900 text-beige-50 rounded-2xl font-medium overflow-hidden"
-          whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
-          <span className="relative z-10">Valider mon inscription →</span>
-        </motion.button>
-        <div className="h-10" />
+        {/* Espace pour ne pas masquer le bas derrière la barre collée */}
+        <div className="h-28" />
+      </div>
+
+      {/* Barre collée en bas : total live + bouton (toujours visible) */}
+      <div className="sticky bottom-0 left-0 right-0 z-20">
+        <div className="absolute inset-0 bg-beige-50/85 backdrop-blur-md border-t border-beige-200" />
+        <div className="relative max-w-xl mx-auto px-5 py-3.5 flex items-center gap-4">
+          {hasCharge && (
+            <div className="flex-shrink-0">
+              <p className="text-[10px] uppercase tracking-widest text-brown-400 leading-none">Total à payer</p>
+              <motion.p key={liveTotal} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                className="text-xl font-semibold text-brown-900 leading-tight" style={{ fontFamily: 'var(--font-cormorant)' }}>
+                {liveTotal.toFixed(2)} €
+              </motion.p>
+            </div>
+          )}
+          <motion.button type="button" onClick={handleSubmit}
+            className="btn-liquid flex-1 py-3.5 bg-brown-900 text-beige-50 rounded-2xl font-medium overflow-hidden"
+            whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+            <span className="relative z-10">{hasCharge && liveTotal > 0 ? 'Valider et payer →' : 'Valider mon inscription →'}</span>
+          </motion.button>
+        </div>
       </div>
     </motion.div>
   );
