@@ -1022,7 +1022,6 @@ function SuccessScreen({ paymentMethod, ticketId, isWaitlist, form }: { paymentM
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoggedIn(!!getCurrentUser());
   }, []);
 
@@ -1872,7 +1871,19 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
             exit={{ y: '-100%', transition: { ...SPRING, stiffness: 340 } }}>
             <div className="min-h-full flex items-start justify-center px-6 py-16">
               <div className="w-full max-w-md">
-                <button onClick={() => { setDirection(-1); setScreen('payment_choice'); }}
+                <button onClick={() => {
+                  setDirection(-1);
+                  if (allowCashCharge) {
+                    setScreen('payment_choice');
+                  } else if ((form.promoCodes?.length ?? 0) > 0) {
+                    setScreen('promo');
+                  } else if (questionFields.length > 0) {
+                    setCurrentIndex(questionFields.length - 1);
+                    setScreen('questions');
+                  } else {
+                    setScreen('identity');
+                  }
+                }}
                   className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">← Retour</button>
                 <h2 className="text-4xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>Paiement sécurisé</h2>
                 <p className="text-brown-400 text-sm mb-8">{paymentField?.label ?? 'Réservation'} · {(computePaymentAmount() ?? 0).toFixed(2)} €</p>

@@ -31,7 +31,6 @@ export function useTheme(): [Theme, () => void] {
   const [theme, setLocal] = useState<Theme>('light');
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocal(getTheme());
     const onChange = () => setLocal(getTheme());
     window.addEventListener(EVT, onChange);

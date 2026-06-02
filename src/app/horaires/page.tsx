@@ -99,7 +99,6 @@ export default function HorairesPage() {
 
   useEffect(() => {
     try {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setData(computeData());
     } catch { /* hebcal indisponible — on garde l'écran de chargement */ }
   }, []);

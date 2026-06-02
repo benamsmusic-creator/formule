@@ -42,7 +42,6 @@ export default function GalaPage() {
       })
       .finally(() => setLoaded(true));
     // étincelles dorées (après montage → pas de mismatch SSR)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSparks(Array.from({ length: 28 }, () => ({
       x: Math.random() * 100, y: Math.random() * 100, d: Math.random() * 6, s: 1 + Math.random() * 2,
     })));
