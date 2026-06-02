@@ -847,9 +847,10 @@ function QuestionScreen({
 
 /* ─── Payment choice screen ─────────────────────────────────── */
 function PaymentChoiceScreen({
-  amount, onCash, onCard, onBack, direction, allowCash,
+  amount, onCash, onCard, onBack, direction, allowCash, recap,
 }: {
   amount: number; onCash: () => void; onCard: () => void; onBack: () => void; direction: number; allowCash?: boolean;
+  recap?: { lines: { label: string; value: string }[]; discount?: { label: string; value: string }; total: number };
 }) {
   const slide = makeSlide(direction);
   return (
@@ -858,16 +859,47 @@ function PaymentChoiceScreen({
       initial={slide.enter}
       animate={slide.center}
       exit={slide.exit}
-      className="absolute inset-0 flex items-center justify-center px-6"
+      className="absolute inset-0 flex items-center justify-center overflow-y-auto px-6 py-16"
     >
       <div className="w-full max-w-md">
-        <button onClick={onBack} className="mb-8 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">
+        <button onClick={onBack} className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">
           ← Retour
         </button>
-        <h2 className="text-4xl sm:text-5xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>
+        <h2 className="text-4xl sm:text-5xl font-light text-brown-900 mb-6" style={{ fontFamily: 'var(--font-cormorant)' }}>
           Mode de paiement
         </h2>
-        <p className="text-brown-400 text-sm mb-10">Montant total : <span className="font-semibold text-brown-700">{amount.toFixed(2)} €</span></p>
+
+        {/* Récapitulatif (#36) */}
+        {recap && recap.lines.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+            className="mb-8 rounded-2xl bg-beige-100 border border-beige-200 p-5"
+          >
+            <p className="text-xs uppercase tracking-widest text-brown-400 mb-3">Récapitulatif</p>
+            <div className="space-y-2">
+              {recap.lines.map((l, i) => (
+                <div key={i} className="flex items-start justify-between gap-3 text-sm">
+                  <span className="text-brown-600">{l.label}</span>
+                  <span className="text-brown-900 font-medium whitespace-nowrap">{l.value}</span>
+                </div>
+              ))}
+              {recap.discount && (
+                <div className="flex items-center justify-between gap-3 text-sm text-green-700">
+                  <span>{recap.discount.label}</span>
+                  <span className="font-medium whitespace-nowrap">{recap.discount.value}</span>
+                </div>
+              )}
+            </div>
+            <div className="mt-3 pt-3 border-t border-beige-300 flex items-center justify-between">
+              <span className="text-sm font-medium text-brown-700">Total à payer</span>
+              <span className="text-xl font-semibold text-brown-900">{recap.total.toFixed(2)} €</span>
+            </div>
+          </motion.div>
+        )}
+
+        {!recap && (
+          <p className="text-brown-400 text-sm mb-10">Montant total : <span className="font-semibold text-brown-700">{amount.toFixed(2)} €</span></p>
+        )}
 
         <div className={`grid gap-4 ${allowCash ? 'grid-cols-2' : 'grid-cols-1'}`}>
           {allowCash && (
@@ -1303,6 +1335,52 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
     return base;
   }, [form, formData, appliedPromo]);
 
+  // Récapitulatif détaillé pour l'écran avant paiement (#36)
+  const buildRecap = useCallback((): { lines: { label: string; value: string }[]; discount?: { label: string; value: string }; total: number } => {
+    const pf = form?.fields.find((f) => f.type === 'payment');
+    const tableField = form?.fields.find((f) => f.type === 'table_reservation');
+    const donationField = form?.fields.find((f) => f.type === 'donation');
+    const peopleField = form?.fields.find((f) => f.type === 'people_count');
+    const lines: { label: string; value: string }[] = [];
+    let base = 0;
+
+    if (pf?.amount) {
+      const count = peopleField ? (parseInt(formData[peopleField.id] as string || '1', 10) || 1) : 1;
+      const lineTotal = pf.amount * count;
+      base += lineTotal;
+      lines.push({
+        label: count > 1 ? `${pf.label ?? 'Participation'} — ${count} × ${pf.amount} €` : (pf.label ?? 'Participation'),
+        value: `${lineTotal.toFixed(2)} €`,
+      });
+    }
+    if (tableField) {
+      const sel = parseTableSelection(formData[tableField.id]);
+      const opt = sel.i >= 0 ? tableField.tableOptions?.[sel.i] : undefined;
+      if (opt) {
+        const lineTotal = opt.price * sel.q;
+        base += lineTotal;
+        lines.push({
+          label: `${sel.q} × ${opt.label} (${opt.seats * sel.q} place${opt.seats * sel.q > 1 ? 's' : ''})`,
+          value: `${lineTotal.toFixed(2)} €`,
+        });
+      }
+    }
+    if (donationField) {
+      const amt = parseFloat(formData[donationField.id] as string || '0') || 0;
+      if (amt > 0) {
+        base += amt;
+        lines.push({ label: donationField.label ?? 'Don', value: `${amt.toFixed(2)} €` });
+      }
+    }
+
+    let discount: { label: string; value: string } | undefined;
+    if (appliedPromo) {
+      const d = appliedPromo.type === 'percent' ? Math.round(base * appliedPromo.discount) / 100 : appliedPromo.discount;
+      discount = { label: `Code promo${appliedPromo.code ? ` « ${appliedPromo.code} »` : ''}`, value: `−${d.toFixed(2)} €` };
+    }
+    return { lines, discount, total: computePaymentAmount() ?? base };
+  }, [form, formData, appliedPromo, computePaymentAmount]);
+
   /**
    * Construit le payload complet à insérer en base.
    * Captures obligatoires : nom complet, téléphone, adresse,
@@ -1649,6 +1727,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
             <PaymentChoiceScreen
               key="payment_choice"
               amount={computePaymentAmount() ?? 0}
+              recap={buildRecap()}
               allowCash={allowCashCharge}
               direction={direction}
               onCash={handleCash}
