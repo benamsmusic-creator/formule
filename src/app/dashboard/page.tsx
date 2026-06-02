@@ -408,6 +408,55 @@ function DashboardContent() {
           </div>
         )}
 
+        {/* Revenus sur 14 jours */}
+        {loaded && (() => {
+          const DAYS = 14;
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const buckets = Array.from({ length: DAYS }, (_, i) => {
+            const d = new Date(today); d.setDate(d.getDate() - (DAYS - 1 - i));
+            return { d, total: 0 };
+          });
+          activeForms.forEach((f) => (f.responses ?? []).forEach((r) => {
+            if (r.paymentStatus !== 'paid' && r.paymentStatus !== 'cash') return;
+            if (!r.submittedAt) return;
+            const t = new Date(r.submittedAt); t.setHours(0, 0, 0, 0);
+            const b = buckets.find((x) => x.d.getTime() === t.getTime());
+            if (b) b.total += r.paymentAmount ?? 0;
+          }));
+          const sum = buckets.reduce((s, b) => s + b.total, 0);
+          if (sum === 0) return null;
+          const max = Math.max(...buckets.map((b) => b.total), 1);
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.23 }}
+              className="mb-12 p-6 rounded-2xl bg-beige-50 border border-beige-200"
+            >
+              <div className="flex items-end justify-between mb-5">
+                <h2 className="text-lg font-medium text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>Revenus · 14 derniers jours</h2>
+                <span className="text-sm font-semibold text-gold-700">{sum} €</span>
+              </div>
+              <div className="flex items-end gap-1.5 h-28">
+                {buckets.map((b, i) => (
+                  <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                    <motion.div
+                      className="w-full rounded-t-md bg-gradient-to-t from-gold-500 to-gold-300 min-h-[2px]"
+                      initial={{ height: 0 }} animate={{ height: `${(b.total / max) * 100}%` }}
+                      transition={{ delay: 0.3 + i * 0.03, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                    />
+                    {b.total > 0 && (
+                      <span className="absolute -top-5 text-[10px] text-brown-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">{b.total}€</span>
+                    )}
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between mt-2 text-[10px] text-brown-300">
+                <span>{buckets[0].d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                <span>{buckets[DAYS - 1].d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+              </div>
+            </motion.div>
+          );
+        })()}
+
         {/* Aperçu : inscriptions par événement */}
         {loaded && (() => {
           const data = activeForms
