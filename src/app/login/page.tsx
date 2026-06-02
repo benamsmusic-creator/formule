@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
@@ -9,6 +9,17 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const from = searchParams.get('from') ?? '/dashboard';
+  const readonlyToken = searchParams.get('readonly');
+
+  // Connexion automatique en lecture seule (#69)
+  useEffect(() => {
+    if (!readonlyToken) return;
+    fetch('/api/auth/readonly', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token: readonlyToken }),
+    }).then((r) => { if (r.ok) router.push('/dashboard'); }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

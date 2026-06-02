@@ -5,6 +5,22 @@ import Link from 'next/link';
 
 const PRESETS = ['#C9A96E', '#1E6F5C', '#2563EB', '#7C3AED', '#DC2626', '#0EA5E9', '#D97706', '#BE185D'];
 
+function ReadonlyLink() {
+  const [copied, setCopied] = useState(false);
+  if (typeof window === 'undefined') return null;
+  const token = btoa('habadlyon2025::readonly');
+  const url = `${window.location.origin}/login?readonly=${token}`;
+  const copy = () => { navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  return (
+    <div className="flex items-center gap-2">
+      <input readOnly value={url} className="flex-1 text-xs px-3 py-2 rounded-xl bg-beige-100 border border-beige-200 text-brown-600 truncate focus:outline-none" />
+      <button onClick={copy} className="flex-shrink-0 px-4 py-2 rounded-xl bg-brown-900 text-beige-50 text-xs font-medium hover:bg-brown-800 transition-colors">
+        {copied ? '✓ Copié' : 'Copier'}
+      </button>
+    </div>
+  );
+}
+
 export default function ParametresPage() {
   const [name, setName] = useState('');
   const [color, setColor] = useState('#C9A96E');
@@ -155,6 +171,15 @@ export default function ParametresPage() {
               {saving ? 'Enregistrement…' : 'Enregistrer'}
             </motion.button>
           </form>
+        )}
+
+        {/* Accès en lecture seule (#69) */}
+        {loaded && (
+          <div className="mt-6 rounded-2xl bg-beige-50 border border-beige-200 p-6">
+            <h2 className="text-lg font-medium text-brown-900 mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>Accès en lecture seule</h2>
+            <p className="text-xs text-brown-500 mb-4">Partagez ce lien avec un trésorier ou secrétaire — accès lecture seule (pas de modification, pas d'envoi).</p>
+            <ReadonlyLink />
+          </div>
         )}
 
         {/* Galerie photos */}
