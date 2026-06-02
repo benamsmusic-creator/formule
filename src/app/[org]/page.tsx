@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import { Form } from '@/lib/types';
+import AuctionSection from './AuctionSection';
 
 export default function OrgPublicPage() {
   const params = useParams();
@@ -192,6 +193,9 @@ export default function OrgPublicPage() {
             </div>
           </div>
         )}
+
+        {/* Enchères de mitzvot */}
+        <AuctionSection org={slug} />
 
         {/* Mur du souvenir */}
         {memorial.length > 0 && (
