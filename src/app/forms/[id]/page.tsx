@@ -1397,12 +1397,203 @@ function PromoScreen({
   );
 }
 
+/* ─── Formulaire « tout sur une page » (scroll unique) ──────────
+   Alternative au mode question-par-question : tout est visible,
+   on remplit en scrollant, un seul bouton à la fin. */
+function ScrollForm({
+  form, questionFields, formData, setFormData, guestCount, onSubmit, direction,
+}: {
+  form: Form;
+  questionFields: FormField[];
+  formData: Record<string, string | boolean>;
+  setFormData: (updater: (prev: Record<string, string | boolean>) => Record<string, string | boolean>) => void;
+  guestCount: number;
+  onSubmit: (data: IdentityData) => void;
+  direction: number;
+}) {
+  const [civility, setCivility] = useState<'M.' | 'Mme' | ''>('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [hp, setHp] = useState('');
+  const [touched, setTouched] = useState(false);
+  const slide = makeSlide(direction);
+
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const phoneValid = phone.replace(/\D/g, '').length >= 8;
+
+  const setField = (id: string, v: string | boolean) => setFormData((prev) => ({ ...prev, [id]: v }));
+
+  // Champs question manquants (obligatoires)
+  const missingQuestion = (f: FormField): boolean => {
+    if (!f.required || f.type === 'event_date' || f.type === 'info_block') return false;
+    const v = formData[f.id];
+    if (f.type === 'checkbox') return v !== true;
+    if (f.type === 'people_count') return !(parseInt((v as string) || '0', 10) > 0);
+    if (f.type === 'table_reservation') return parseTableSelection(v).i < 0;
+    if (f.type === 'donation') return !(parseFloat((v as string) || '0') > 0);
+    return v === undefined || v === '' || v === false;
+  };
+
+  const identityOk = civility !== '' && firstName.trim() && lastName.trim() && emailValid && phoneValid;
+  const questionsOk = questionFields.every((f) => !missingQuestion(f));
+  const canSubmit = !!identityOk && questionsOk;
+
+  const handleSubmit = () => {
+    setTouched(true);
+    if (hp) return; // bot
+    if (!canSubmit) {
+      // amène au premier champ manquant
+      document.querySelector('[data-invalid="true"]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+    onSubmit({ civility: civility as 'M.' | 'Mme', firstName: firstName.trim(), lastName: lastName.trim(), email: email.trim(), phone: phone.trim(), address: address.trim() });
+  };
+
+  const inputCls = (invalid?: boolean) =>
+    `w-full px-4 py-3.5 rounded-xl bg-beige-100 border text-brown-900 text-base focus:outline-none focus:bg-beige-50 transition-colors placeholder:text-beige-400 ${
+      invalid ? 'border-red-300 focus:border-red-400' : 'border-beige-200 focus:border-gold-400'
+    }`;
+  const sectionLabel = 'text-xs text-brown-400 uppercase tracking-wide mb-2 block font-medium';
+
+  return (
+    <motion.div key="scrollform" initial={slide.enter} animate={slide.center} exit={slide.exit}
+      className="absolute inset-0 overflow-y-auto">
+      <div className="w-full max-w-xl mx-auto px-5 py-20">
+        {/* En-tête */}
+        <div className="mb-8">
+          <h2 className="text-3xl sm:text-4xl font-light text-brown-900 mb-1" style={{ fontFamily: 'var(--font-cormorant)' }}>{form.title}</h2>
+          {form.description && <p className="text-brown-400 text-sm">{form.description}</p>}
+        </div>
+
+        {/* Honeypot */}
+        <input type="text" name="company" value={hp} onChange={(e) => setHp(e.target.value)}
+          tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: 'absolute', left: '-9999px', width: 1, height: 1, opacity: 0 }} />
+
+        <div className="rounded-3xl bg-beige-50 border border-beige-200 shadow-[0_20px_60px_rgba(44,24,16,0.06)] p-6 sm:p-8 space-y-7">
+          {/* ── Identité ── */}
+          <div>
+            <label className={sectionLabel}>Civilité</label>
+            <div className="flex gap-3" data-invalid={touched && !civility ? 'true' : undefined}>
+              {(['M.', 'Mme'] as const).map((c) => (
+                <button key={c} type="button" onClick={() => setCivility(c)}
+                  className={`flex-1 py-3.5 rounded-2xl border-2 font-semibold transition-all ${civility === c ? 'border-gold-500 bg-gold-400/15 text-brown-900' : 'border-beige-200 bg-beige-50 text-brown-500 hover:border-gold-400/50'}`}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <label className={sectionLabel}>Prénom</label>
+              <input className={inputCls(touched && !firstName.trim())} data-invalid={touched && !firstName.trim() ? 'true' : undefined}
+                placeholder="Votre prénom" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            </div>
+            <div>
+              <label className={sectionLabel}>Nom</label>
+              <input className={inputCls(touched && !lastName.trim())} data-invalid={touched && !lastName.trim() ? 'true' : undefined}
+                placeholder="Votre nom" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            </div>
+          </div>
+          <div>
+            <label className={sectionLabel}>Email</label>
+            <input type="email" inputMode="email" className={inputCls(touched && !emailValid)} data-invalid={touched && !emailValid ? 'true' : undefined}
+              placeholder="votre@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+            {touched && email && !emailValid && <p className="mt-1.5 text-xs text-red-500">Adresse e-mail invalide.</p>}
+          </div>
+          <div>
+            <label className={sectionLabel}>Téléphone</label>
+            <input inputMode="tel" className={inputCls(touched && !phoneValid)} data-invalid={touched && !phoneValid ? 'true' : undefined}
+              placeholder="06 12 34 56 78" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            {touched && phone && !phoneValid && <p className="mt-1.5 text-xs text-red-500">Numéro invalide.</p>}
+          </div>
+          <div>
+            <label className={sectionLabel}>Adresse <span className="normal-case text-brown-300">(optionnel)</span></label>
+            <input className={inputCls(false)} placeholder="12 rue des Acacia, Lyon" value={address} onChange={(e) => setAddress(e.target.value)} />
+          </div>
+
+          {/* ── Questions ── */}
+          {questionFields.map((f) => {
+            if (f.type === 'event_date') return <div key={f.id}><EventDateDisplay field={f} /></div>;
+            if (f.type === 'info_block') return <div key={f.id}><InfoBlock field={f} /></div>;
+            const invalid = touched && missingQuestion(f);
+            return (
+              <div key={f.id} data-invalid={invalid ? 'true' : undefined} className="pt-1 border-t border-beige-200/60">
+                <label className="text-base font-medium text-brown-900 mb-3 block" style={{ fontFamily: 'var(--font-cormorant)' }}>
+                  {f.label}{f.required && <span className="text-gold-500 ml-1">*</span>}
+                </label>
+                {f.type === 'people_count' && <PeopleCountField value={(formData[f.id] as string) || ''} onChange={(v) => setField(f.id, v)} max={f.maxPeople ?? 8} />}
+                {f.type === 'table_reservation' && <TableReservationField field={f} value={(formData[f.id] as string) || ''} onChange={(v) => setField(f.id, v)} />}
+                {f.type === 'donation' && <DonationField field={f} value={(formData[f.id] as string) || ''} onChange={(v) => setField(f.id, v)} />}
+                {f.type === 'textarea' && (
+                  <textarea rows={4} className="w-full px-4 py-3 rounded-xl bg-beige-100 border border-beige-200 text-brown-900 focus:outline-none focus:border-gold-400 resize-none placeholder:text-beige-400"
+                    placeholder={f.placeholder ?? 'Votre réponse…'} value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
+                )}
+                {(f.type === 'text' || f.type === 'email' || f.type === 'phone' || f.type === 'number') && (
+                  <input type={f.type === 'number' ? 'number' : 'text'} className={inputCls(invalid)}
+                    placeholder={f.placeholder ?? 'Votre réponse'} value={(formData[f.id] as string) || ''} onChange={(e) => setField(f.id, e.target.value)} />
+                )}
+                {(f.type === 'radio' || f.type === 'select') && (
+                  field.perGuestCheck(f, guestCount)
+                    ? <PerGuestChoice field={f} guestCount={guestCount} value={(formData[f.id] as string) || ''} onChange={(v) => setField(f.id, v)} />
+                    : <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        {(f.options ?? []).map((opt) => {
+                          const active = formData[f.id] === opt.label;
+                          return (
+                            <button key={opt.label} type="button" onClick={() => setField(f.id, opt.label)}
+                              className={`flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-colors ${active ? 'border-gold-500 bg-gold-400/10' : 'border-beige-200 bg-beige-50 hover:border-gold-400/50'}`}>
+                              <span className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${active ? 'border-gold-500' : 'border-beige-300'}`}>
+                                {active && <span className="w-2.5 h-2.5 rounded-full bg-gold-500" />}
+                              </span>
+                              <span className={`text-sm font-medium ${active ? 'text-brown-900' : 'text-brown-600'}`}>{opt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                )}
+                {f.type === 'checkbox' && (
+                  <button type="button" onClick={() => setField(f.id, !formData[f.id])}
+                    className={`flex items-center gap-3 px-5 py-3.5 rounded-xl border-2 w-full text-left transition-colors ${formData[f.id] ? 'border-gold-500 bg-gold-400/10' : 'border-beige-200 bg-beige-50 hover:border-gold-400/40'}`}>
+                    <span className={`w-6 h-6 rounded-md border-2 flex items-center justify-center flex-shrink-0 ${formData[f.id] ? 'border-gold-500 bg-gold-500' : 'border-beige-300'}`}>
+                      {formData[f.id] && <span className="text-beige-50 text-xs font-bold">✓</span>}
+                    </span>
+                    <span className="text-sm text-brown-700">{f.placeholder || 'Oui, je confirme'}</span>
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {touched && !canSubmit && (
+          <p className="mt-4 text-sm text-red-500 text-center">Merci de compléter les champs obligatoires (★).</p>
+        )}
+
+        <motion.button type="button" onClick={handleSubmit}
+          className="btn-liquid w-full mt-6 py-4 bg-brown-900 text-beige-50 rounded-2xl font-medium overflow-hidden"
+          whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}>
+          <span className="relative z-10">Valider mon inscription →</span>
+        </motion.button>
+        <div className="h-10" />
+      </div>
+    </motion.div>
+  );
+}
+
+/* helper pour décider du mode par convive sans dupliquer la logique */
+const field = {
+  perGuestCheck: (f: FormField, guestCount: number) =>
+    (f.type === 'radio' || f.type === 'select') && !!f.perGuest && guestCount > 1,
+};
+
 /* ─── Main page ─────────────────────────────────────────────── */
 export default function FormPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [form, setForm] = useState<Form | null>(null);
   const [notFound, setNotFound] = useState(false);
-  const [screen, setScreen] = useState<'cover' | 'identity' | 'questions' | 'promo' | 'payment_choice' | 'payment' | 'success'>('cover');
+  const [screen, setScreen] = useState<'cover' | 'form' | 'identity' | 'questions' | 'promo' | 'payment_choice' | 'payment' | 'success'>('cover');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [formData, setFormData] = useState<Record<string, string | boolean>>(() => {
@@ -1477,8 +1668,21 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const handleStart = useCallback(() => {
     if (!form) return;
     setDirection(1);
-    setScreen('identity');
+    setScreen('form');
   }, [form]);
+
+  // Soumission du formulaire « tout sur une page » (flux non step-by-step)
+  const handleScrollSubmit = (data: IdentityData) => {
+    setIdentityData(data);
+    setDirection(1);
+    const due = computePaymentAmount();
+    if (isFull || !hasCharge || due === undefined || due <= 0) {
+      submitForm(data, undefined);
+      return;
+    }
+    if ((form?.promoCodes?.length ?? 0) > 0) { setScreen('promo'); return; }
+    if (allowCashCharge) { setScreen('payment_choice'); } else { setPaymentMethod('card'); setScreen('payment'); }
+  };
 
   useEffect(() => {
     if (screen !== 'cover') return;
@@ -1785,6 +1989,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
   const pct = screen === 'payment_choice' || screen === 'payment' || screen === 'promo' ? 95
     : screen === 'questions' ? Math.round(20 + ((currentIndex + 1) / Math.max(questionFields.length, 1)) * 70)
     : screen === 'identity' ? 15
+    : screen === 'form' ? (hasCharge ? 50 : 70)
     : screen === 'success' ? 100
     : 0;
 
@@ -1832,7 +2037,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
       '--color-gold-600': form.accentColor,
     } as React.CSSProperties) : undefined}>
       {screen !== 'cover' && screen !== 'success' && (
-        <ProgressBar pct={pct} steps={macroSteps} active={activeStep} />
+        <ProgressBar pct={pct} steps={screen === 'form' ? undefined : macroSteps} active={activeStep} />
       )}
 
       {/* Musique d'ambiance — active dès le chargement du formulaire */}
@@ -1898,34 +2103,17 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
           />
         )}
 
-        {screen === 'identity' && (
-          <AnimatePresence mode="wait" key="identity-host">
-            <IdentityScreen
-              key="identity"
-              direction={direction}
-              onNext={handleIdentityNext}
-              onBack={() => { setDirection(-1); setScreen('cover'); }}
-            />
-          </AnimatePresence>
-        )}
-
-        {screen === 'questions' && currentField && (
-          <AnimatePresence mode="wait" key="q-host">
-            <QuestionScreen
-              key={currentField.id}
-              field={currentField}
-              index={currentIndex}
-              total={realTotal}
-              value={formData[currentField.id] ?? (currentField.type === 'checkbox' ? false : '')}
-              onChange={(v) => setFormData((prev) => ({ ...prev, [currentField.id]: v }))}
-              onNext={handleNext}
-              onBack={handleBack}
-              isLast={currentIndex === questionFields.length - 1 && !hasCharge}
-              direction={direction}
-              guestCount={guestCount}
-              firstName={identityData?.firstName ?? ''}
-            />
-          </AnimatePresence>
+        {screen === 'form' && (
+          <ScrollForm
+            key="scrollform"
+            form={form}
+            questionFields={questionFields}
+            formData={formData}
+            setFormData={setFormData}
+            guestCount={guestCount}
+            direction={direction}
+            onSubmit={handleScrollSubmit}
+          />
         )}
 
           {screen === 'promo' && hasCharge && (
