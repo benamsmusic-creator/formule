@@ -1849,14 +1849,20 @@ function BuilderContent() {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="flex flex-col items-center justify-center py-12 text-center"
+                      className="flex flex-col items-center justify-center py-12 text-center rounded-2xl border-2 border-dashed border-beige-300"
                     >
                       <div className="text-5xl text-beige-300 mb-4 float-1">◈</div>
-                      <p className="text-brown-400 text-sm">Votre formulaire est vide.</p>
-                      <p className="text-brown-300 text-xs mt-1">
-                        Les informations d&apos;identité (civilité, prénom, nom, téléphone) sont collectées automatiquement.<br />
-                        Ajoutez ici vos questions supplémentaires.
+                      <p className="text-brown-700 text-sm font-medium">Ajoutez votre premier champ</p>
+                      <p className="text-brown-300 text-xs mt-1 max-w-xs">
+                        Civilité, prénom, nom, email et téléphone sont <strong>déjà demandés automatiquement</strong>. Ajoutez ici vos questions ou un paiement.
                       </p>
+                      <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+                        <button onClick={() => setShowMobilePanel(true)}
+                          className="lg:hidden px-4 py-2.5 rounded-xl bg-brown-900 text-beige-50 text-sm font-medium">+ Ajouter un champ</button>
+                        <span className="hidden lg:inline text-xs text-brown-400">← Choisissez un champ dans le panneau de gauche</span>
+                        <button onClick={() => setShowTemplates(true)}
+                          className="px-4 py-2.5 rounded-xl border border-beige-300 text-brown-600 text-sm hover:bg-beige-100 transition-colors">◳ Partir d&apos;un modèle</button>
+                      </div>
                     </motion.div>
                   ) : (
                     <Reorder.Group axis="y" values={fields} onReorder={setFields} className="space-y-3">
