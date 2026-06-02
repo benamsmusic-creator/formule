@@ -447,58 +447,74 @@ function DashboardContent() {
           );
         })()}
 
-        {/* Outils groupés */}
-        {loaded && (
-          <div className="mb-12">
-            <h2 className="text-2xl font-light text-brown-900 mb-4" style={{ fontFamily: 'var(--font-cormorant)' }}>Outils</h2>
-            <div className="space-y-5">
-              {[
-                { group: 'Communauté', items: [
-                  { href: '/dashboard/crm', icon: '📇', label: 'CRM', desc: 'Contacts & participants' },
-                  { href: '/membres', icon: '🪪', label: 'Adhésions', desc: 'Cotisations & familles' },
-                  { href: '/annuaire', icon: '📒', label: 'Annuaire', desc: 'Cacher, mikvé…' },
-                ] },
-                { group: 'Communication', items: [
-                  { href: '/annonces', icon: '📢', label: 'Annonces', desc: 'Actualités & urgences' },
-                  { href: '/newsletter', icon: '📣', label: 'Newsletter', desc: 'Email groupé' },
-                  { href: '/sms', icon: '📱', label: 'SMS', desc: 'Envoi groupé' },
-                ] },
-                { group: 'Cycle de vie', items: [
-                  { href: '/yahrzeit', icon: '🕯️', label: 'Yahrzeit', desc: 'Rappels automatiques' },
-                  { href: '/anniversaires', icon: '🎂', label: 'Anniversaires', desc: 'Rappels automatiques' },
-                ] },
-                { group: 'Événements & dons', items: [
-                  { href: '/dashboard/gala', icon: '🥂', label: 'Gala', desc: 'Centre de contrôle' },
-                  { href: '/builder', icon: '➕', label: 'Nouveau formulaire', desc: 'Événement, gala, don…' },
-                  { href: '/encheres', icon: '🔨', label: 'Enchères', desc: 'Mitzvot aux enchères' },
-                ] },
-                { group: 'Gestion', items: [
-                  { href: '/parametres', icon: '⚙️', label: 'Réglages', desc: 'Nom, couleur, logo, galerie' },
-                  { href: '/historique', icon: '🕘', label: 'Historique', desc: 'Journal des actions' },
-                  ...(me?.superAdmin ? [{ href: '/clients', icon: '👥', label: 'Clients', desc: 'Gérer les communautés' }] : []),
-                ] },
-              ].map((g) => (
-                <div key={g.group}>
-                  <p className="text-xs uppercase tracking-widest text-brown-400 mb-2">{g.group}</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {g.items.map((it) => (
-                      <Link key={it.href} href={it.href}>
-                        <motion.div whileHover={{ y: -2, boxShadow: '0 12px 30px rgba(44,24,16,0.06)' }}
-                          className="flex items-center gap-3 p-3.5 rounded-2xl bg-beige-50 border border-beige-200 hover:border-gold-400/40 transition-colors h-full">
-                          <span className="text-2xl flex-shrink-0">{it.icon}</span>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-brown-900 truncate">{it.label}</p>
-                            <p className="text-[11px] text-brown-400 truncate">{it.desc}</p>
-                          </div>
-                        </motion.div>
-                      </Link>
-                    ))}
-                  </div>
+        {/* Résumé du jour + raccourcis */}
+        {loaded && (() => {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          // Inscriptions des dernières 24h (toutes confirmées)
+          const since = Date.now() - 24 * 3600 * 1000;
+          const recent = activeForms.reduce((sum, f) => sum + (f.responses ?? []).filter((r) => {
+            const t = r.submittedAt ? new Date(r.submittedAt).getTime() : 0;
+            return t >= since;
+          }).length, 0);
+          // Événements aujourd'hui (champ event_date présent et = aujourd'hui)
+          const eventsToday = activeForms.filter((f) => {
+            const ed = f.fields.find((x) => x.type === 'event_date')?.presetValue;
+            if (!ed) return false;
+            const d = new Date(ed); if (isNaN(d.getTime())) return false;
+            d.setHours(0, 0, 0, 0);
+            return d.getTime() === today.getTime();
+          });
+          // Listes d'attente cumulées
+          const waitTotal = activeForms.reduce((s, f) => s + (f.responses ?? []).filter((r) => (r.data as Record<string, unknown>)?._waitlist === 'true').length, 0);
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.22 }}
+              className="mb-12 p-6 rounded-2xl bg-beige-50 border border-beige-200"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-medium text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>Aujourd’hui</h2>
+                <span className="text-xs text-brown-400">{new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-4 rounded-xl bg-beige-100 border border-beige-200">
+                  <p className="text-2xl font-light text-brown-900">{recent}</p>
+                  <p className="text-xs text-brown-500">nouvelle(s) inscription(s) · 24h</p>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+                <div className="p-4 rounded-xl bg-beige-100 border border-beige-200">
+                  <p className="text-2xl font-light text-brown-900">{eventsToday.length}</p>
+                  <p className="text-xs text-brown-500">événement(s) aujourd’hui</p>
+                </div>
+                <div className={`p-4 rounded-xl border ${waitTotal > 0 ? 'bg-red-50 border-red-200' : 'bg-beige-100 border-beige-200'}`}>
+                  <p className={`text-2xl font-light ${waitTotal > 0 ? 'text-red-600' : 'text-brown-900'}`}>{waitTotal}</p>
+                  <p className="text-xs text-brown-500">en liste d’attente</p>
+                </div>
+              </div>
+              {eventsToday.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {eventsToday.map((f) => (
+                    <Link key={f.id} href={`/dashboard/responses/${f.id}`} className="text-xs px-3 py-1.5 rounded-full bg-gold-400/10 border border-gold-400/20 text-gold-700 hover:bg-gold-400/20 transition-colors">
+                      📅 {f.title} →
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {/* Raccourcis */}
+              <div className="mt-5 pt-5 border-t border-beige-200 flex flex-wrap gap-2">
+                {[
+                  { href: '/builder', icon: '➕', label: 'Nouveau formulaire' },
+                  { href: '/dashboard/crm', icon: '📇', label: 'CRM' },
+                  { href: '/dashboard/gala', icon: '🥂', label: 'Gala' },
+                  { href: '/annonces', icon: '📢', label: 'Annonce' },
+                  { href: '/newsletter', icon: '📣', label: 'Newsletter' },
+                ].map((it) => (
+                  <Link key={it.href} href={it.href} className="inline-flex items-center gap-2 text-sm px-3.5 py-2 rounded-xl bg-beige-100 border border-beige-200 text-brown-700 hover:border-gold-400/40 hover:bg-beige-50 transition-colors">
+                    <span>{it.icon}</span>{it.label}
+                  </Link>
+                ))}
+              </div>
+            </motion.div>
+          );
+        })()}
 
         {/* Recherche */}
         {loaded && forms.length > 4 && (
