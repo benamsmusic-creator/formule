@@ -11,19 +11,19 @@ export async function GET(req: NextRequest) {
   if (!org) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
   const { data } = await supabaseAdmin
     .from('members')
-    .select('id, name, email, phone, paid_until')
+    .select('id, name, email, phone, paid_until, family')
     .eq('org_id', org)
-    .order('name', { ascending: true });
+    .order('family', { ascending: true });
   return NextResponse.json(data ?? []);
 }
 
 export async function POST(req: NextRequest) {
   const org = currentOrg(req);
   if (!org) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
-  const { name, email, phone, paidUntil } = await req.json();
+  const { name, email, phone, paidUntil, family } = await req.json();
   if (!name) return NextResponse.json({ error: 'Nom requis' }, { status: 400 });
   const { error } = await supabaseAdmin.from('members').insert({
-    org_id: org, name, email: email ?? '', phone: phone ?? '', paid_until: paidUntil || null,
+    org_id: org, name, email: email ?? '', phone: phone ?? '', paid_until: paidUntil || null, family: family ?? '',
   });
   if (error) return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   return NextResponse.json({ ok: true });
