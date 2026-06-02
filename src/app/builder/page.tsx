@@ -1258,6 +1258,69 @@ function QuickWizard({ onCreate, onAdvanced, saving }: {
   );
 }
 
+/* ─── Aperçu en direct du formulaire (lecture seule) ───────────── */
+function FormPreview({ title, description, fields, onClose }: {
+  title: string; description: string; fields: FormField[]; onClose: () => void;
+}) {
+  const pill = 'px-4 py-3 rounded-xl bg-beige-100 border border-beige-200 text-brown-400 text-sm';
+  return (
+    <motion.div className="fixed inset-0 z-[200] flex items-center justify-center px-4 bg-brown-900/50 backdrop-blur-sm"
+      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.div className="w-full max-w-md max-h-[88vh] overflow-y-auto bg-beige-50 rounded-3xl border border-beige-200 shadow-2xl"
+        initial={{ scale: 0.96, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 20 }}
+        onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-beige-50/95 backdrop-blur-md border-b border-beige-200 px-5 py-3 flex items-center justify-between z-10">
+          <span className="text-xs uppercase tracking-widest text-gold-600">👁 Aperçu visiteur</span>
+          <button onClick={onClose} aria-label="Fermer" className="text-brown-400 hover:text-brown-700 text-xl leading-none">×</button>
+        </div>
+        <div className="p-6 space-y-6">
+          <div>
+            <h2 className="text-2xl font-light text-brown-900" style={{ fontFamily: 'var(--font-cormorant)' }}>{title || 'Titre du formulaire'}</h2>
+            {description && <p className="text-brown-400 text-sm mt-1">{description}</p>}
+          </div>
+          {/* Identité (toujours demandée) */}
+          <div className="space-y-2.5">
+            <p className="text-xs font-semibold text-brown-800">👤 Vos coordonnées</p>
+            <div className={pill}>Civilité · Prénom · Nom</div>
+            <div className={pill}>Email</div>
+            <div className={pill}>Téléphone</div>
+          </div>
+          {fields.length > 0 && <div className="border-t border-beige-200" />}
+          {fields.map((f) => (
+            <div key={f.id}>
+              {f.type === 'event_date' ? (
+                <div className="p-4 rounded-2xl bg-beige-100 border border-gold-400/20 text-center">
+                  <p className="text-2xl mb-1">📅</p>
+                  <p className="text-brown-800 font-medium">{f.presetValue || "Date de l'événement"}</p>
+                  {f.venue && <p className="text-xs text-brown-400 mt-1">📍 {f.venue}</p>}
+                </div>
+              ) : f.type === 'info_block' ? (
+                <div className="p-4 rounded-2xl bg-beige-100 border-l-4 border-gold-400">
+                  <p className="text-brown-700 text-sm whitespace-pre-line">{f.presetValue || 'Texte d’information…'}</p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-sm font-medium text-brown-900 mb-2">{f.label}{f.required && <span className="text-gold-500 ml-1">*</span>}</p>
+                  {f.type === 'people_count' && <div className="flex gap-2">{[1, 2, 3].map((n) => <span key={n} className="w-12 h-12 rounded-xl border-2 border-beige-200 bg-beige-50 flex items-center justify-center text-brown-500">{n}</span>)}<span className="text-brown-300 self-center">…</span></div>}
+                  {f.type === 'donation' && <div className="flex flex-wrap gap-2">{(f.suggestedAmounts ?? [18, 36, 180]).map((a) => <span key={a} className="px-5 py-3 rounded-2xl border-2 border-beige-200 bg-beige-50 text-brown-600">{a} €</span>)}</div>}
+                  {f.type === 'table_reservation' && <div className="space-y-2">{(f.tableOptions ?? []).map((o, i) => <div key={i} className="px-4 py-3 rounded-xl border-2 border-beige-200 bg-beige-50 flex justify-between"><span className="text-brown-700 text-sm">{o.label}</span><span className="text-brown-500 text-sm">{o.seats} pl · {o.price} €</span></div>)}</div>}
+                  {(f.type === 'radio' || f.type === 'select') && <div className="grid grid-cols-2 gap-2">{(f.options ?? []).map((o) => <span key={o.label} className="px-4 py-2.5 rounded-xl border-2 border-beige-200 bg-beige-50 text-brown-600 text-sm">{o.label}</span>)}</div>}
+                  {f.type === 'checkbox' && <div className="flex items-center gap-2"><span className="w-6 h-6 rounded-md border-2 border-beige-300" /><span className="text-brown-600 text-sm">{f.placeholder || 'Je confirme'}</span></div>}
+                  {(f.type === 'text' || f.type === 'number') && <div className={pill}>{f.placeholder || 'Réponse courte…'}</div>}
+                  {f.type === 'textarea' && <div className={`${pill} h-20`}>{f.placeholder || 'Réponse longue…'}</div>}
+                  {f.type === 'payment' && <div className="px-4 py-3 rounded-xl bg-gold-400/10 border border-gold-400/20 text-gold-700 text-sm">◆ {f.amount ?? 0} € · paiement carte</div>}
+                </div>
+              )}
+            </div>
+          ))}
+          <button className="w-full py-3.5 bg-brown-900 text-beige-50 rounded-2xl font-medium opacity-90">Valider mon inscription →</button>
+          <p className="text-center text-[11px] text-brown-300">Ceci est un aperçu — les boutons ne sont pas actifs.</p>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function BuilderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -1301,6 +1364,7 @@ function BuilderContent() {
   const [showMobilePanel, setShowMobilePanel] = useState(false);
   const [showAI, setShowAI] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   // Mode création : assistant guidé par défaut pour un nouveau formulaire
   const [mode, setMode] = useState<'wizard' | 'advanced'>(() => (searchParams.get('id') ? 'advanced' : 'wizard'));
 
@@ -1514,6 +1578,12 @@ function BuilderContent() {
       </AnimatePresence>
 
       <AnimatePresence>
+        {showPreview && (
+          <FormPreview title={title} description={description} fields={fields} onClose={() => setShowPreview(false)} />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showTemplates && (
           <motion.div
             className="fixed inset-0 z-[200] flex items-center justify-center px-4 bg-brown-900/40 backdrop-blur-sm"
@@ -1564,6 +1634,14 @@ function BuilderContent() {
               <p className="text-brown-500 text-sm">Une question à la fois. Une expérience inoubliable.</p>
             </div>
             <div className="flex items-center gap-2 flex-shrink-0 mt-1">
+              <motion.button
+                onClick={() => setShowPreview(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-brown-900 text-beige-50 text-sm font-medium hover:bg-brown-800 transition-colors"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                👁 Aperçu
+              </motion.button>
               <motion.button
                 onClick={() => setShowTemplates(true)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-beige-100 border border-beige-200 text-brown-700 text-sm font-medium hover:border-gold-400/40 transition-colors"
