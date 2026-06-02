@@ -680,6 +680,27 @@ function DonationField({
           <span className="text-brown-400">€</span>
         </div>
       )}
+
+      {/* Réduction fiscale — fort levier de générosité (art. 200 CGI, 66%) */}
+      {(() => {
+        const amt = parseFloat(value || '0') || 0;
+        if (amt <= 0) return null;
+        const realCost = Math.round(amt * 0.34 * 100) / 100;
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            className="mt-2 rounded-2xl bg-gold-400/10 border border-gold-400/20 p-4 max-w-md"
+          >
+            <p className="text-sm text-brown-800">
+              🙏 Merci pour votre générosité !
+            </p>
+            <p className="text-xs text-brown-500 mt-1">
+              Votre don de <span className="font-semibold text-brown-800">{amt} €</span> ne vous coûte réellement que{' '}
+              <span className="font-semibold text-gold-700">{realCost} €</span> après réduction d&apos;impôt (66%).
+            </p>
+          </motion.div>
+        );
+      })()}
     </div>
   );
 }
