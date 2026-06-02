@@ -52,6 +52,8 @@ export default function ResponsesPage() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'cash' | 'unpaid' | 'waitlist'>('all');
 
   const cancelResponse = async (rid: string) => {
     if (!confirm('Supprimer cette inscription ? Cette action est irréversible.')) return;
@@ -117,8 +119,21 @@ export default function ResponsesPage() {
     );
   }
 
-  const responses = form.responses ?? [];
+  const allResponses = form.responses ?? [];
   const arrived = Object.values(checked).filter(Boolean).length;
+
+  // Recherche + filtre par statut (#29 côté admin)
+  const q = search.trim().toLowerCase();
+  const responses = allResponses.filter((r) => {
+    const d = r.data as Record<string, string>;
+    const name = [d._firstName, d._lastName, d._fullName, d._email, d._phone].filter(Boolean).join(' ').toLowerCase();
+    if (q && !name.includes(q)) return false;
+    if (filterStatus === 'paid') return r.paymentStatus === 'paid';
+    if (filterStatus === 'cash') return r.paymentStatus === 'cash';
+    if (filterStatus === 'unpaid') return !r.paymentStatus || r.paymentStatus === 'unpaid' || r.paymentStatus === 'pending';
+    if (filterStatus === 'waitlist') return d._waitlist === 'true';
+    return true;
+  });
 
   return (
     <div className="min-h-screen pt-24 pb-20">
@@ -159,6 +174,27 @@ export default function ResponsesPage() {
             )}
           </div>
         </motion.div>
+
+        {/* Recherche + filtres statut */}
+        {allResponses.length > 2 && (
+          <div className="flex flex-wrap gap-2 mb-6 print:hidden">
+            <div className="relative flex-1 min-w-48">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-brown-300 text-sm">🔍</span>
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher un participant…"
+                aria-label="Rechercher parmi les participants"
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-beige-50 border border-beige-200 text-sm text-brown-900 placeholder:text-brown-300 focus:outline-none focus:border-gold-400 transition-colors" />
+            </div>
+            <div className="flex gap-1.5 flex-wrap">
+              {([['all','Tous'],['paid','Payé 💳'],['cash','Espèces 💵'],['unpaid','Non payé'],['waitlist','Attente ⏳']] as const).map(([v, lbl]) => (
+                <button key={v} onClick={() => setFilterStatus(v)}
+                  className={`px-3 py-2 rounded-xl text-xs font-medium border transition-colors ${filterStatus === v ? 'bg-brown-900 text-beige-50 border-brown-900' : 'bg-beige-50 text-brown-600 border-beige-200 hover:border-gold-400/50'}`}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Empty state */}
         {responses.length === 0 && (
