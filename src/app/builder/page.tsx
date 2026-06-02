@@ -38,18 +38,38 @@ async function compressImage(file: File, maxPx: number): Promise<Blob> {
   });
 }
 
-const FIELD_TYPES: { type: FieldType; label: string; icon: string; desc: string; hint: string }[] = [
-  { type: 'event_date', label: "Date de l'événement", icon: '📅', desc: 'Affiche la date aux participants', hint: 'Sélectionnez une date via le calendrier.' },
-  { type: 'info_block', label: 'Message informatif', icon: '✍', desc: 'Affiche un texte ou une info', hint: 'Ex : règles, tarifs, conditions. Le visiteur lit, ne remplit pas.' },
-  { type: 'people_count', label: 'Nombre de personnes', icon: '👥', desc: 'Le visiteur choisit combien de personnes', hint: 'Ex : 1 à 8 personnes. Sélection par bouton.' },
-  { type: 'table_reservation', label: 'Réservation de table (Gala)', icon: '🍽️', desc: 'Tables et places avec prix', hint: 'Définissez vos formules : table complète, place individuelle… chacune avec son nombre de places et son prix. Le visiteur choisit et la quantité.' },
-  { type: 'donation', label: 'Don', icon: '🤲', desc: 'Montants suggérés + don libre', hint: 'Proposez des montants (ex : 18, 36, 180 €) et autorisez un montant libre. Idéal pour la tsedaka.' },
-  { type: 'textarea', label: 'Texte long', icon: '¶', desc: 'Le visiteur tape un long message', hint: 'Ex : commentaire, demande particulière.' },
-  { type: 'select', label: 'Choix avec photos', icon: '▾', desc: 'Le visiteur choisit parmi des options', hint: 'Ex : Menu du soir, type de place. Vous pouvez ajouter une photo par option.' },
-  { type: 'radio', label: 'Choix unique', icon: '◉', desc: 'Le visiteur choisit une seule réponse', hint: 'Ex : Adulte / Enfant. Peut aussi avoir des photos.' },
-  { type: 'checkbox', label: 'Case à cocher', icon: '☑', desc: 'Le visiteur coche ou non', hint: "Ex : J'accepte les conditions, Je serai présent(e)." },
-  { type: 'payment', label: 'Paiement', icon: '◆', desc: 'Le visiteur paie par carte bancaire', hint: 'Vous fixez le montant. Sécurisé par Stripe.' },
+/* ─── Types de champs, organisés en 3 catégories claires ───────── */
+type FieldTypeDef = { type: FieldType; label: string; icon: string; desc: string; hint: string };
+const FIELD_GROUPS: { group: string; emoji: string; note: string; types: FieldTypeDef[] }[] = [
+  {
+    group: 'Questions', emoji: '💬', note: 'Ce que le visiteur remplit',
+    types: [
+      { type: 'radio', label: 'Choix unique', icon: '◉', desc: 'Une seule réponse', hint: 'Ex : Adulte / Enfant, Viande / Poisson.' },
+      { type: 'select', label: 'Choix avec photos', icon: '🖼️', desc: 'Options, avec image possible', hint: 'Ex : menu du soir illustré.' },
+      { type: 'checkbox', label: 'Case à cocher', icon: '☑', desc: 'Oui / non', hint: "Ex : J'accepte, je serai présent(e)." },
+      { type: 'text', label: 'Texte court', icon: '✏️', desc: 'Une ligne', hint: "Ex : nom de l'enfant, allergie." },
+      { type: 'textarea', label: 'Texte long', icon: '¶', desc: 'Paragraphe', hint: 'Ex : commentaire, demande.' },
+      { type: 'people_count', label: 'Nombre de personnes', icon: '👥', desc: 'Compteur 1 à N', hint: 'Sélection par bouton.' },
+    ],
+  },
+  {
+    group: 'Paiement', emoji: '💰', note: 'Pour encaisser (carte Stripe)',
+    types: [
+      { type: 'payment', label: 'Montant fixe', icon: '◆', desc: 'Prix fixe à payer', hint: 'Vous fixez le montant (× nb de personnes si présent).' },
+      { type: 'donation', label: 'Don libre', icon: '🤲', desc: 'Montants suggérés + libre', hint: 'Ex : 18, 36, 180 € + montant au choix.' },
+      { type: 'table_reservation', label: 'Tables & places', icon: '🍽️', desc: 'Formules avec places et prix', hint: 'Ex : table complète, place seule — chacune son prix.' },
+    ],
+  },
+  {
+    group: 'Affichage', emoji: 'ℹ️', note: 'Informations — le visiteur ne remplit rien',
+    types: [
+      { type: 'event_date', label: 'Date & lieu', icon: '📅', desc: "Affiche la date de l'événement", hint: 'Choisie via le calendrier.' },
+      { type: 'info_block', label: "Bloc d'information", icon: '✍', desc: 'Texte libre', hint: 'Ex : règles, tarifs, conditions.' },
+    ],
+  },
 ];
+// Liste plate dérivée — pour les recherches existantes (addField, FieldEditor)
+const FIELD_TYPES: FieldTypeDef[] = FIELD_GROUPS.flatMap((g) => g.types);
 
 /* ─── Modèles de formulaires prêts à l'emploi ─────────────────── */
 type TemplateField = Omit<FormField, 'id'>;
@@ -1429,34 +1449,39 @@ function BuilderContent() {
   };
 
   const fieldTypePanel = (
-    <div className="space-y-1.5">
-      {FIELD_TYPES.map((ft, i) => (
-        <motion.button
-          key={ft.type}
-          onClick={() => addField(ft.type)}
-          className="w-full flex items-start gap-3 px-4 py-3 rounded-xl bg-beige-50 border border-beige-200 text-left transition-all group hover:border-gold-400/50 hover:bg-gold-400/5"
-          whileHover={{ x: 2 }}
-          whileTap={{ scale: 0.98 }}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.03 }}
-        >
-          <span
-            className={`w-7 h-7 mt-0.5 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${
-              ft.type === 'payment'
-                ? 'bg-gold-400/20 text-gold-600 border border-gold-400/30'
-                : 'bg-beige-200 text-brown-600 border border-beige-300 group-hover:bg-gold-400/10 group-hover:text-gold-600 group-hover:border-gold-400/20'
-            }`}
-          >
-            {ft.icon}
-          </span>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-brown-800">{ft.label}</p>
-            <p className="text-[11px] text-brown-500 mt-0.5">{ft.desc}</p>
-            <p className="text-[10px] text-brown-300 mt-0.5 leading-tight">{ft.hint}</p>
+    <div className="space-y-5">
+      {FIELD_GROUPS.map((g) => (
+        <div key={g.group}>
+          <div className="flex items-baseline gap-2 mb-2 px-1">
+            <span className="text-sm font-semibold text-brown-800">{g.emoji} {g.group}</span>
+            <span className="text-[10px] text-brown-400">· {g.note}</span>
           </div>
-          <span className="text-gold-400 opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex-shrink-0">+</span>
-        </motion.button>
+          <div className="space-y-1.5">
+            {g.types.map((ft) => (
+              <motion.button
+                key={ft.type}
+                onClick={() => addField(ft.type)}
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-beige-50 border border-beige-200 text-left transition-all group hover:border-gold-400/50 hover:bg-gold-400/5"
+                whileHover={{ x: 2 }}
+                whileTap={{ scale: 0.98 }}
+                title={ft.hint}
+              >
+                <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0 transition-colors ${
+                  g.group === 'Paiement'
+                    ? 'bg-gold-400/20 text-gold-600 border border-gold-400/30'
+                    : 'bg-beige-200 text-brown-600 border border-beige-300 group-hover:bg-gold-400/10 group-hover:border-gold-400/20'
+                }`}>
+                  {ft.icon}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-brown-800 leading-tight">{ft.label}</p>
+                  <p className="text-[11px] text-brown-400 leading-tight">{ft.desc}</p>
+                </div>
+                <span className="text-gold-400 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 text-lg">+</span>
+              </motion.button>
+            ))}
+          </div>
+        </div>
       ))}
     </div>
   );
