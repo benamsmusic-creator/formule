@@ -468,6 +468,7 @@ function DashboardContent() {
                   { href: '/anniversaires', icon: '🎂', label: 'Anniversaires', desc: 'Rappels automatiques' },
                 ] },
                 { group: 'Événements & dons', items: [
+                  { href: '/dashboard/gala', icon: '🥂', label: 'Gala', desc: 'Centre de contrôle' },
                   { href: '/builder', icon: '➕', label: 'Nouveau formulaire', desc: 'Événement, gala, don…' },
                   { href: '/encheres', icon: '🔨', label: 'Enchères', desc: 'Mitzvot aux enchères' },
                 ] },

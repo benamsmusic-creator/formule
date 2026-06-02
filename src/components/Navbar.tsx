@@ -25,6 +25,7 @@ const TOOL_GROUPS = [
     { href: '/anniversaires', icon: '🎂', label: 'Anniversaires' },
   ] },
   { group: 'Événements & dons', items: [
+    { href: '/dashboard/gala', icon: '🥂', label: 'Gala' },
     { href: '/encheres', icon: '🔨', label: 'Enchères' },
   ] },
   { group: 'Gestion', items: [
