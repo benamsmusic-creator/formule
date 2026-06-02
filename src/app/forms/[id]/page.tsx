@@ -2240,7 +2240,7 @@ export default function FormPage({ params }: { params: Promise<{ id: string }> }
                 }}
                   className="mb-6 text-xs text-brown-400 hover:text-brown-700 transition-colors flex items-center gap-1">← Retour</button>
                 <h2 className="text-4xl font-light text-brown-900 mb-2" style={{ fontFamily: 'var(--font-cormorant)' }}>Paiement sécurisé</h2>
-                <p className="text-brown-400 text-sm mb-8">{paymentField?.label ?? 'Réservation'} · {(computePaymentAmount() ?? 0).toFixed(2)} €</p>
+                <p className="text-brown-400 text-sm mb-8">{paymentField?.label ?? donationField?.label ?? tableField?.label ?? 'Total'} · {(computePaymentAmount() ?? 0).toFixed(2)} €</p>
                 <StripePayment
                   amount={computePaymentAmount() ?? paymentField?.amount ?? 50}
                   description={form.title}
